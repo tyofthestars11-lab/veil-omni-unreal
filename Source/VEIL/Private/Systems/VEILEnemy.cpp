@@ -14,6 +14,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Engine/DamageEvents.h"
 #include "VEIL.h"
+#include "Systems/VEILCampaign.h"
 #include "Animation/AnimSequence.h"
 #include "Animation/AnimSingleNodeInstance.h"
 #include "Components/CapsuleComponent.h"
@@ -398,6 +399,10 @@ void AVEILEnemy::Die()
 		if (UWorld* DieW = GetWorld())
 		{
 			if (UOMNIQuestSystem* DieQ = DieW->GetSubsystem<UOMNIQuestSystem>()) { DieQ->AddShard(); }
+			if (UVEILCampaignSubsystem* DieC = DieW->GetSubsystem<UVEILCampaignSubsystem>())
+			{
+				DieC->NoteKill(Kind == EVEILEnemyKind::WardenPrime);
+			}
 			if (UPHISideQuests* DieS = DieW->GetSubsystem<UPHISideQuests>()) { DieS->AddEcho(); }
 			if (UVEILFactionManager* DieF = DieW->GetSubsystem<UVEILFactionManager>())
 			{

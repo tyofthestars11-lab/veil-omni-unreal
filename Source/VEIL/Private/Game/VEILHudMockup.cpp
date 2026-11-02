@@ -17,6 +17,7 @@
 #include "GameFramework/HUD.h"
 #include "Kismet/GameplayStatics.h"
 #include "Systems/OMNIQuestSystem.h"
+#include "Systems/VEILCampaign.h"
 #include "Systems/VEILEnemy.h"
 #include "Systems/VEILOS.h"
 
@@ -89,6 +90,7 @@ void VEILHudMockup::Draw(AHUD* H, UCanvas* C)
 
 	UVEILOS* OS = World->GetSubsystem<UVEILOS>();
 	UOMNIQuestSystem* Quest = World->GetSubsystem<UOMNIQuestSystem>();
+	UVEILCampaignSubsystem* Camp = World->GetSubsystem<UVEILCampaignSubsystem>();
 	const APawn* Body = UGameplayStatics::GetPlayerPawn(H, 0);
 
 	static UFont* Big = LoadObject<UFont>(nullptr,
@@ -156,6 +158,14 @@ void VEILHudMockup::Draw(AHUD* H, UCanvas* C)
 			case EOMNIQuestStage::WardenAwake:     Objective = TEXT("Face WARDEN PRIME"); break;
 			case EOMNIQuestStage::Clear:           Objective = TEXT("The signal is whole"); break;
 			}
+		}
+		// THE CAMPAIGN OWNS THE LINE. The stage switch above is the fallback
+		// for a world without it; this is the objective the fifty activities and
+		// the six acts actually answer to.
+		if (Camp)
+		{
+			Objective = Camp->ObjectiveLine();
+			MockTxt(H, Camp->ActivityLine(), MockGold, BX + 34.f, BY - 16.f, Med, 0.62f);
 		}
 		MockTxt(H, FString::Printf(TEXT("\u25C6  %s"), *Objective), MockWhite, BX + 34.f, BY + 30.f, Med, 0.74f);
 	}

@@ -2168,7 +2168,7 @@ void AVEILWorldBuilder::DressPhiPalette()
 	};
 
 	const double PhiLocal = 1.618033988749895;
-	const double GoldenDeg = 137.50776405003785;
+	const double GoldenStep = 137.50776405003785;
 	const FLinearColor GoldTint(0.55f, 0.47f, 0.34f);   // bronze-stone, not plastic gold
 	const FLinearColor CrystalTint(0.30f, 0.62f, 1.f);
 
@@ -2201,7 +2201,7 @@ void AVEILWorldBuilder::DressPhiPalette()
 			// MEASURED, like everything else that was a wafer before: 2.2 m across, 12.5 m
 			// tall, standing on the ground rather than buried to its cap.
 			Place(At + FVector(0.f, 0.f, 625.f), ScaleForCm(Pillar, FVector(220.f, 220.f, 1250.f)),
-				Pillar, Gold, GoldTint, 0.55f, FRotator(0.f, (float)(i * GoldenDeg), 0.f));
+				Pillar, Gold, GoldTint, 0.55f, FRotator(0.f, (float)(i * GoldenStep), 0.f));
 			++Pillars;
 		}
 		const bool bCrystalHere = Flavour == TEXT("Wilds")
@@ -2266,7 +2266,7 @@ void AVEILWorldBuilder::DressPhiPalette()
 			const float Side = 640.f / FMath::Pow((float)PhiLocal, (float)K);
 			Place(Spire + FVector(0.f, 0.f, 1400.f + K * 2600.f),
 				ScaleForCm(Pillar, FVector(Side, Side, 2600.f)), Pillar, Gold, GoldTint, 0.8f,
-				FRotator(0.f, (float)(K * GoldenDeg), 0.f));
+				FRotator(0.f, (float)(K * GoldenStep), 0.f));
 		}
 		if (Glow)
 		{
@@ -2335,7 +2335,7 @@ void AVEILWorldBuilder::DressPhiPalette()
 		// THE GOLD IS AN INLAY NOW: one ring, flush, on the plane the stones make.
 		for (int32 i = 0; i < 13; ++i)
 		{
-			const double Ang = FMath::DegreesToRadians(i * GoldenDeg);
+			const double Ang = FMath::DegreesToRadians(i * GoldenStep);
 			const double Rad = 620.0;
 			Place(FVector(FMath::Cos(Ang) * Rad, FMath::Sin(Ang) * Rad, PaveZ + 5.f),
 				ScaleForCm(Tile, FVector(150.f, 150.f, 6.f)), Tile, Gold, GoldTint, 0.3f,
@@ -2584,23 +2584,23 @@ void AVEILWorldBuilder::DressRegions()
 	// player sees. Warm rock reads as the same cliff the kit authored.
 	const FLinearColor BlueC(0.44f, 0.41f, 0.36f);
 	const FLinearColor IceC(0.52f, 0.76f, 1.f);
-	const double GoldenDeg = 137.50776405003785;
+	const double GoldenStep = 137.50776405003785;
 	int32 Market = 0, Nest = 0, Omni = 0, Peaks = 0, Beacons = 0;
 
 	// 1. THE HUB MARKET: sixteen stalls and sixteen gold posts on the golden angle, ring
 	// on phi-damped radius so the crowd thins outward instead of stopping at a wall.
 	for (int32 i = 0; i < 16; ++i)
 	{
-		const double Ang = FMath::DegreesToRadians(i * GoldenDeg);
+		const double Ang = FMath::DegreesToRadians(i * GoldenStep);
 		const double Rad = 1500.0 * FMath::Sqrt(1.0 + i * 0.18);
 		const FVector At(FMath::Cos(Ang) * Rad, FMath::Sin(Ang) * Rad, 0.f);
 		// A STALL IS A COUNTER YOU CAN SEE, a canopy over it, and four posts that are
 		// posts - not a 2 cm stick, which is what the unmeasured scale produced.
 		Solid(At, FVector(600.f, 600.f, 110.f), Slab, nullptr, FLinearColor(0.45f, 0.40f, 0.34f),
-			0.f, (float)(i * GoldenDeg));
+			0.f, (float)(i * GoldenStep));
 		++Market;
 		Solid(At + FVector(0.f, 0.f, 230.f), FVector(800.f, 800.f, 40.f), Roof, Gold, GoldC, 0.20f,
-			(float)(i * GoldenDeg));
+			(float)(i * GoldenStep));
 		++Market;
 		for (int32 Post = 0; Post < 4; ++Post)
 		{
@@ -2615,7 +2615,7 @@ void AVEILWorldBuilder::DressRegions()
 	// angle, and waterfalls running off three of them as thin blue sheets of water.
 	for (int32 i = 0; i < 9; ++i)
 	{
-		const double Ang = FMath::DegreesToRadians(180.0 + i * GoldenDeg * 0.5);
+		const double Ang = FMath::DegreesToRadians(180.0 + i * GoldenStep * 0.5);
 		// THE NEST IS A PLACE YOU WALK TO, NOT A WALL AT THE SPAWN. At 32 m the first
 		// shelf's inner face stood 15 m from the plaza and every standing frame was
 		// blue rock on three sides. 62 m out, 26 m wide: nearest face 49 m away, so the
@@ -2624,7 +2624,7 @@ void AVEILWorldBuilder::DressRegions()
 		const FVector At(FMath::Cos(Ang) * Rad, FMath::Sin(Ang) * Rad, 0.f);
 		const float Height = 700.f + i * 210.f;
 		Solid(At, FVector(2600.f, 2600.f, Height), Rock, Blue, BlueC, 0.12f,
-			(float)(i * GoldenDeg));
+			(float)(i * GoldenStep));
 		++Nest;
 		if (i % 3 == 0)
 		{
@@ -2640,13 +2640,13 @@ void AVEILWorldBuilder::DressRegions()
 	// skyline has a shape instead of a row.
 	for (int32 i = 0; i < 10; ++i)
 	{
-		const double Ang = FMath::DegreesToRadians(i * GoldenDeg);
+		const double Ang = FMath::DegreesToRadians(i * GoldenStep);
 		const double Rad = 2600.0 + (i % 4) * 420.0;
 		const FVector At(2600.0 + FMath::Cos(Ang) * Rad * 0.35, FMath::Sin(Ang) * Rad, 0.f);
 		const float TowerH = 1400.f + (6 - (i % 6)) * 520.f;
 		const float TowerW = 900.f + (float)(i % 3) * 250.f;
 		Solid(At, FVector(TowerW, TowerW, TowerH), Pillar, Gold, GoldC, 0.35f,
-			(float)(i * GoldenDeg));
+			(float)(i * GoldenStep));
 		++Omni;
 	}
 
@@ -2654,7 +2654,7 @@ void AVEILWorldBuilder::DressRegions()
 	// speak of - a horizon, not a light source.
 	for (int32 i = 0; i < 12; ++i)
 	{
-		const double Ang = FMath::DegreesToRadians(i * GoldenDeg);
+		const double Ang = FMath::DegreesToRadians(i * GoldenStep);
 		// FAR ENOUGH THAT IT IS A HORIZON, NOT A WALL. Measured mountains at 90 m
 		// across on a 56 m ring put their inner face 11 m from the plaza and swallowed
 		// the town - the aerial frame was solid blue, camera and all. The crystals are
@@ -2664,7 +2664,7 @@ void AVEILWorldBuilder::DressRegions()
 		const float PeakH = 5200.f + (i % 4) * 1100.f;
 		Solid(FVector(FMath::Cos(Ang) * Rad, FMath::Sin(Ang) * Rad, 0.f),
 			FVector(13000.f, 13000.f, PeakH), Rock, Blue, IceC, 0.10f,
-			(float)(i * GoldenDeg));
+			(float)(i * GoldenStep));
 		++Peaks;
 	}
 

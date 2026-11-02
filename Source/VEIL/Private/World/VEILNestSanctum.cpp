@@ -14,7 +14,7 @@
 
 namespace
 {
-	constexpr float GoldenDeg = 137.50776405f;
+	constexpr float NestGoldenDeg = 137.50776405f;
 
 	// The project's own palette, the same paths the district already uses. Stone is the kit's
 	// cut stone: the gold is trim, never a body.
@@ -50,7 +50,7 @@ void AVEILNestSanctum::Tick(float DeltaSeconds)
 	{
 		AActor* Shard = Halo[i].Get();
 		if (!Shard) { continue; }
-		const float Angle = HaloPhase + FMath::DegreesToRadians(i * GoldenDeg);
+		const float Angle = HaloPhase + FMath::DegreesToRadians(i * NestGoldenDeg);
 		const float Rise = FMath::Sin(HaloPhase * 2.f + i * 0.6180339887f) * 40.f;
 		Shard->SetActorLocation(FVector(FMath::Cos(Angle) * Radius, FMath::Sin(Angle) * Radius,
 			DeckZ + 240.f + Rise));
@@ -257,7 +257,7 @@ bool AVEILNestSanctum::BuildSanctum()
 	// ---- THE RING: THIRTEEN POSTS ON THE GOLDEN ANGLE -------------------------
 	for (int32 i = 0; i < 13; ++i)
 	{
-		const float Angle = FMath::DegreesToRadians(i * GoldenDeg);
+		const float Angle = FMath::DegreesToRadians(i * NestGoldenDeg);
 		const FVector At(FMath::Cos(Angle) * 1400.f, FMath::Sin(Angle) * 1400.f, DeckZ + 80.f);
 		SpawnPiece(Cube, At, FVector(60.f, 60.f, 160.f), Gold, true);
 	}
@@ -282,7 +282,7 @@ bool AVEILNestSanctum::BuildSanctum()
 	// ---- THE HALO: EIGHT SHARDS TURNING ON THE GOLDEN ANGLE -------------------
 	for (int32 i = 0; i < 8; ++i)
 	{
-		const float Angle = FMath::DegreesToRadians(i * GoldenDeg);
+		const float Angle = FMath::DegreesToRadians(i * NestGoldenDeg);
 		if (UStaticMeshComponent* Shard = SpawnPiece(Cube,
 			FVector(FMath::Cos(Angle) * 520.f, FMath::Sin(Angle) * 520.f, DeckZ + 240.f),
 			FVector(60.f, 60.f, 180.f), Gold, false))
@@ -322,7 +322,7 @@ bool AVEILNestSanctum::BuildSanctum()
 	// THE RUNNER STANDS ON THE DECK, NOT INSIDE THE HUB.
 	if (APawn* Runner = UGameplayStatics::GetPlayerPawn(W, 0))
 	{
-		const float Step = FMath::DegreesToRadians(GoldenDeg);
+		const float Step = FMath::DegreesToRadians(NestGoldenDeg);
 		const FVector Stand(FMath::Cos(Step) * 700.f, FMath::Sin(Step) * 700.f, DeckZ + 100.f);
 		Runner->SetActorLocation(Stand, false, nullptr, ETeleportType::TeleportPhysics);
 		if (AController* C = Runner->GetController())

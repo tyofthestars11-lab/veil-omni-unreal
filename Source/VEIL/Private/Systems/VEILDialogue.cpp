@@ -5,6 +5,7 @@
 #include "Systems/PHILivingWorld.h"
 #include "Systems/VEILLoopSubsystem.h"
 #include "Story/VEILSpine.h"
+#include "Systems/VEILCampaign.h"
 #include "Story/VEILVoiceTake.h"
 #include "Systems/VEILTime.h"
 #include "VEIL.h"
@@ -38,6 +39,10 @@ bool UVEILDialogue::Begin(FName CharacterId)
 	LineIndex = 0;
 	LineStartTime = Now(GetWorld());
 	bActive = true;
+	if (UVEILCampaignSubsystem* VoiceCamp = GetWorld() ? GetWorld()->GetSubsystem<UVEILCampaignSubsystem>() : nullptr)
+	{
+		VoiceCamp->NoteVoice();
+	}
 
 	// THE OPENING LINE IS THE ONE THAT REMEMBERS. If this person has a deed on
 	// file, what the runner said last time is what they open with - the authored

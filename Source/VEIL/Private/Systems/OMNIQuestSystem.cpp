@@ -25,6 +25,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Systems/VEILProgression.h"
 #include "Systems/VEILOmniAll.h"
+#include "Systems/VEILCampaign.h"
 #include "Systems/VEILLoopSubsystem.h"
 #include "VEIL.h"
 
@@ -61,6 +62,7 @@ bool UOMNIQuestSystem::ClaimBeacon(int32 Index)
 		return false;
 	}
 	ClaimedBeacons.Add(Id);
+	if (UVEILCampaignSubsystem* Camp = GetWorld() ? GetWorld()->GetSubsystem<UVEILCampaignSubsystem>() : nullptr) { Camp->NoteBeacon(); }
 	AwardXP(25, TEXT("beacon forged"));
 
 	// THE KEEPER'S BEACON IS THE KEEPER BEAT. The objective line on the HUD is the
@@ -236,8 +238,18 @@ FString UOMNIQuestSystem::GetRegionName() const
 
 void UOMNIQuestSystem::AddShard()
 {
+	// A SHARD IS NOT A FRAGMENT.
+	//
+	// This used to call CollectFragment(), so every machine the runner put down
+	// advanced the story: eight kills and the Keeper's ten-piece sentence was
+	// "recovered" without the runner ever picking one up. Shards pay experience
+	// and nothing else now; the fragments come from the fragments.
 	++Shards;
-	CollectFragment();
+	AwardXP(2, TEXT("a shard from a fallen machine"));
+	if (UVEILCampaignSubsystem* KillCamp = GetWorld() ? GetWorld()->GetSubsystem<UVEILCampaignSubsystem>() : nullptr)
+	{
+		KillCamp->NoteKill(false);
+	}
 }
 
 void UOMNIQuestSystem::CollectFragment()
@@ -277,6 +289,7 @@ void UOMNIQuestSystem::ReachCache()
 		return;
 	}
 	Gold += 80;
+	if (UVEILCampaignSubsystem* CampC = GetWorld() ? GetWorld()->GetSubsystem<UVEILCampaignSubsystem>() : nullptr) { CampC->NoteCache(); }
 	AwardXP(25, TEXT("the survey cache"));
 	UE_LOG(LogVEIL, Log, TEXT("PHI OMNI QUEST: cache claimed (+80 gold -> %d)."), Gold);
 	// This is the PC line 233 block, corrected. CFM is the variable,
@@ -333,6 +346,7 @@ void UOMNIQuestSystem::DefeatWarden()
 		return;
 	}
 	AdvanceTo(EOMNIQuestStage::Clear);
+	if (UVEILCampaignSubsystem* CampW = GetWorld() ? GetWorld()->GetSubsystem<UVEILCampaignSubsystem>() : nullptr) { CampW->NoteKill(true); }
 	Gold += 150;
 	AwardXP(100, TEXT("WARDEN PRIME down"));
 	UE_LOG(LogVEIL, Log, TEXT("PHI OMNI QUEST: WARDEN PRIME DOWN - CLEAR. +150 gold -> %d."), Gold);
