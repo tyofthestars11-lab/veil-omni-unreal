@@ -1,0 +1,50 @@
+VEIL OMNI - SPACE AUDIT (measured, not estimated)
+Date: 2026-11-02
+
+TOTALS
+  project on disk       36 GB
+  Content               22 GB
+  Intermediate         5.0 GB   (regenerable)
+  Saved                4.1 GB   (logs, screenshots, autosaves)
+  Binaries             849 MB
+  .git                 606 MB
+  proof                638 MB
+  Source               2.6 MB
+
+WHAT THE GAME ACTUALLY NEEDS
+  Referenced by the baked World Partition level:
+    Iceland_Environment, Sicka_EnvPack2, ParagonMurdock, StarterContent, PHI, Maps
+  Referenced by code (count of path literals):
+    ParagonCountess 90, Sicka_EnvPack2 50, PHI 41, SFX 28, Polyart 23,
+    ParagonMurdock 18, StarterContent 17, Iceland_Environment 15, Maps 8,
+    ParagonGreystone 6, Voice 5, ParagonMinions 4, MetaHumans 3,
+    ParagonRevenant 2, Data 2, Modular 1
+
+NOT REFERENCED ANYWHERE (measured: no hit in Source, Content/Maps or Content/PHI)
+  Content/LavaMat                1.7 GB
+
+THINLY REFERENCED (a handful of path literals, no level dependency)
+  ParagonMinions                 4.8 GB   4 literals
+  ParagonRevenant                1.7 GB   2 literals
+  ParagonGreystone               2.2 GB   6 literals
+
+OUR OWN CONTENT
+  Content/PHI                   1.3 MB   9 assets (the entire PHI palette)
+  Levels                        2-3 MB each, VEILDistrictWP itself 13 KB
+
+RECLAIM PLAN, IN ORDER OF SAFETY
+  1. Saved logs and screenshots             ~0.6 GB   delete freely, regenerated
+  2. proof/ screenshots and clips           638 MB    keep one frame per milestone
+  3. Content/LavaMat                        1.7 GB    no reference anywhere
+  4. ParagonMinions + Revenant + Greystone  8.7 GB    after checking their few call sites
+  Total safe-to-reclaim                     ~11 GB of 36
+
+WHAT NOT TO TOUCH
+  Sicka_EnvPack2 (3.2 GB) and ParagonMurdock (2.1 GB) build the district and the
+  baked level. ParagonCountess (1.8 GB) is the Countess character. StarterContent
+  (608 MB) supplies the stone and water materials the whole palette runs on.
+
+CAUTION
+  Content deletion is not reversible from here. Move a pack out of Content to a
+  quarantine folder, launch once, and confirm the world still builds before
+  deleting anything permanently.
