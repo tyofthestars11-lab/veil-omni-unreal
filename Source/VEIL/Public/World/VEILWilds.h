@@ -72,6 +72,10 @@ struct FVEILCamp
 	bool bResting = false;
 	/** Last order issued, as an int so the enum stays out of the header. */
 	int32 Order = -1;
+	/** An order that differs from the current one, and how many decisions in a
+	 *  row it has held. Two in a row before the camp changes what it is doing. */
+	int32 Pending = -1;
+	int32 PendingCount = 0;
 };
 
 /**

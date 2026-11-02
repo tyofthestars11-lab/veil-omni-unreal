@@ -368,15 +368,23 @@ void AVEILEnemy::Tick(float DeltaSeconds)
 void AVEILEnemy::StandDown(float Seconds)
 {
 	if (!GetWorld() || Seconds <= 0.f) { return; }
-	StandDownUntil = FMath::Max(StandDownUntil, (float)GetWorld()->GetTimeSeconds() + Seconds);
+	const float Now = (float)GetWorld()->GetTimeSeconds();
+	// A record, not a heartbeat: the wilds ask every 0.618 s and this used to
+	// write 6,198 identical lines in two minutes, which is not evidence of
+	// anything except that the log was being used as a debugger.
+	const bool bWasStanding = StandDownUntil > Now;
+	StandDownUntil = FMath::Max(StandDownUntil, Now + Seconds);
 	// Forget him outright: sight memory, the friends this machine called, and
 	// any lunge already in flight.
 	LastSeenTime = -1000.f;
 	bCalledFriends = false;
 	AttackTimer = 0.f;
 	if (AAIController* C = Cast<AAIController>(GetController())) { C->StopMovement(); }
-	UE_LOG(LogVEIL, Log, TEXT("PHI STAND DOWN: %s lets the returned runner go for %.2fs."),
-		*GetActorNameOrLabel(), Seconds);
+	if (!bWasStanding)
+	{
+		UE_LOG(LogVEIL, Log, TEXT("PHI STAND DOWN: %s lets the returned runner go for %.2fs."),
+			*GetActorNameOrLabel(), Seconds);
+	}
 }
 
 float AVEILEnemy::TakeDamage(float Damage, const FDamageEvent& Event, AController* By, AActor* Causer)

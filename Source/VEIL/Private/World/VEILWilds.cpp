@@ -298,9 +298,31 @@ void AVEILWildsPopulation::Tick(float DeltaSeconds)
 			const float RetreatDigit = FMath::Frac(Camp.Phase * WildsPhi * WildsPhi * WildsPhi);
 			const float Breath = 1.f + 0.09f * FMath::Sin(Camp.Phase * WildsPhi);
 
-			EWildsOrder Order = EWildsOrder::Hunt;
-			if (Camp.Intent < WildsRestDigit) { Order = EWildsOrder::Hold; }
-			else if (OrderDigit < WildsRestDigit) { Order = EWildsOrder::Encircle; }
+			EWildsOrder Candidate = EWildsOrder::Hunt;
+			if (Camp.Intent < WildsRestDigit) { Candidate = EWildsOrder::Hold; }
+			else if (OrderDigit < WildsRestDigit) { Candidate = EWildsOrder::Encircle; }
+
+			// HYSTERESIS. A digit sitting on the threshold flips the whole camp every
+			// 0.618 s, which read in the log as 2,600 order changes in two minutes and
+			// looked, correctly, like noise. An order now has to hold for two decisions
+			// in a row before it is obeyed - the camp still decides on phi, it just does
+			// not stutter about it.
+			EWildsOrder Order = (Camp.Order < 0) ? Candidate : (EWildsOrder)Camp.Order;
+			if (Camp.Order < 0)
+			{
+				Order = Candidate;
+			}
+			else if ((int32)Candidate != Camp.Order)
+			{
+				if (Camp.Pending == (int32)Candidate) { ++Camp.PendingCount; }
+				else { Camp.Pending = (int32)Candidate; Camp.PendingCount = 1; }
+				if (Camp.PendingCount >= 2) { Order = Candidate; }
+			}
+			else
+			{
+				Camp.Pending = -1;
+				Camp.PendingCount = 0;
+			}
 
 			Camp.Dir.SetNum(Camp.Members.Num());
 
