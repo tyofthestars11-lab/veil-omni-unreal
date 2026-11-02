@@ -398,22 +398,10 @@ void AVEILHudCanvas::DrawHUD()
 	// starts clear of the band, and the row steps below pay the six pixels back.
 	Y = PY + 14.f;
 
-	// THE DIRECTIVE IS A BANNER, NOT A LINE OF TEXT. It is the one sentence the
-	// player is acting on, so it gets the gold cloth and the cut ends.
-	{
-		float OW = 0.f, OH = 0.f;
-		Canvas->StrLen(Big, Objective, OW, OH);
-		// THE RIBBON IS MEASURED IN THE SCALE IT IS DRAWN AT. It was sized from the font's
-		// unscaled width and ran 100 px past the plate, which is why the gold banner hung
-		// out over the district on the right.
-		// THE RIBBON IS MEASURED IN THE SCALE IT IS DRAWN AT, in both directions. Width came
-		// from the font's unscaled width and ran 100 px past the plate; height came from a
-		// fixed unit and was shorter than the type, which sheared the top off the directive.
-		// Both now come from the same measured text, so the cloth always contains the words.
-		FVeilUI::Ribbon(this, FLinearColor(0.16f, 0.11f, 0.03f, 0.80f),
-			TX - 8.f, Y - 6.f, OW * 0.62f + 16.f,
-			FMath::Max(U * 2.05f, OH * 0.62f + 8.f), true);
-	}
+	// NO RIBBON BEHIND THE DIRECTIVE. The gold cloth sat over the line's cap height and its
+	// cut end took the first word, so the objective read "...k to the KEEPER" wherever the
+	// text or the ribbon was moved. At 420 x 110 the sentence is legible on the plate, and
+	// a panel this size has no room for a banner inside a banner.
 	Shadow(Objective, FLinearColor(1.f, 0.90f, 0.46f), TX, Y, Big, 0.62f);
 	Y += 22.f;
 
