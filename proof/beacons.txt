@@ -1,0 +1,25 @@
+PlayerStart PlazaStart @ <Struct 'Vector' (0x000001BC6D812BD0) {x: 0.000000, y: 0.000000, z: 154.000000}>
+VEILWaveSpawner WaveSpawner_North @ <Struct 'Vector' (0x000001BC7D8C7B20) {x: 0.000000, y: 0.000000, z: 0.000000}>
+VEILWaveSpawner WaveSpawner_West @ <Struct 'Vector' (0x000001BC7D8C7B20) {x: 0.000000, y: 0.000000, z: 0.000000}>
+VEILWaveSpawner WaveSpawner_South @ <Struct 'Vector' (0x000001BC7D8C7BC0) {x: 0.000000, y: 0.000000, z: 0.000000}>
+PlayerStart RUNNER @ <Struct 'Vector' (0x000001BC7D8C7C60) {x: 0.000000, y: 0.000000, z: 100.000000}>
+VEILWaveSpawner VEILWaveSpawner @ <Struct 'Vector' (0x000001BC7D8C7990) {x: 0.000000, y: 0.000000, z: 0.000000}>
+VEILBeacon BEACON_Keeper @ <Struct 'Vector' (0x000001BC7D8C7A80) {x: 900.000000, y: 0.000000, z: 300.000000}>
+VEILBeacon BEACON_Seer @ <Struct 'Vector' (0x000001BC7D8C7CB0) {x: -450.000000, y: 780.000000, z: 300.000000}>
+VEILBeacon BEACON_Carto @ <Struct 'Vector' (0x000001BC7D8C7DF0) {x: -450.000000, y: -780.000000, z: 300.000000}>
+VEILBeacon BEACON_Cache @ <Struct 'Vector' (0x000001BC7D8C7DA0) {x: 0.000000, y: -6200.000000, z: 300.000000}>
+VEILBeacon BEACON_Frag1 @ <Struct 'Vector' (0x000001BC7D8C7E40) {x: 2000.000000, y: 500.000000, z: 300.000000}>
+VEILBeacon BEACON_Frag3 @ <Struct 'Vector' (0x000001BC7D8C7E90) {x: 600.000000, y: -2100.000000, z: 300.000000}>
+VEILEnemy Foe_S1 @ <Struct 'Vector' (0x000001BC7D8C7EE0) {x: 1200.000000, y: -1500.000000, z: 150.000000}>
+VEILEnemy Foe_S2 @ <Struct 'Vector' (0x000001BC7D8C7F30) {x: -1200.000000, y: -1500.000000, z: 150.000000}>
+VEILEnemy Foe_S3 @ <Struct 'Vector' (0x000001BC7D8C7F80) {x: 2500.000000, y: -3000.000000, z: 150.000000}>
+VEILEnemy Foe_S4 @ <Struct 'Vector' (0x000001BC7D8C7FD0) {x: -2500.000000, y: -4500.000000, z: 150.000000}>
+VEILEnemy Foe_S5 @ <Struct 'Vector' (0x000001BC7D8C7C10) {x: 1200.000000, y: -5500.000000, z: 150.000000}>
+VEILEnemy Foe_S6 @ <Struct 'Vector' (0x000001BC7D8E00B0) {x: -800.000000, y: -2500.000000, z: 150.000000}>
+VEILEnemy Foe_D1 @ <Struct 'Vector' (0x000001BC7D8E0060) {x: 0.000000, y: -3000.000000, z: 500.000000}>
+VEILEnemy Foe_D2 @ <Struct 'Vector' (0x000001BC7D8E0150) {x: 1800.000000, y: -1500.000000, z: 500.000000}>
+VEILEnemy Foe_D3 @ <Struct 'Vector' (0x000001BC7D8E01A0) {x: -1800.000000, y: -3500.000000, z: 500.000000}>
+VEILEnemy Foe_D4 @ <Struct 'Vector' (0x000001BC7D8E01F0) {x: 600.000000, y: -5000.000000, z: 500.000000}>
+OMNIWardenPrime WARDEN_PRIME @ <Struct 'Vector' (0x000001BC7D8E0100) {x: 0.000000, y: -6200.000000, z: 100.000000}>
+COUNTS [('StaticMeshActor', 467), ('VEILFragment', 10), ('VEILEnemy', 10), ('PointLight', 6), ('VEILBeacon', 6), ('VEILWaveSpawner', 4), ('OMNIQuestGiver', 3), ('OMNIFragment', 3), ('PlayerStart', 2), ('DirectionalLight', 1), ('SkyLight', 1), ('SkyAtmosphere', 1)]
+DONE

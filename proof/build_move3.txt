@@ -1,0 +1,30 @@
+Using bundled DotNet SDK version: 10.0 win-x64
+Running UnrealBuildTool: dotnet "..\..\Engine\Binaries\DotNET\UnrealBuildTool\UnrealBuildTool.dll" VEILEditor Win64 Development -Project=D:\VEIL-OMNI\VEIL.uproject -WaitMutex
+Log file: C:\Users\Admin\AppData\Local\UnrealBuildTool\Log.txt
+Determining max actions to execute in parallel (6 physical cores, 12 logical cores)
+  Executing up to 6 processes, one per physical core
+  Requested 1.5 GB memory per action, 5.7 GB available: limiting max parallel actions to 3
+UbaServer - Listening on 0.0.0.0:1345
+Building VEILEditor...
+===== Toolchain Information =====
+Using ISPC compiler (C:\Program Files\Epic Games\UE_5.8\Engine\Source\ThirdParty\Intel\ISPC\bin\Windows\ispc.exe)
+  Intel(r) Implicit SPMD Program Compiler (Intel(r) ISPC), 1.24.0 (build commit  @ 20250404, LLVM 18.1.2) 
+Using Visual Studio 14.44.35228 toolchain (C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207) and Windows 10.0.26100.0 SDK (C:\Program Files (x86)\Windows Kits\10).
+[Adaptive Build] Excluded from VEIL unity file: VEIL.cpp, OMNIWardenPrime.cpp, VEILCompanion.cpp, VEILFactionAI.cpp, VEILCharacter.cpp, VEILCountessCharacter.cpp, PHI_GameState_Fixed.cpp, VEILGameMode.cpp, VEILHUD.cpp, VEILHudCanvas.cpp, VEILMainMenu.cpp, VEILPauseMenu.cpp, VEILTextReader.cpp, VEILWinScreen.cpp, OMNIQuestSystem.cpp, PHICompanionParty.cpp, PHIForge.cpp, PHIGear.cpp, PHIOcean.cpp, PHIPortal.cpp, PHISelfUpdate.cpp, PHISideQuests.cpp, PHIVoice.cpp, PHIWeather.cpp, PHI_CrashFix_AddressZero.cpp, PHI_DynamicMusic.cpp, PHI_GodmodeSafe.cpp, PHI_MitochondrialEngine.cpp, PHI_NPCProcessor.cpp, PHI_Sfx.cpp, PHI_WorldDress_Vault.cpp, VEILDiscoverySystem.cpp, VEILEnemy.cpp, VEILFastTravel.cpp, VEILLoopActors.cpp, VEILLoopSubsystem.cpp, VEILMito.cpp, VEILMusicDirector.cpp, VEILProgression.cpp, VEILQuest.cpp, VEILRegionSubsystem.cpp, VEILVault.cpp, VEILWaveSpawner.cpp, VEILMinimap.cpp, OMNIQuestContent.cpp, VEILDistrictStreaming.cpp, VEILLevelLink.cpp, VEILWorldBuilder.cpp
+===== End Toolchain Information =====
+Using Unreal Build Accelerator local executor to run 4 action(s)
+  CPU 6 physical cores, 12 logical cores
+  Memory 15.84 GB physical, 45.46 GB/54.32 GB committed
+  UBA Storage capacity 40 GB
+[1/4] Compile [x64] VEILCharacter.cpp
+D:\VEIL-OMNI\Source\VEIL\Private\Character\VEILCharacter.cpp(416,6): error C2039: 'GetPendingMovementInputVector': is not a member of 'UCharacterMovementComponent'
+					UE_LOG(LogVEIL, Warning,
+					^
+C:\Program Files\Epic Games\UE_5.8\Engine\Source\Runtime\Engine\Classes\GameFramework\CharacterMovementComponent.h(136,7): note: see declaration of 'UCharacterMovementComponent'
+class UCharacterMovementComponent : public UPawnMovementComponent, public IRVOAvoidanceInterface, public INetworkPredictionInterface
+      ^
+Total time in Unreal Build Accelerator local executor: 17.50 seconds
+
+Result: Failed (OtherCompilationError)
+Total execution time: 18.86 seconds
+Trace written to file C:\Users\Admin\AppData\Local\UnrealBuildTool\Trace.uba with size 6.4kb

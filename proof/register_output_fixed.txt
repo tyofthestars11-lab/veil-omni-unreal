@@ -1,0 +1,26 @@
+VEIL OMNI REGISTER PROJECT - start
+Project file check:
+  VEIL.uproject -> FOUND at D:\VEIL-OMNI\VEIL.uproject
+  "EngineAssociation": "5.8",
+Content folders on disk (this is a disk check, not yet an editor Content Browser check):
+  /Game/ParagonCountess -> FOUND at D:\VEIL-OMNI\Content\ParagonCountess
+  /Game/ParagonGreystone -> FOUND at D:\VEIL-OMNI\Content\ParagonGreystone
+  /Game/ParagonMinions -> FOUND at D:\VEIL-OMNI\Content\ParagonMinions
+  /Game/ParagonMurdock -> FOUND at D:\VEIL-OMNI\Content\ParagonMurdock
+  /Game/ParagonRevenant -> FOUND at D:\VEIL-OMNI\Content\ParagonRevenant
+  /Game/Sicka_EnvPack2 -> FOUND at D:\VEIL-OMNI\Content\Sicka_EnvPack2
+  /Game/LavaMat -> FOUND at D:\VEIL-OMNI\Content\LavaMat
+  /Game/MetaHumans -> MISSING in D:\VEIL-OMNI\Content - not yet added by Fab Add to Project
+UnrealVersionSelector -> MISSING at C:\Program Files\Epic Games\UE_5.8\Engine\Binaries\Win64\UnrealVersionSelector.exe (right-click Switch version may be missing, use the editor direct launch instead)
+Config: C:\Users\Admin\AppData\Local\EpicGamesLauncher\Saved\Config\WindowsEditor\GameUserSettings.ini
+  Backup made: C:\Users\Admin\AppData\Local\EpicGamesLauncher\Saved\Config\WindowsEditor\GameUserSettings.ini.veil_backup_2026-10-31_2148
+  CreatedProjectPaths -> 2 clean line(s) now (replaced 8 stray/merged line(s)); D:\ included
+Config: C:\Users\Admin\AppData\Local\UnrealEngine\5.8\Saved\Config\WindowsEditor\EditorSettings.ini
+  Backup made: C:\Users\Admin\AppData\Local\UnrealEngine\5.8\Saved\Config\WindowsEditor\EditorSettings.ini.veil_backup_2026-10-31_2148
+  CreatedProjectPaths -> 1 clean line(s) now (replaced 4 stray/merged line(s)); D:\ included
+VEIL OMNI REGISTER PROJECT - done
+NEXT, IN ORDER: close this window, open Epic Games Launcher, go to Unreal Engine > My Projects.
+PHOTO 1 PROOF: My Projects now lists VEIL (not You do not have any projects yet).
+PHOTO 2 PROOF: Fab > My Library > an item > Add to Project > picker now lists VEIL OMNI to pick.
+If PHOTO 1 still shows empty, photo it and photo the two config files lines starting CreatedProjectPaths - do not claim registration from this script alone.
+NOT done by this script: Fab Add to Project itself, MetaHuman Verify/Package, editor save, Play. Those still need the editor, after a fresh Epic sign-in for Fab.

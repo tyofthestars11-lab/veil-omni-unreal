@@ -1,0 +1,15 @@
+Using bundled DotNet SDK version: 10.0 win-x64
+Running UnrealBuildTool: dotnet "..\..\Engine\Binaries\DotNET\UnrealBuildTool\UnrealBuildTool.dll" VEILEditor Win64 Development -Project=D:\VEIL-OMNI\VEIL.uproject -WaitMutex
+Log file: C:\Users\Admin\AppData\Local\UnrealBuildTool\Log.txt
+Determining max actions to execute in parallel (6 physical cores, 12 logical cores)
+  Executing up to 6 processes, one per physical core
+  Requested 1.5 GB memory per action, 5.55 GB available: limiting max parallel actions to 3
+UbaServer - Listening on 0.0.0.0:1345
+Target is up to date
+Using Unreal Build Accelerator local executor to run 0 action(s)
+Total time in Unreal Build Accelerator local executor: 0.16 seconds
+Output binary: C:\Program Files\Epic Games\UE_5.8\Engine\Binaries\Win64\UnrealEditor.exe
+
+Result: Succeeded
+Total execution time: 1.15 seconds
+Trace written to file C:\Users\Admin\AppData\Local\UnrealBuildTool\Trace.uba with size 2.7kb

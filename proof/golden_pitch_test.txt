@@ -1,0 +1,23 @@
+=== THE ANGLE, COMPUTED FRESH ===
+mu          17.0324 deg = 0.297271459517 rad
+cos(mu)     0.9561392708   sin(mu)     0.2929124355
+cos^2+sin^2 1.000000000000   (round-trip: the correction invents nothing)
+rung(cos)   -0.0932     rung(sin)   -2.5516
+
+=== CASE 1: an error the pitch walks in (fails twice, answers on the third) ===
+GOLDEN PITCH: opening the door attempt 1 failed - 'door stuck at attempt 1'
+GOLDEN PITCH: error sits at rung 0.0000; correcting at mu 17.0324 deg - in phase 0.9561392708, carried 0.2929124355.
+GOLDEN PITCH: next attempt 2 -> phase 17.0324 deg after 0.100s (rung +0).
+GOLDEN PITCH: opening the door attempt 2 failed - 'door stuck at attempt 2'
+GOLDEN PITCH: error sits at rung 1.4404; correcting at mu 17.0324 deg - in phase 0.9561392708, carried 0.2929124355.
+GOLDEN PITCH: next attempt 3 -> phase 34.0648 deg after 0.162s (rung +1).
+GOLDEN PITCH: opening the door settled at attempt 3 of 3 (phase 34.0648 deg).
+result: open on attempt 3  (attempts used: 3)
+
+=== CASE 2: an error that never settles (the last rung is spent and said out loud) ===
+stopped after 3 attempts: GOLDEN PITCH: a door with no key did not settle after 3 rungs (mu 17.0324 deg). Last error: no key, ever
+
+=== CASE 3: an error line, so any app failure reads in rungs ===
+GOLDEN PITCH 17.0324 deg: 'provider request interrupted' at rung 1.4404 - correction 0.9561392708 now, 0.2929124355 carried.
+
+GOLDEN PITCH RESULT: PASS - errors are walked in at 17.0324 deg, and a spent ladder says so.

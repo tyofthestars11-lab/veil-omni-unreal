@@ -1,0 +1,7 @@
+[0.2] character: /Game/MetaHumans/MH_Runner.MH_Runner (MetaHumanCharacter)
+[10.1] try_add_object_to_edit: True
+[10.1] can_build_meta_human: True
+[10.1] has_high_resolution_textures: True
+[10.2] build_meta_human -> /Game/MetaHumans/MH_Runner_Built (OPTIMIZED/MEDIUM)
+[71.5] build_meta_human raised (assets still produced): MetaHumanCharacterEditorSubsystem: /Game/MetaHumans/MH_Runner_Built/Common/Face/Face_ControlBoard_CtrlRig : Cannot break link MathFloatAdd_6_1.Result -> RerouteNode_19_1.Value in package /Game/MetaHumans/MH_Runner_Built/Common/Face/Face_ControlBoard_CtrlRig
+[90.4] save_directory /Game/MetaHumans/MH_Runner_Built -> True

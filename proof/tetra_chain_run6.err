@@ -1,0 +1,4 @@
+[72116:80104:1101/130136.598:ERROR:google_update_settings.cc(265)] Failed opening key Software\Chromium to set usagestats; result: 5
+[72116:21128:1101/131113.393:ERROR:storage_partition_impl.cc(233)] Storage service crashed or was terminated 1 times, restarting service.
+[72116:21128:1101/131118.404:ERROR:network_service_instance_impl.cc(614)] Network service crashed or was terminated 1 times, restarting service.
+[72116:21128:1101/131123.477:ERROR:gpu_process_host.cc(1010)] GPU process exited unexpectedly: exit_code=-1073741510

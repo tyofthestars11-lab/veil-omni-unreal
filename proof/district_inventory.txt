@@ -1,0 +1,83 @@
+LEVEL: /Game/Maps/VEILDistrict
+  Vault         1
+      VEILVault_0
+  Anchor        0
+  Runner        0
+  Countess      1
+      VEILCountessCharacter_0
+  Machine       1
+      OMNIWardenPrime_0
+  Enemy         10
+      VEILEnemy_0
+      VEILEnemy_1
+      VEILEnemy_2
+      VEILEnemy_3
+      VEILEnemy_4
+      VEILEnemy_5
+      VEILEnemy_6
+      VEILEnemy_7
+      VEILEnemy_8
+      VEILEnemy_9
+  Beacon        6
+      VEILBeacon_0
+      VEILBeacon_1
+      VEILBeacon_2
+      VEILBeacon_3
+      VEILBeacon_4
+      VEILBeacon_5
+  Fragment      10
+      VEILFragment_0
+      VEILFragment_1
+      VEILFragment_2
+      VEILFragment_3
+      VEILFragment_4
+      VEILFragment_5
+      VEILFragment_6
+      VEILFragment_7
+      VEILFragment_8
+      VEILFragment_9
+  OMNIFragment  3
+      OMNIFragment_0
+      OMNIFragment_1
+      OMNIFragment_2
+  Cache         1
+      OMNICache_0
+  QuestGiver    3
+      OMNIQuestGiver_0
+      OMNIQuestGiver_1
+      OMNIQuestGiver_2
+  WardenPrime   1
+      OMNIWardenPrime_0
+  Forge         1
+      VEILForge_0
+  PhiForge      0
+  Portal        2
+      PhiPortal_0
+      PhiPortal_1
+  Clue          0
+  PlayerStart   2
+      PlayerStart_0
+      PlayerStart_1
+  StaticMesh    571
+      StaticMeshActor_2
+      StaticMeshActor_10
+      StaticMeshActor_14
+      StaticMeshActor_22
+      StaticMeshActor_26
+      StaticMeshActor_38
+      StaticMeshActor_42
+      StaticMeshActor_43
+      StaticMeshActor_44
+      StaticMeshActor_45
+  Light         22
+      PointLight_0
+      PointLight_1
+      PointLight_2
+      PointLight_3
+      PointLight_4
+      PointLight_5
+      PointLight_6
+      PointLight_7
+      PointLight_8
+      PointLight_9
+total named-class actors: 635

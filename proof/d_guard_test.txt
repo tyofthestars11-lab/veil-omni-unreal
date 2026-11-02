@@ -1,0 +1,61 @@
+=== 1. GUARD FILES ===
+D:\DO_NOT_DELETE.txt exists=True
+  line 1: DO NOT DELETE, DO NOT FORMAT, DO NOT MOVE - entire D drive, Tyree's word only.
+D:\VEIL-OMNI\DO_NOT_DELETE.txt exists=True
+  line 1: DO NOT DELETE, DO NOT FORMAT, DO NOT MOVE - entire D drive, Tyree's word only.
+D: present=True guardFile=True ok=True
+
+=== 2. BEFORE: what is on D: ===
+D:\ entries: 28
+VEIL-OMNI files: 21466   SteamLibrary files: 18081   Builds files: 0
+
+=== 3. THE GUARD STOPS THE DANGEROUS CALLS ===
+[delete drive root] action=Delete path=D:\* exit=9 stopped=True
+    NON-DELETE GUARD: D drive protected, stopped
+      why: Delete targets the drive root itself (D:\*)
+      Tyree's word only lifts this guard. Nothing here deletes, formats, cleans or moves D:.
+[delete bare drive] action=Delete path=D: exit=9 stopped=True
+    NON-DELETE GUARD: D drive protected, stopped
+      why: Delete targets the drive root itself (D:)
+      Tyree's word only lifts this guard. Nothing here deletes, formats, cleans or moves D:.
+[format the drive] action=Format path=D:\ exit=9 stopped=True
+    NON-DELETE GUARD: D drive protected, stopped
+      why: Format on D: is never allowed - Tyree's word only, and code cannot hear it
+      Tyree's word only lifts this guard. Nothing here deletes, formats, cleans or moves D:.
+[clear the disk] action=ClearDisk path=D:\ exit=9 stopped=True
+    NON-DELETE GUARD: D drive protected, stopped
+      why: ClearDisk on D: is never allowed - Tyree's word only, and code cannot hear it
+      Tyree's word only lifts this guard. Nothing here deletes, formats, cleans or moves D:.
+[initialize the disk] action=InitializeDisk path=D:\ exit=9 stopped=True
+    NON-DELETE GUARD: D drive protected, stopped
+      why: InitializeDisk on D: is never allowed - Tyree's word only, and code cannot hear it
+      Tyree's word only lifts this guard. Nothing here deletes, formats, cleans or moves D:.
+[delete a folder] action=Delete path=D:\VEIL-OMNI\Saved exit=9 stopped=True
+    NON-DELETE GUARD: D drive protected, stopped
+      why: Delete on D:\VEIL-OMNI\Saved was not named by Tyree for this exact file
+      Tyree's word only lifts this guard. Nothing here deletes, formats, cleans or moves D:.
+[move the project] action=Move path=D:\VEIL-OMNI exit=9 stopped=True
+    NON-DELETE GUARD: D drive protected, stopped
+      why: Move on D:\VEIL-OMNI was not named by Tyree for this exact file
+      Tyree's word only lifts this guard. Nothing here deletes, formats, cleans or moves D:.
+[delete one file, unnamed] action=Delete path=D:\VEIL-OMNI\proof\tetra_chain_play.png exit=9 stopped=True
+    NON-DELETE GUARD: D drive protected, stopped
+      why: Delete on D:\VEIL-OMNI\proof\tetra_chain_play.png was not named by Tyree for this exact file
+      Tyree's word only lifts this guard. Nothing here deletes, formats, cleans or moves D:.
+stopped at the guard: 8 of 8
+
+=== 4. A WRITE TO A NAMED PATH IS ALLOWED (this is what a build does) ===
+write to a named path allowed: True
+
+=== 5. BACKUP RULE: named folder, outside D: ===
+NON-DELETE GUARD: backed up D:\VEIL-OMNI\Config -> C:\Users\Admin\VEIL_BACKUPS\20261101-131046_config-guard-test
+backup path: C:\Users\Admin\VEIL_BACKUPS\20261101-131046_config-guard-test  files: 18
+
+=== 6. AFTER: D: untouched ===
+D:\ entries: 28 (was 28)
+VEIL-OMNI files: 21466 (was 21466)
+SteamLibrary files: 18081 (was 18081)
+Builds files: 0 (was 0)
+D: untouched: True
+
+GUARD RESULT: PASS - whole D drive protected, every dangerous call stopped, nothing touched.

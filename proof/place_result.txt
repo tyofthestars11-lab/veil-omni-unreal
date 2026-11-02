@@ -1,0 +1,7 @@
+LOAD ok
+BEFORE vault=VEILVault countess=1 runner=NONE playerstarts=1 ['PlazaStart']
+VAULT VEILVault at (0.0, 0.0, -80.9)
+COUNTESS VEILCountessCharacter at (809.0, -309.0, 64.7)
+RUNNER ADDED RUNNER at (0.0, 0.0, 100.0)
+SAVE save_map True
+SAVE RESULT True

@@ -1,0 +1,22 @@
+LOAD ok
+FRAGMENT_00 -> shard1
+FRAGMENT_01 -> shard2
+FRAGMENT_02 -> shard3
+FRAGMENT_03 -> shard4
+FRAGMENT_04 -> shard5
+FRAGMENT_05 -> shard6
+FRAGMENT_06 -> shard7
+FRAGMENT_07 -> shard8
+FRAGMENT_08 -> shard9
+FRAGMENT_09 -> shard10
+VEILForge -> SM_LittleShrine
+NO SMC on VEILWaveSpawner
+BEACON_Keeper -> SM_AncientMonolith
+BEACON_Seer -> SM_AncientMonolith
+BEACON_Carto -> SM_AncientMonolith
+BEACON_Cache -> SM_AncientMonolith
+BEACON_Frag1 -> SM_AncientMonolith
+BEACON_Frag3 -> SM_AncientMonolith
+WARDEN_PRIME -> Murdock skeletal mesh
+SET 18 meshes
+SAVE RESULT True

@@ -1,0 +1,60 @@
+[4.4] created asset: /Game/MetaHumans/MH_Runner.MH_Runner (class MetaHumanCharacter)
+[7.3] try_add_object_to_edit: True
+[7.3] template face=True body=True
+[8.8] import_from_template: <ImportErrorCode.SUCCESS: 13>
+[16.6] saved character asset early: /Game/MetaHumans/MH_Runner.MH_Runner
+[16.6] import_body_from_template: None
+[16.6] can_build_meta_human (before rigging): False
+[16.6] requesting auto-rigging (Epic cloud) - blocking
+[24.4] auto-rigging returned
+[24.4] requesting texture sources (Epic cloud) - blocking
+[32.6] texture sources returned; has_high_res_textures=True
+[32.6] can_build_meta_human (before build): True
+[32.6] build_meta_human -> /Game/MetaHumans/MH_Runner_Built (OPTIMIZED/MEDIUM)
+[93.8] build_meta_human raised: MetaHumanCharacterEditorSubsystem: /Game/MetaHumans/MH_Runner_Built/Common/Face/Face_ControlBoard_CtrlRig : Cannot break link MathFloatAdd_6_1.Result -> RerouteNode_19_1.Value in package /Game/MetaHumans/MH_Runner_Built/Common/Face/Face_ControlBoard_CtrlRig
+  RuntimeError: MetaHumanCharacterEditorSubsystem: /Game/MetaHumans/MH_Runner_Built/Common/Face/Face_ControlBoard_CtrlRig : Cannot break link RerouteNode_19_1.Value -> SetControlVector2D_1_1.Vector.X in package /Game/MetaHumans/MH_Runner_Built/Common/Face/Face_ControlBoard_CtrlRig
+    RuntimeError: MetaHumanCharacterEditorSubsystem: /Game/MetaHumans/MH_Runner_Built/Common/Face/CR_MetaHuman_HeadMovement_IK_Proc : Cannot break link Multiply.Result.Z -> RerouteNode_1.Value in package /Game/MetaHumans/MH_Runner_Built/Common/Face/CR_MetaHuman_HeadMovement_IK_Proc
+      RuntimeError: MetaHumanCharacterEditorSubsystem: /Game/MetaHumans/MH_Runner_Built/Common/Face/CR_MetaHuman_HeadMovement_IK_Proc : Cannot break link RerouteNode_1.Value -> Add.C in package /Game/MetaHumans/MH_Runner_Built/Common/Face/CR_MetaHuman_HeadMovement_IK_Proc
+[95.1] built assets under /Game/MetaHumans/MH_Runner_Built: 184
+[95.1]    /Game/MetaHumans/MH_Runner_Built/Common/Animation/ABP_Clothing_PostProcess.ABP_Clothing_PostProcess
+[95.1]    /Game/MetaHumans/MH_Runner_Built/Common/Animation/ABP_MH_LiveLink.ABP_MH_LiveLink
+[95.1]    /Game/MetaHumans/MH_Runner_Built/Common/Animation/CR_PlaceHolder.CR_PlaceHolder
+[95.1]    /Game/MetaHumans/MH_Runner_Built/Common/Body/ABP_Body_PostProcess.ABP_Body_PostProcess
+[95.1]    /Game/MetaHumans/MH_Runner_Built/Common/Body/IdentityTemplate/Body_LODSettings_Medium.Body_LODSettings_Medium
+[95.1]    /Game/MetaHumans/MH_Runner_Built/Common/Common/MetaHuman_ControlRig.MetaHuman_ControlRig
+[95.2]    /Game/MetaHumans/MH_Runner_Built/Common/Controls/CRSL_MetaHuman_Gizmo.CRSL_MetaHuman_Gizmo
+[95.2]    /Game/MetaHumans/MH_Runner_Built/Common/Controls/M_RigControlActor_Black.M_RigControlActor_Black
+[95.2]    /Game/MetaHumans/MH_Runner_Built/Common/Controls/SM_MetaHuman_Faceboard_2x.SM_MetaHuman_Faceboard_2x
+[95.2]    /Game/MetaHumans/MH_Runner_Built/Common/Controls/SM_MetaHuman_Faceboard_Convergence.SM_MetaHuman_Faceboard_Convergence
+[95.2]    /Game/MetaHumans/MH_Runner_Built/Common/Controls/SM_MetaHuman_Faceboard_FollowGrp.SM_MetaHuman_Faceboard_FollowGrp
+[95.2]    /Game/MetaHumans/MH_Runner_Built/Common/Face/ABP_Face.ABP_Face
+[95.2]    /Game/MetaHumans/MH_Runner_Built/Common/Face/ABP_Face_PostProcess.ABP_Face_PostProcess
+[95.2]    /Game/MetaHumans/MH_Runner_Built/Common/Face/ARKit/AS_MetaHuman_ARKit_Mapping.AS_MetaHuman_ARKit_Mapping
+[95.3]    /Game/MetaHumans/MH_Runner_Built/Common/Face/ARKit/PA_MetaHuman_ARKit_Mapping.PA_MetaHuman_ARKit_Mapping
+[95.3]    /Game/MetaHumans/MH_Runner_Built/Common/Face/CR_MetaHuman_HeadMovement_IK_Proc.CR_MetaHuman_HeadMovement_IK_Proc
+[95.3]    /Game/MetaHumans/MH_Runner_Built/Common/Face/Face_Archetype_Skeleton.Face_Archetype_Skeleton
+[95.3]    /Game/MetaHumans/MH_Runner_Built/Common/Face/Face_ControlBoard_CtrlRig.Face_ControlBoard_CtrlRig
+[95.3]    /Game/MetaHumans/MH_Runner_Built/Common/Face/Face_LODSettings.Face_LODSettings
+[95.3]    /Game/MetaHumans/MH_Runner_Built/Common/Face/Face_LODSettings_Medium.Face_LODSettings_Medium
+[95.3]    /Game/MetaHumans/MH_Runner_Built/Common/Face/PHYS_Face.PHYS_Face
+[95.3]    /Game/MetaHumans/MH_Runner_Built/Common/Face/SKM_Face.SKM_Face
+[95.4]    /Game/MetaHumans/MH_Runner_Built/Common/Face/SKM_Face_DNA.SKM_Face_DNA
+[95.4]    /Game/MetaHumans/MH_Runner_Built/Common/Female/Medium/NormalWeight/Body/metahuman_base_skel.metahuman_base_skel
+[95.4]    /Game/MetaHumans/MH_Runner_Built/Common/Lookdev_UHM/Common/Material_Functions/MF_blendNormals.MF_blendNormals
+[95.4]    /Game/MetaHumans/MH_Runner_Built/Common/Lookdev_UHM/Common/Material_Functions/MF_color_LinearTosRGB.MF_color_LinearTosRGB
+[95.4]    /Game/MetaHumans/MH_Runner_Built/Common/Lookdev_UHM/Common/Material_Functions/MF_color_sRGBToLinear.MF_color_sRGBToLinear
+[95.4]    /Game/MetaHumans/MH_Runner_Built/Common/Lookdev_UHM/Common/Material_Functions/MF_normalRotator.MF_normalRotator
+[95.4]    /Game/MetaHumans/MH_Runner_Built/Common/Lookdev_UHM/Common/Material_Functions/MF_normalStrength.MF_normalStrength
+[95.4]    /Game/MetaHumans/MH_Runner_Built/Common/Lookdev_UHM/Common/Material_Functions/MF_ruler.MF_ruler
+[95.5]    /Game/MetaHumans/MH_Runner_Built/Common/Lookdev_UHM/Common/Material_Functions/MF_UDIMs.MF_UDIMs
+[95.5]    /Game/MetaHumans/MH_Runner_Built/Common/Lookdev_UHM/Common/Material_Functions/MF_UHM_QualitySwitch_MaterialAttributes.MF_UHM_QualitySwitch_MaterialAttributes
+[95.5]    /Game/MetaHumans/MH_Runner_Built/Common/Lookdev_UHM/Common/Material_Functions/MF_UHM_QualitySwitch_Scalar.MF_UHM_QualitySwitch_Scalar
+[95.5]    /Game/MetaHumans/MH_Runner_Built/Common/Lookdev_UHM/Common/Material_Functions/MF_UHM_QualitySwitch_Vector3.MF_UHM_QualitySwitch_Vector3
+[95.5]    /Game/MetaHumans/MH_Runner_Built/Common/Lookdev_UHM/Common/Textures/Placeholders/T_Flat_Black_M.T_Flat_Black_M
+[95.5]    /Game/MetaHumans/MH_Runner_Built/Common/Lookdev_UHM/Common/Textures/Placeholders/T_Flat_Black_M_VT.T_Flat_Black_M_VT
+[95.5]    /Game/MetaHumans/MH_Runner_Built/Common/Lookdev_UHM/Common/Textures/Placeholders/T_Flat_Grey_C.T_Flat_Grey_C
+[95.5]    /Game/MetaHumans/MH_Runner_Built/Common/Lookdev_UHM/Common/Textures/Placeholders/T_Flat_Grey_C_VT.T_Flat_Grey_C_VT
+[95.6]    /Game/MetaHumans/MH_Runner_Built/Common/Lookdev_UHM/Common/Textures/Placeholders/T_Flat_Grey_HDR_C.T_Flat_Grey_HDR_C
+[95.6]    /Game/MetaHumans/MH_Runner_Built/Common/Lookdev_UHM/Common/Textures/Placeholders/T_Flat_Grey_linear.T_Flat_Grey_linear
+[95.6] skeletal meshes produced: 6
+[95.6] DONE in 95.6s

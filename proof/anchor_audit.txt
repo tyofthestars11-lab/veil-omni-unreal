@@ -1,0 +1,39 @@
+Loaded /Game/Maps/VEILDistrict
+Actors in level: 524
+
+MATCH  Vault         -> VEILVault (VEILVault) at (0.0, 0.0, -80.9)  d=0.0
+MATCH  Countess      -> VEILCountessCharacter (VEILCountessCharacter) at (809.0, -309.0, 64.7)  d=0.0
+MATCH  RUNNER start  -> RUNNER (PlayerStart) at (0.0, 0.0, 100.0)  d=0.0
+MATCH  Keeper        -> STATUE_Keeper (OMNIQuestGiver) at (900.0, 0.0, 0.0)  d=0.0
+MATCH  Seer          -> STATUE_Seer (OMNIQuestGiver) at (-450.0, 780.0, 0.0)  d=0.0
+MATCH  Cartographer  -> STATUE_Cartographer (OMNIQuestGiver) at (-4150.0, -780.0, 0.0)  d=0.0
+MATCH  Fragment 1    -> WORLD666_239 (StaticMeshActor) at (2800.0, 400.0, 0.0)  d=100.0
+MATCH  Fragment 2    -> WORLD666_5 (StaticMeshActor) at (-2000.0, -1000.0, 0.0)  d=100.0
+MATCH  Fragment 3    -> SIGNAL_FRAGMENT_3 (OMNIFragment) at (600.0, -2100.0, 150.0)  d=150.0
+MATCH  Cache         -> SURVEY_CACHE (OMNICache) at (0.0, -6200.0, 0.0)  d=0.0
+
+RESULT: 10/10 anchors present in the saved level
+
+--- class census ---
+  StaticMeshActor                          467
+  VEILFragment                             10
+  VEILEnemy                                10
+  PointLight                               6
+  VEILBeacon                               6
+  VEILWaveSpawner                          4
+  OMNIQuestGiver                           3
+  OMNIFragment                             3
+  PlayerStart                              2
+  DirectionalLight                         1
+  SkyLight                                 1
+  SkyAtmosphere                            1
+  ExponentialHeightFog                     1
+  PostProcessVolume                        1
+  RecastNavMesh                            1
+  VEILVault                                1
+  NavMeshBoundsVolume                      1
+  Actor                                    1
+  VEILForge                                1
+  OMNICache                                1
+  VEILCountessCharacter                    1
+  OMNIWardenPrime                          1

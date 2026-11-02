@@ -1,0 +1,78 @@
+Using bundled DotNet SDK version: 10.0 win-x64
+Running UnrealBuildTool: dotnet "..\..\Engine\Binaries\DotNET\UnrealBuildTool\UnrealBuildTool.dll" VEILEditor Win64 Development -Project=D:\VEIL-OMNI\VEIL.uproject -WaitMutex
+Log file: C:\Users\Admin\AppData\Local\UnrealBuildTool\Log.txt
+Determining max actions to execute in parallel (6 physical cores, 12 logical cores)
+  Executing up to 6 processes, one per physical core
+  Requested 1.5 GB memory per action, 6.18 GB available: limiting max parallel actions to 4
+UbaServer - Listening on 0.0.0.0:1345
+Building VEILEditor...
+===== Toolchain Information =====
+Using ISPC compiler (C:\Program Files\Epic Games\UE_5.8\Engine\Source\ThirdParty\Intel\ISPC\bin\Windows\ispc.exe)
+  Intel(r) Implicit SPMD Program Compiler (Intel(r) ISPC), 1.24.0 (build commit  @ 20250404, LLVM 18.1.2) 
+Using Visual Studio 14.44.35228 toolchain (C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207) and Windows 10.0.26100.0 SDK (C:\Program Files (x86)\Windows Kits\10).
+[Adaptive Build] Excluded from VEIL unity file: VEIL.cpp, OMNIWardenPrime.cpp, VEILCompanion.cpp, VEILFactionAI.cpp, VEILCharacter.cpp, VEILCountessCharacter.cpp, PHI_GameState_Fixed.cpp, VEILGameMode.cpp, VEILHUD.cpp, VEILHudCanvas.cpp, VEILMainMenu.cpp, VEILPauseMenu.cpp, VEILTextReader.cpp, VEILWinScreen.cpp, OMNIQuestSystem.cpp, PHICompanionParty.cpp, PHIForge.cpp, PHIGear.cpp, PHIOcean.cpp, PHIPortal.cpp, PHISelfUpdate.cpp, PHISideQuests.cpp, PHIVoice.cpp, PHIWeather.cpp, PHI_CrashFix_AddressZero.cpp, PHI_DynamicMusic.cpp, PHI_GodmodeSafe.cpp, PHI_MitochondrialEngine.cpp, PHI_NPCProcessor.cpp, PHI_Sfx.cpp, PHI_WorldDress_Vault.cpp, VEILDiscoverySystem.cpp, VEILEnemy.cpp, VEILFastTravel.cpp, VEILLoopActors.cpp, VEILLoopSubsystem.cpp, VEILMito.cpp, VEILMusicDirector.cpp, VEILProgression.cpp, VEILQuest.cpp, VEILRegionSubsystem.cpp, VEILVault.cpp, VEILWaveSpawner.cpp, VEILMinimap.cpp, OMNIQuestContent.cpp, VEILDistrictStreaming.cpp, VEILLevelLink.cpp, VEILWorldBuilder.cpp
+===== End Toolchain Information =====
+Using Unreal Build Accelerator local executor to run 4 action(s)
+  CPU 6 physical cores, 12 logical cores
+  Memory 15.84 GB physical, 41.55 GB/54.32 GB committed
+  UBA Storage capacity 40 GB
+[1/4] Compile [x64] VEILGameMode.cpp
+D:\VEIL-OMNI\Source\VEIL\Public\AI\VEILFactionAI.h(40,2): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+	GENERATED_BODY()
+	^
+D:\VEIL-OMNI\Source\VEIL\Public\AI\VEILFactionAI.h(66,16): error C2143: syntax error: missing ';' before '<class-head>'
+class VEIL_API AVEILFactionAgent : public ACharacter
+               ^
+D:\VEIL-OMNI\Source\VEIL\Public\AI\VEILFactionAI.h(65,1): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+UCLASS()
+^
+D:\VEIL-OMNI\Source\VEIL\Public\AI\VEILFactionAI.h(68,2): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+	GENERATED_BODY()
+	^
+D:\VEIL-OMNI\Source\VEIL\Public\AI\VEILFactionAI.h(149,16): error C2143: syntax error: missing ';' before '<class-head>'
+class VEIL_API UVEILFactionManager : public UWorldSubsystem
+               ^
+D:\VEIL-OMNI\Source\VEIL\Public\AI\VEILFactionAI.h(148,1): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+UCLASS()
+^
+D:\VEIL-OMNI\Source\VEIL\Public\AI\VEILFactionAI.h(151,2): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+	GENERATED_BODY()
+	^
+D:\VEIL-OMNI\Source\VEIL\Public\Game\VEILGameMode.h(33,16): error C2143: syntax error: missing ';' before '<class-head>'
+class VEIL_API AVEILGameMode : public AGameModeBase
+               ^
+D:\VEIL-OMNI\Source\VEIL\Public\Game\VEILGameMode.h(32,1): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+UCLASS()
+^
+D:\VEIL-OMNI\Source\VEIL\Public\Game\VEILGameMode.h(35,2): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+	GENERATED_BODY()
+	^
+D:\VEIL-OMNI\Source\VEIL\Public\Game\VEILGameMode.h(77,16): error C2143: syntax error: missing ';' before '<class-head>'
+class VEIL_API AVEILPlayerController : public APlayerController
+               ^
+D:\VEIL-OMNI\Source\VEIL\Public\Game\VEILGameMode.h(76,1): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+UCLASS()
+^
+D:\VEIL-OMNI\Source\VEIL\Public\Game\VEILGameMode.h(79,2): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+	GENERATED_BODY()
+	^
+D:\VEIL-OMNI\Source\VEIL\Public\Character\VEILCharacter.h(31,16): error C2143: syntax error: missing ';' before '<class-head>'
+class VEIL_API AVEILCharacter : public ACharacter
+               ^
+D:\VEIL-OMNI\Source\VEIL\Public\Character\VEILCharacter.h(30,1): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+UCLASS()
+^
+D:\VEIL-OMNI\Source\VEIL\Public\Character\VEILCharacter.h(33,2): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+	GENERATED_BODY()
+	^
+D:\VEIL-OMNI\Source\VEIL\Private\Game\VEILGameMode.cpp(185,9): error C2039: 'SetupInputComponent': is not a member of 'AController'
+	Super::SetupInputComponent();
+	       ^
+C:\Program Files\Epic Games\UE_5.8\Engine\Source\Runtime\Engine\Classes\GameFramework\Controller.h(40,7): note: see declaration of 'AController'
+class AController : public AActor, public INavAgentInterface
+      ^
+Total time in Unreal Build Accelerator local executor: 16.56 seconds
+
+Result: Failed (OtherCompilationError)
+Total execution time: 17.83 seconds
+Trace written to file C:\Users\Admin\AppData\Local\UnrealBuildTool\Trace.uba with size 9.0kb

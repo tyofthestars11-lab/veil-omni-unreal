@@ -1,0 +1,8 @@
+--- editor load check ---
+engine version: 5.8.4-58902052+++UE5+Release-5.8
+project: D:/VEIL-OMNI/
+content: D:/VEIL-OMNI/Content/
+load VEILDistrict: True
+actors: 646
+spire actors: 120
+DONE

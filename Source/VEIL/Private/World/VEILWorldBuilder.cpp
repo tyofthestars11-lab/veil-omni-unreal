@@ -1165,10 +1165,20 @@ UInstancedStaticMeshComponent* AVEILWorldBuilder::MakeSet(UStaticMesh* Mesh,
 		// BaseColor on a mesh whose material IS M_PHI_Gold still renders gold, because the
 		// base colour is only one input to that material. Unlit instanced surfaces therefore
 		// get the cut stone material ASSIGNED, the same way Place() does it.
-		UMaterialInterface* BodyMat = (Emissive <= 0.f)
-			? LoadObject<UMaterialInterface>(nullptr,
-				TEXT("/Game/StarterContent/Materials/M_Brick_Cut_Stone.M_Brick_Cut_Stone"))
-			: nullptr;
+		// GOLD IS REAL METAL, NOT FLAT YELLOW. Unlit surfaces are stone; lit ones wear the
+		// metallic gold built for this game (metallic 1.0, roughness 0.28, emissive 0.35)
+		// instead of the old flat material. If that asset is missing, the mesh keeps its own.
+		UMaterialInterface* BodyMat = nullptr;
+		if (Emissive <= 0.f)
+		{
+			BodyMat = LoadObject<UMaterialInterface>(nullptr,
+				TEXT("/Game/StarterContent/Materials/M_Brick_Cut_Stone.M_Brick_Cut_Stone"));
+		}
+		else
+		{
+			BodyMat = LoadObject<UMaterialInterface>(nullptr,
+				TEXT("/Game/PHI/Palette/M_PHI_GoldMetallic.M_PHI_GoldMetallic"));
+		}
 		if (UMaterialInstanceDynamic* StoneMID = BodyMat ? UMaterialInstanceDynamic::Create(BodyMat, Set) : nullptr)
 		{
 			StoneMID->SetVectorParameterValue(TEXT("Color"), Use);
@@ -2132,8 +2142,13 @@ void AVEILWorldBuilder::DressPhiPalette()
 		// wall blocks standing there as solid gold cubes - which is exactly what the complaint
 		// was about. So the rule is now about the whole world: any surface asked for gold that
 		// is NOT emissive becomes stone; gold survives only where it is actually glowing.
+		// MEASURED, NOT GUESSED. A dump of the plaza found 102 components wearing
+		// MID_M_PHI_Gold_0 - the pillars are SM_AncientColumn_Big with a dynamic instance of
+		// M_PHI_Gold. They survived the earlier swap because that swap exempted emissive
+		// surfaces, and the pillars glow. The vision is a STONE pillar with a glowing phi
+		// symbol, so the body is stone at every emissive level; the light is the trim.
 		UMaterialInterface* Use = Mat;
-		if (StoneMat && Gold && Mat == Gold && Emissive <= 0.f)
+		if (StoneMat && Gold && Mat == Gold)
 		{
 			Use = StoneMat;
 		}

@@ -1,0 +1,20 @@
+round-trip |phi^Rung(v) - v| worst over the AI's own values: 0.000000000
+clock band samples: 4000, distinct: 4000
+smallest gap between neighbouring bands: 0.0127322004
+min band 0.0001065335  max band 0.9998808233
+intent mix for ONE fixed situation (threat 0.5, health 0.9):
+   Rest           0 samples    0.0%
+   Patrol       279 samples    7.0%
+   Investigate 2760 samples   69.0%
+   Hunt         961 samples   24.0%
+   Fight          0 samples    0.0%
+   Flee           0 samples    0.0%
+
+same brain, different situations (how a machine answers as things change):
+   situation              Rest Patr Inve Hunt Figh Flee
+   calm, whole              32   67    1    0    0    0
+   seen, whole               0    7   69   24    0    0
+   close, whole              0    0   30   62    8    0
+   close, wounded            0    0    5   49   46    0
+   close, dying              0    0    0   23   66   11
+creature A rung 0.672244 vs creature B rung 0.435254 -> identical intent histogram? no

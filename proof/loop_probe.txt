@@ -1,0 +1,13 @@
+TOTAL_ACTORS 483
+KEEPER count=3 ['Beacon_Keeper [StaticMeshActor]', 'Light_Keeper [PointLight]', 'BeaconKeeper [StaticMeshActor]']
+SEER count=3 ['Beacon_Seer [StaticMeshActor]', 'Light_Seer [PointLight]', 'BeaconSeer [StaticMeshActor]']
+CARTO count=2 ['Beacon_Carto [StaticMeshActor]', 'Light_Carto [PointLight]']
+FRAGMENT count=0 []
+CACHE count=3 ['Beacon_Cache [StaticMeshActor]', 'Light_Cache [PointLight]', 'BeaconCache [StaticMeshActor]']
+WARDEN count=0 []
+ANCHOR count=0 []
+VAULT count=25 ['VAULT666_0 [StaticMeshActor]', 'VAULT666_1 [StaticMeshActor]', 'VAULT666_2 [StaticMeshActor]', 'VAULT666_3 [StaticMeshActor]', 'VAULT666_4 [StaticMeshActor]', 'VAULT666_5 [StaticMeshActor]', 'VAULT666_6 [StaticMeshActor]', 'VAULT666_7 [StaticMeshActor]']
+SIGNAL count=0 []
+PLAYERSTART count=0 []
+VEILVAULT_CLASS_FOUND 1
+VAULT_ANCHORS_IN_LEVEL 0

@@ -1,0 +1,10 @@
+fragments before=6 sites=3 duplicates=3
+  removing duplicate at <Struct 'Vector' (0x0000020E526BCCE0) {x: 2800.000000, y: 500.000000, z: 150.000000}>
+  removing duplicate at <Struct 'Vector' (0x0000020E526BCC90) {x: -2000.000000, y: -900.000000, z: 150.000000}>
+  removing duplicate at <Struct 'Vector' (0x0000020E526BCD30) {x: 600.000000, y: -2100.000000, z: 150.000000}>
+SAVE RESULT True
+fragments after=3
+  SIGNAL_FRAGMENT_1 @ <Struct 'Vector' (0x0000020E705C78F0) {x: 2800.000000, y: 500.000000, z: 150.000000}>
+  SIGNAL_FRAGMENT_2 @ <Struct 'Vector' (0x0000020E705C7850) {x: -2000.000000, y: -900.000000, z: 150.000000}>
+  SIGNAL_FRAGMENT_3 @ <Struct 'Vector' (0x0000020E705C7E40) {x: 600.000000, y: -2100.000000, z: 150.000000}>
+DONE

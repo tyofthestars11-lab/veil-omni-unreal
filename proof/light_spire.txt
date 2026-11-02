@@ -1,0 +1,4 @@
+existing spire lights=0
+LIGHTS PLACED 16 | SAVE True
+SPIRE ACTORS IN LEVEL: 120
+DONE

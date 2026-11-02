@@ -1,0 +1,97 @@
+Using bundled DotNet SDK version: 10.0 win-x64
+Running UnrealBuildTool: dotnet "..\..\Engine\Binaries\DotNET\UnrealBuildTool\UnrealBuildTool.dll" VEILEditor Win64 Development -Project=D:\VEIL-OMNI\VEIL.uproject -WaitMutex
+Log file: C:\Users\Admin\AppData\Local\UnrealBuildTool\Log.txt
+Determining max actions to execute in parallel (6 physical cores, 12 logical cores)
+  Executing up to 6 processes, one per physical core
+  Requested 1.5 GB memory per action, 6.5 GB available: limiting max parallel actions to 4
+UbaServer - Listening on 0.0.0.0:1345
+UHT compiled-in object format Default
+UHT processed VEILEditor in 10.7764953 seconds (100 generated files written)
+Building VEILEditor...
+===== Toolchain Information =====
+Using ISPC compiler (C:\Program Files\Epic Games\UE_5.8\Engine\Source\ThirdParty\Intel\ISPC\bin\Windows\ispc.exe)
+  Intel(r) Implicit SPMD Program Compiler (Intel(r) ISPC), 1.24.0 (build commit  @ 20250404, LLVM 18.1.2) 
+Using Visual Studio 14.44.35228 toolchain (C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207) and Windows 10.0.26100.0 SDK (C:\Program Files (x86)\Windows Kits\10).
+[Adaptive Build] Excluded from VEIL unity file: VEIL.cpp, OMNIWardenPrime.cpp, VEILCompanion.cpp, VEILFactionAI.cpp, VEILCharacter.cpp, VEILCountessCharacter.cpp, PHI_GameState_Fixed.cpp, VEILGameMode.cpp, VEILHUD.cpp, VEILHudCanvas.cpp, VEILMainMenu.cpp, VEILPauseMenu.cpp, VEILTextReader.cpp, VEILWinScreen.cpp, OMNIQuestSystem.cpp, PHICompanionParty.cpp, PHIForge.cpp, PHIGear.cpp, PHIOcean.cpp, PHIPortal.cpp, PHISelfUpdate.cpp, PHISideQuests.cpp, PHIVoice.cpp, PHIWeather.cpp, PHI_CrashFix_AddressZero.cpp, PHI_DynamicMusic.cpp, PHI_GodmodeSafe.cpp, PHI_MitochondrialEngine.cpp, PHI_NPCProcessor.cpp, PHI_Sfx.cpp, PHI_WorldDress_Vault.cpp, VEILDiscoverySystem.cpp, VEILEnemy.cpp, VEILFastTravel.cpp, VEILLoopActors.cpp, VEILLoopSubsystem.cpp, VEILMito.cpp, VEILMusicDirector.cpp, VEILProgression.cpp, VEILQuest.cpp, VEILRegionSubsystem.cpp, VEILVault.cpp, VEILWaveSpawner.cpp, VEILMinimap.cpp, OMNIQuestContent.cpp, VEILDistrictStreaming.cpp, VEILLevelLink.cpp, VEILWorldBuilder.cpp
+===== End Toolchain Information =====
+Using Unreal Build Accelerator local executor to run 50 action(s)
+  CPU 6 physical cores, 12 logical cores
+  Memory 15.84 GB physical, 42.22 GB/54.32 GB committed
+  UBA Storage capacity 40 GB
+[1/50] Compile [x64] Module.VEIL.cpp
+[2/50] Compile [x64] OMNIQuestContent.cpp
+[3/50] Compile [x64] OMNIQuestSystem.cpp
+[4/50] Compile [x64] OMNIWardenPrime.cpp
+[5/50] Compile [x64] PHICompanionParty.cpp
+[6/50] Compile [x64] PHIForge.cpp
+[7/50] Compile [x64] PHIGear.cpp
+[8/50] Compile [x64] PHIOcean.cpp
+[9/50] Compile [x64] PHIPortal.cpp
+[10/50] Compile [x64] PHISelfUpdate.cpp
+[11/50] Compile [x64] PHISideQuests.cpp
+[12/50] Compile [x64] PHIVoice.cpp
+[13/50] Compile [x64] PHIWeather.cpp
+[14/50] Compile [x64] PHI_CrashFix_AddressZero.cpp
+[15/50] Compile [x64] PHI_DynamicMusic.cpp
+[16/50] Compile [x64] PHI_GameState_Fixed.cpp
+[17/50] Compile [x64] PHI_GodmodeSafe.cpp
+[18/50] Compile [x64] PHI_NPCProcessor.cpp
+[19/50] Compile [x64] PHI_Sfx.cpp
+[20/50] Compile [x64] PHI_WorldDress_Vault.cpp
+[21/50] Compile [x64] VEILCharacter.cpp
+[22/50] Compile [x64] VEILCompanion.cpp
+[23/50] Compile [x64] VEILCountessCharacter.cpp
+[24/50] Compile [x64] VEILDiscoverySystem.cpp
+[25/50] Compile [x64] VEILDistrictStreaming.cpp
+[26/50] Compile [x64] VEILEnemy.cpp
+[27/50] Compile [x64] VEILFactionAI.cpp
+[28/50] Compile [x64] VEILFastTravel.cpp
+[29/50] Compile [x64] VEILGameMode.cpp
+[30/50] Compile [x64] VEILHUD.cpp
+[31/50] Compile [x64] VEILHudCanvas.cpp
+[32/50] Compile [x64] VEILLevelLink.cpp
+[33/50] Compile [x64] VEILLoopActors.cpp
+[34/50] Compile [x64] VEILLoopSubsystem.cpp
+[35/50] Compile [x64] VEILMainMenu.cpp
+D:\VEIL-OMNI\Source\VEIL\Private\Game\VEILMainMenu.cpp(38,31): warning C4996: 'FSlateFontInfo::FSlateFontInfo': Use constructor with FCompositeFont instead. - Please update your code to the new API before upgrading to the next release, otherwise your project will no longer compile.
+		Text->SetFont(FSlateFontInfo(FPaths::EngineContentDir() / TEXT("Slate/Fonts/Roboto-Bold.ttf"), Size));
+		                            ^
+D:\VEIL-OMNI\Source\VEIL\Private\Game\VEILMainMenu.cpp(50,31): warning C4996: 'FSlateFontInfo::FSlateFontInfo': Use constructor with FCompositeFont instead. - Please update your code to the new API before upgrading to the next release, otherwise your project will no longer compile.
+		Text->SetFont(FSlateFontInfo(FPaths::EngineContentDir() / TEXT("Slate/Fonts/Roboto-Regular.ttf"), 22));
+		                            ^
+[36/50] Compile [x64] VEILMinimap.cpp
+[37/50] Compile [x64] VEILMito.cpp
+[38/50] Compile [x64] VEILMusicDirector.cpp
+[39/50] Compile [x64] VEILPauseMenu.cpp
+D:\VEIL-OMNI\Source\VEIL\Private\Game\VEILPauseMenu.cpp(36,31): warning C4996: 'FSlateFontInfo::FSlateFontInfo': Use constructor with FCompositeFont instead. - Please update your code to the new API before upgrading to the next release, otherwise your project will no longer compile.
+		Text->SetFont(FSlateFontInfo(FPaths::EngineContentDir() / TEXT("Slate/Fonts/Roboto-Bold.ttf"), Size));
+		                            ^
+D:\VEIL-OMNI\Source\VEIL\Private\Game\VEILPauseMenu.cpp(48,31): warning C4996: 'FSlateFontInfo::FSlateFontInfo': Use constructor with FCompositeFont instead. - Please update your code to the new API before upgrading to the next release, otherwise your project will no longer compile.
+		Text->SetFont(FSlateFontInfo(FPaths::EngineContentDir() / TEXT("Slate/Fonts/Roboto-Regular.ttf"), 22));
+		                            ^
+[40/50] Compile [x64] VEILProgression.cpp
+[41/50] Compile [x64] VEILQuest.cpp
+[42/50] Compile [x64] VEILRegionSubsystem.cpp
+[43/50] Compile [x64] VEILTextReader.cpp
+D:\VEIL-OMNI\Source\VEIL\Private\Game\VEILTextReader.cpp(15,23): warning C4996: 'FSlateFontInfo::FSlateFontInfo': Use constructor with FCompositeFont instead. - Please update your code to the new API before upgrading to the next release, otherwise your project will no longer compile.
+	return FSlateFontInfo(FPaths::EngineContentDir() / Face, Size);
+	                     ^
+[44/50] Compile [x64] VEILVault.cpp
+[45/50] Compile [x64] VEILWaveSpawner.cpp
+[46/50] Compile [x64] VEILWinScreen.cpp
+D:\VEIL-OMNI\Source\VEIL\Private\Game\VEILWinScreen.cpp(77,31): warning C4996: 'FSlateFontInfo::FSlateFontInfo': Use constructor with FCompositeFont instead. - Please update your code to the new API before upgrading to the next release, otherwise your project will no longer compile.
+		Text->SetFont(FSlateFontInfo(FPaths::EngineContentDir() / TEXT("Slate/Fonts/Roboto-Bold.ttf"), Size));
+		                            ^
+D:\VEIL-OMNI\Source\VEIL\Private\Game\VEILWinScreen.cpp(90,31): warning C4996: 'FSlateFontInfo::FSlateFontInfo': Use constructor with FCompositeFont instead. - Please update your code to the new API before upgrading to the next release, otherwise your project will no longer compile.
+		Text->SetFont(FSlateFontInfo(FPaths::EngineContentDir() / TEXT("Slate/Fonts/Roboto-Regular.ttf"), 22));
+		                            ^
+[47/50] Compile [x64] VEILWorldBuilder.cpp
+[48/50] Link [x64] UnrealEditor-VEIL.lib
+[49/50] Link [x64] UnrealEditor-VEIL.dll
+VEILFastTravel.cpp.obj : error LNK2019: unresolved external symbol "public: void __cdecl AVEILBeacon::LightMarker(void)" (?LightMarker@AVEILBeacon@@QEAAXXZ) referenced in function "public: virtual void __cdecl UVEILFastTravel::Tick(float)" (?Tick@UVEILFastTravel@@UEAAXM@Z)
+D:\VEIL-OMNI\Binaries\Win64\UnrealEditor-VEIL.dll : fatal error LNK1120: 1 unresolved externals
+Total time in Unreal Build Accelerator local executor: 115.22 seconds
+
+Result: Failed (OtherCompilationError)
+Total execution time: 127.18 seconds
+Trace written to file C:\Users\Admin\AppData\Local\UnrealBuildTool\Trace.uba with size 27.8kb

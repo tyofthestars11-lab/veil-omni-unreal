@@ -1,0 +1,11 @@
+/Game/Maps/VEILDistrict: 0 portal(s) already
+  placed portal -> OMNIWorld at <Struct 'Vector' (0x0000019C0C75DAA0) {x: 1400.000000, y: 0.000000, z: 100.000000}>
+  placed portal -> VEILWorld at <Struct 'Vector' (0x0000019C0C75DA50) {x: -1400.000000, y: 0.000000, z: 100.000000}>
+  SAVE /Game/Maps/VEILDistrict -> True
+/Game/Maps/OMNIWorld: 0 portal(s) already
+  placed portal -> VEILDistrict at <Struct 'Vector' (0x0000019C0A785690) {x: 600.000000, y: 0.000000, z: 160.000000}>
+  SAVE /Game/Maps/OMNIWorld -> True
+/Game/Maps/VEILWorld: 0 portal(s) already
+  placed portal -> VEILDistrict at <Struct 'Vector' (0x0000019C0A785690) {x: 600.000000, y: 0.000000, z: 160.000000}>
+  SAVE /Game/Maps/VEILWorld -> True
+DONE

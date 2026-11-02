@@ -1,0 +1,116 @@
+	// ------------------------------------------------------------------
+	// THE DISTRICT IS PLACED BY PHI, NOT SCATTERED.
+	//
+	// A grid with a hash height reads as clutter because nothing in it knows
+	// where anything else is. So: four roads leave the plaza at successive
+	// golden angles (137.507764 deg apart - the same angle a sunflower uses).
+	// Along each road, plots sit at radii that grow by phi, so the gap between
+	// neighbours is always the same ratio and the street has a rhythm a body
+	// can feel. Every block has a job, set back from the road, and the road
+	// itself is kept clear all the way out.
+	// ------------------------------------------------------------------
+	const float Phi = 1.61803398875f;
+	const float GoldenAngleDeg = 137.50776405f;
+	const float RoadClear = 620.f;       // nothing within this of a road centre
+	const float PlotBase = 1250.f;       // first plot out from the plaza
+	int32 Shops = 0, Homes = 0, Camps = 0, Shrines = 0, Towers = 0;
+
+	// Road zero points at the Keeper, so the landmark a new runner is told to
+	// find is the first thing standing on the first street.
+	const FVector KeeperAt(0.f, -2600.f, 0.f);
+	const float RoadZeroDeg = FMath::RadiansToDegrees(FMath::Atan2(KeeperAt.Y, KeeperAt.X));
+
+	for (int32 Road = 0; Road < 4; ++Road)
+	{
+		const float RoadDeg = RoadZeroDeg + Road * GoldenAngleDeg;
+		const float RoadRad = FMath::DegreesToRadians(RoadDeg);
+		const FVector Along(FMath::Cos(RoadRad), FMath::Sin(RoadRad), 0.f);
+		const FVector Across(-Along.Y, Along.X, 0.f);
+
+		for (int32 N = 1; N <= 6; ++N)
+		{
+			const float Radius = PlotBase * FMath::Pow(Phi, (float)(N - 1));
+			if (Radius > 13000.f) { break; }
+			const FVector OnRoad = Along * Radius;
+
+			// A lamp on the road itself at every phi step: the path is legible
+			// from the ground, from the map, and from the far end of the street.
+			SpawnBlock(FVector(OnRoad.X, OnRoad.Y, 240.f), FVector(0.36f, 0.36f, 4.8f),
+				CylinderMesh, GoldTint, 3.2f);
+			SpawnBlock(FVector(OnRoad.X, OnRoad.Y, 500.f), FVector(0.9f, 0.9f, 0.9f),
+				SphereMesh, GoldTint, 4.5f);
+
+			const FVector Setback = OnRoad + Across * (RoadClear + 520.f);
+			const int32 Kind = (Road * 3 + N) % 4;
+
+			if (Kind == 0)
+			{
+				// SHOP: wide and low, with a lit sign band over the door.
+				const float W = 700.f, H = 520.f;
+				SpawnBlock(FVector(Setback.X, Setback.Y, H * 0.5f),
+					FVector(W / 100.f, (W * 0.72f) / 100.f, H / 100.f), CubeMesh, TowerTintWarm, 0.f);
+				SpawnBlock(FVector(Setback.X, Setback.Y, H + 40.f),
+					FVector(W / 92.f, (W * 0.66f) / 92.f, 0.5f), CubeMesh, GoldTint, 2.6f);
+				++Shops;
+			}
+			else if (Kind == 1)
+			{
+				// HOME: narrow, tall, one lit window band - a place, not a monolith.
+				const float W = 460.f;
+				const float H = 900.f * FMath::Pow(Phi, (float)(N % 3) * 0.25f);
+				SpawnBlock(FVector(Setback.X, Setback.Y, H * 0.5f),
+					FVector(W / 100.f, W / 100.f, H / 100.f), CubeMesh, TowerTint, 0.f);
+				SpawnBlock(FVector(Setback.X, Setback.Y, H * 0.62f),
+					FVector(W / 94.f, W / 94.f, 0.34f), CubeMesh, GoldTint, 1.6f);
+				++Homes;
+			}
+			else if (Kind == 2)
+			{
+				// CAMP: a low ring of blocks around a fire. The fire is the light.
+				for (int32 A = 0; A < 5; ++A)
+				{
+					const float Ang = FMath::DegreesToRadians(A * 72.f);
+					const FVector P = Setback + FVector(FMath::Cos(Ang) * 420.f, FMath::Sin(Ang) * 420.f, 0.f);
+					SpawnBlock(FVector(P.X, P.Y, 90.f), FVector(1.5f, 1.5f, 1.8f), CubeMesh, TowerTintWarm, 0.f);
+				}
+				SpawnBlock(FVector(Setback.X, Setback.Y, 150.f), FVector(0.7f, 0.7f, 0.7f), SphereMesh, GoldTint, 5.f);
+				++Camps;
+			}
+			else
+			{
+				// SHRINE: a gold column with a crown, marking the street's end.
+				SpawnBlock(FVector(Setback.X, Setback.Y, 620.f), FVector(1.1f, 1.1f, 12.4f), CylinderMesh, TowerTint, 0.f);
+				SpawnBlock(FVector(Setback.X, Setback.Y, 1300.f), FVector(1.5f, 1.5f, 1.5f), SphereMesh, GoldTint, 4.f);
+				++Shrines;
+			}
+
+			// The far side of the street, one rung out: a tower that closes the
+			// view down the road instead of leaving it open to nothing.
+			if (N >= 3)
+			{
+				const FVector Far = OnRoad - Across * (RoadClear + 900.f);
+				const float H = 900.f * FMath::Pow(Phi, (float)(N - 3) * 0.5f);
+				SpawnBlock(FVector(Far.X, Far.Y, H * 0.5f),
+					FVector(6.2f, 6.2f, H / 100.f), CubeMesh, TowerTint, 0.f);
+				if (N % 2 == 0)
+				{
+					SpawnBlock(FVector(Far.X, Far.Y, H + 30.f),
+						FVector(0.5f, 0.5f, 0.24f), CubeMesh, GoldTint, 2.2f);
+				}
+				++Towers;
+			}
+		}
+	}
+
+	// THE KEEPER'S LANDMARK: a column of light on the first road, at the end of
+	// the lit path. The objective stops being a label at the edge of the screen
+	// and becomes a thing standing in the world.
+	SpawnBlock(FVector(KeeperAt.X, KeeperAt.Y, 1500.f), FVector(3.4f, 3.4f, 30.f),
+		CylinderMesh, TowerTint, 0.f);
+	SpawnBlock(FVector(KeeperAt.X, KeeperAt.Y, 3100.f), FVector(1.8f, 1.8f, 1.8f),
+		SphereMesh, GoldTint, 6.f);
+	// The beam: a thin gold column from the crown into the sky, readable over
+	// every roof in the district.
+	SpawnBlock(FVector(KeeperAt.X, KeeperAt.Y, 6200.f), FVector(0.5f, 0.5f, 62.f),
+		CylinderMesh, GoldTint, 3.4f);
+

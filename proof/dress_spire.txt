@@ -1,0 +1,11 @@
+found sicka=215 iceland=14
+structure meshes=60 debris=8
+PLACED 104 | SAVE True
+  /Game/Iceland_Environment/Static_Meshes/SM_Iceland_Crest.SM_Iceland_Crest
+  /Game/Iceland_Environment/Static_Meshes/SM_Iceland_Eroded_Mountain.SM_Iceland_Eroded_Mountain
+  /Game/Iceland_Environment/Static_Meshes/SM_Iceland_Mountain_02.SM_Iceland_Mountain_02
+  /Game/Iceland_Environment/Static_Meshes/SM_Iceland_Plateus_01.SM_Iceland_Plateus_01
+  /Game/Iceland_Environment/Static_Meshes/SM_Mountain_01.SM_Mountain_01
+  /Game/Iceland_Environment/Static_Meshes/SM_Mountain_02.SM_Mountain_02
+SPIRE ACTORS IN LEVEL: 104
+DONE
