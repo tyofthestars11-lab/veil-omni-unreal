@@ -833,10 +833,39 @@ void AVEILGameMode::BeginPlay()
 					}
 				}
 
+				// A LANDMARK'S COLLISION PROXY IS NOT A FLOOR EITHER. The runner kept
+				// waking at z=598 beside a gold column, and this is the cause: the trace
+				// under the plaza does not reach the ground, it hits Actor_1 - a meshless
+				// collision slab whose top face is at z=500 and which spans the plaza in
+				// every direction - so he was seated 5 m up, on a block, next to
+				// SM_AncientColumn_Big. The Vault ignore above cannot catch it because the
+				// actor is not named "Vault". A surface with no mesh on it is a proxy, so
+				// whatever the centre trace hits that carries no static mesh, above plaza
+				// level, is ignored; the same trace then reaches the floor the district
+				// is actually built on.
+				{
+					FHitResult CentreHit;
+					FCollisionQueryParams ProbeParams(SCENE_QUERY_STAT(VeilSeatProxy), false);
+					ProbeParams.AddIgnoredActor(Pawn);
+					if (W->LineTraceSingleByChannel(CentreHit, Plaza + FVector(0.f, 0.f, 4000.f),
+						Plaza - FVector(0.f, 0.f, 4000.f), ECC_Visibility, ProbeParams))
+					{
+						AActor* HitActor = CentreHit.GetActor();
+						const bool bIsMesh = Cast<AStaticMeshActor>(HitActor) != nullptr;
+						if (HitActor && !bIsMesh && CentreHit.ImpactPoint.Z > Plaza.Z + 150.f)
+						{
+							Params.AddIgnoredActor(HitActor);
+							UE_LOG(LogVEIL, Warning, TEXT("VEIL SEAT: ignored the meshless collision proxy %s (top z=%.0f) - a landmark, not a floor."),
+								*HitActor->GetName(), CentreHit.ImpactPoint.Z);
+						}
+					}
+				}
+
 				FVector Seat = Plaza;
 				FVector Fallback = FVector::ZeroVector;
 				bool bRoom = false;
-				int32 MissFloor = 0, Blocked = 0;
+				int32 MissFloor = 0, Blocked = 0, Roofs = 0;
+				TSet<AActor*> RoofsIgnored;
 				// THE SEARCH WIDENS BY PHI UNTIL THE WORLD HAS ROOM. At street scale
 				// (15 m) the plaza is built over - every candidate had floor but no
 				// capsule could stand in it - so the spiral steps out three phi rings,
@@ -856,6 +885,28 @@ void AVEILGameMode::BeginPlay()
 						Try - FVector(0.f, 0.f, 4000.f), ECC_Visibility, Params))
 					{
 						++MissFloor;
+						continue;
+					}
+
+					// A ROOF IS NOT A FLOOR, AND SKIPPING IT IS NOT ENOUGH. Whatever covers
+					// the plaza - a gold plinth at z=500 here - is hit by EVERY candidate, so
+					// simply rejecting the candidate fails the whole walk (that attempt sent
+					// him into mid-air at z=440). The roof has to be taken out of the query:
+					// the actor is added to the ignore list the first time it is seen, and the
+					// next trace reaches the ground underneath it.
+					if (Floor.ImpactPoint.Z > Plaza.Z + 150.f)
+					{
+						if (AActor* RoofActor = Floor.GetActor())
+						{
+							if (!RoofsIgnored.Contains(RoofActor))
+							{
+								RoofsIgnored.Add(RoofActor);
+								Params.AddIgnoredActor(RoofActor);
+								UE_LOG(LogVEIL, Warning, TEXT("VEIL SEAT: %s is a roof at z=%.0f, not a floor - taken out of the seat query."),
+									*RoofActor->GetName(), Floor.ImpactPoint.Z);
+							}
+						}
+						++Roofs;
 						continue;
 					}
 
@@ -882,8 +933,8 @@ void AVEILGameMode::BeginPlay()
 
 					Seat = Stand;
 					bRoom = true;
-					UE_LOG(LogVEIL, Log, TEXT("VEIL SEAT: plaza centre is occupied - runner wakes at %s, %.0f cm out on the golden angle (step %.0f, i=%d); %d point(s) had no floor, %d had no room."),
-						*Stand.ToCompactString(), Rad, StepCm, i, MissFloor, Blocked);
+					UE_LOG(LogVEIL, Log, TEXT("VEIL SEAT: plaza centre is occupied - runner wakes at %s, %.0f cm out on the golden angle (step %.0f, i=%d); %d point(s) had no floor, %d had no room, %d roof(s) struck."),
+						*Stand.ToCompactString(), Rad, StepCm, i, MissFloor, Blocked, Roofs);
 					break;
 				}
 				if (bRoom) { break; }
@@ -899,6 +950,53 @@ void AVEILGameMode::BeginPlay()
 					Seat = Plaza + FVector(0.f, 0.f, 220.f);
 					UE_LOG(LogVEIL, Log, TEXT("VEIL SEAT: nothing at street scale held him - %d point(s) with no floor, %d with no room - runner dropped at %s."),
 						MissFloor, Blocked, *Seat.ToCompactString());
+				}
+
+				// NOTHING MAY BE STANDING WHERE THE RUNNER WAKES. The search above asks
+				// about floor and about room, and it answers both - but the district is
+				// dressed by the builder at Play, and a piece of it can occupy the seat
+				// after that probe settles. That is the frame the runner woke in: at
+				// V(-512,-91,598) with his shoulder inside a gold mass and the camera
+				// buried in it. No saved-level or pivot probe can see that mass (it is
+				// not in the saved level), but COLLISION can, so the last step is the
+				// only one that matters: if the capsule is blocked where he is about to
+				// stand, walk him out on the golden angle, and lift him if the mass is
+				// tall, until he has air around him. If nothing is clear, he keeps the
+				// seat and the log says so instead of pretending.
+				{
+					FCollisionQueryParams FreeParams(SCENE_QUERY_STAT(VeilSeatFree), false);
+					FreeParams.AddIgnoredActor(Pawn);
+					auto BlockedAt = [&](const FVector& At)
+					{
+						return W->OverlapBlockingTestByChannel(At, FQuat::Identity, ECC_Pawn,
+							FCollisionShape::MakeCapsule(42.f, 96.f), FreeParams);
+					};
+					if (BlockedAt(Seat))
+					{
+						FVector Best = Seat;
+						bool bFree = false;
+						// A LIFT IS FOR CLEARING A KERB, NOT FOR TAKING OFF. The first version
+						// of this offered 520 and 800 cm and the runner, blocked on good ground
+						// at z=119, was lifted to z=639 - hovering over the plaza. Steps only.
+						for (float Lift : { 0.f, 40.f, 90.f })
+						{
+							for (int32 i = 1; i <= 34; ++i)
+							{
+								const float Ang = FMath::DegreesToRadians(i * GAngleDeg);
+								const float Rad = 260.f * FMath::Sqrt((float)i);
+								const FVector Try(Seat.X + FMath::Cos(Ang) * Rad,
+									Seat.Y + FMath::Sin(Ang) * Rad, Seat.Z + Lift);
+								if (!BlockedAt(Try)) { Best = Try; bFree = true; break; }
+							}
+							if (bFree) { break; }
+						}
+						UE_LOG(LogVEIL, Warning, TEXT("VEIL SEAT: the runner woke inside something at %s - %s."),
+							*Seat.ToCompactString(),
+							bFree
+								? *FString::Printf(TEXT("walked out to %s on the golden angle"), *Best.ToCompactString())
+								: TEXT("nothing within 34 golden steps was clear; the seat stands as found"));
+						if (bFree) { Seat = Best; }
+					}
 				}
 
 				Pawn->SetActorLocation(Seat, false, nullptr, ETeleportType::TeleportPhysics);
