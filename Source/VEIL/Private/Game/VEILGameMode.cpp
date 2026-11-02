@@ -1,6 +1,7 @@
 // VEIL: THE LAST SIGNAL - game mode + player controller implementation.
 #include "Game/VEILGameMode.h"
 #include "World/VEILNestSanctum.h"
+#include "World/VEILConceptWorld.h"
 
 #include "Systems/VEILOS.h"
 #include "Game/VEILHudCanvas.h"
@@ -813,6 +814,13 @@ void AVEILGameMode::BeginPlay()
 						FVector::ZeroVector, FRotator::ZeroRotator))
 					{
 						Sanctum->BuildSanctum();
+					// THE COMPOSITION, on the same tick as the sanctum: pillars, market,
+					// falls, bridges, crystals, the Deep, and wings, all placed by phi.
+					if (AVEILConceptWorld* Concept = GetWorld()->SpawnActor<AVEILConceptWorld>(
+						FVector::ZeroVector, FRotator::ZeroRotator))
+					{
+						Concept->Build();
+					}
 					}
 				}), 2.0f, false);
 		}
