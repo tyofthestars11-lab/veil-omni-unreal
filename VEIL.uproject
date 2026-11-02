@@ -16,6 +16,10 @@
    "Name": "EnhancedInput"
   },
   {
+   "Name": "AIAssistant",
+   "Enabled": true
+  },
+  {
    "Name": "PythonScriptPlugin",
    "Enabled": true
   },
