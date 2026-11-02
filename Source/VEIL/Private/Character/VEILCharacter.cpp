@@ -1376,7 +1376,11 @@ void AVEILCharacter::HoldGoldenCamera(float DeltaSeconds)
 			// code already believes in - 420/phi^2 = 160.4 cm - is the floor here too.
 			// A tight corner now shows some stone at the edge of the frame, which is
 			// what a real third-person camera does, instead of showing nothing.
-			const float Standoff = 420.f / (UPHIMito::Phi * UPHIMito::Phi);
+			// HALF THE ARM, NOT A THIRD OF IT. At 420/phi^2 = 160 cm the lens stood inside
+			// the runner's shoulders and he filled the frame - a portrait, not a shot of a
+			// district. 420/phi = 260 cm keeps his whole body in the lower third with the
+			// world readable behind him, which is what a third-person frame is for.
+			const float Standoff = 420.f / UPHIMito::Phi;
 			const float Clamped = FMath::Max(Wall.Distance - Skin, Standoff);
 			if (Clamped < AllowedLength)
 			{

@@ -155,6 +155,18 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "VEIL|UI")
 	bool bShowFieldManual = false;
 
+	/**
+	 * INSTRUMENTATION, ON DEMAND. The phase lock, the nearest machine's brain, the
+	 * world's intent and the OMNI field are readouts for building the game, not for
+	 * playing it. On screen they crowded the district and made every frame read as a
+	 * debug build, which is exactly what the Bible forbids. F10 shows them.
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "VEIL|UI")
+	bool bShowDebug = false;
+
+	UFUNCTION(BlueprintCallable, Category = "VEIL|UI")
+	void ToggleDebugStrips();
+
 	UPROPERTY(BlueprintReadOnly, Category = "VEIL|Input")
 	bool bUsingGamepad = false;
 

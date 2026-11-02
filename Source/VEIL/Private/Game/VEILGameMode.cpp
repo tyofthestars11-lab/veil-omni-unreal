@@ -919,6 +919,13 @@ void AVEILGameMode::BeginPlay()
 					const FVector Try(Plaza.X + FMath::Cos(Ang) * Rad,
 						Plaza.Y + FMath::Sin(Ang) * Rad, Plaza.Z);
 
+					// THE SPIRE'S BASE IS NOT A SEAT. The centre of the plaza is where the
+					// stacked gold columns stand - 6.4 m wide at the bottom - and a candidate
+					// 620 cm out is close enough that the camera's whole frame is gold. The
+					// keep-out is phi^2 steps from it: 1097 cm, wider than the column and its
+					// plinth, so no seat can end up looking up the shaft.
+					if (FVector::Dist2D(Try, FVector(0.f, 0.f, 0.f)) < 1097.f) { continue; }
+
 					FHitResult Floor;
 					if (!W->LineTraceSingleByChannel(Floor, Try + FVector(0.f, 0.f, 4000.f),
 						Try - FVector(0.f, 0.f, 4000.f), ECC_Visibility, Params))
@@ -1008,9 +1015,29 @@ void AVEILGameMode::BeginPlay()
 				}
 				else if (!bRoom)
 				{
-					Seat = Plaza + FVector(0.f, 0.f, 220.f);
+					// THE HUB PAD, NOT THE SPIRE'S FEET. The fallback used to drop the runner
+					// on the plaza centre, which is where the Spire stands: he woke six metres
+					// from a two-metre-thick gold column, so every opening frame was gold
+					// filling the middle of the shot. The Hub arrival pad is the square the
+					// region tour already proves standable, and it looks across the plaza
+					// instead of up it.
+					FHitResult PadFloor;
+					FCollisionQueryParams PadParams = Params;
+					const FVector Pad(900.f, -1500.f, 0.f);
+					if (W->LineTraceSingleByChannel(PadFloor, Pad + FVector(0.f, 0.f, 4000.f),
+						Pad - FVector(0.f, 0.f, 4000.f), ECC_Visibility, PadParams))
+					{
+						Seat = PadFloor.ImpactPoint + FVector(0.f, 0.f, 98.f);
+						bRoom = true;
+						UE_LOG(LogVEIL, Warning, TEXT("VEIL SEAT: plaza centre holds nothing but the Spire - runner wakes on the Hub pad at %s, not at its feet."),
+							*Seat.ToCompactString());
+					}
+					else
+					{
+						Seat = Plaza + FVector(0.f, 0.f, 220.f);
 					UE_LOG(LogVEIL, Log, TEXT("VEIL SEAT: nothing at street scale held him - %d point(s) with no floor, %d with no room - runner dropped at %s."),
 						MissFloor, Blocked, *Seat.ToCompactString());
+					}
 				}
 
 				// NOTHING MAY BE STANDING WHERE THE RUNNER WAKES. The search above asks
@@ -2643,6 +2670,9 @@ void AVEILPlayerController::SetupInputComponent()
 		// Field manual: H (safe), the pad's left d-pad, and F1 handled in InputKey
 		// because the engine owns F1 and must be intercepted first.
 		InputComponent->BindKey(EKeys::H, IE_Pressed, this, &AVEILPlayerController::ToggleFieldManual);
+		// F10: the debug strips. Off by default - normal play shows the game, not the
+		// instrumentation. The Bible names F10 for exactly this.
+		InputComponent->BindKey(EKeys::F10, IE_Pressed, this, &AVEILPlayerController::ToggleDebugStrips);
 		InputComponent->BindKey(EKeys::Gamepad_DPad_Left, IE_Pressed, this, &AVEILPlayerController::ToggleFieldManual);
 		// Respawn
 		InputComponent->BindKey(EKeys::R, IE_Pressed, this, &AVEILPlayerController::RespawnRunner);
@@ -2993,6 +3023,12 @@ void AVEILPlayerController::TravelOrAdvance()
 	}
 	if (bShowChart && ChartPage == 2) { OptionsActivate(); return; }
 	ChartTravel();
+}
+
+void AVEILPlayerController::ToggleDebugStrips()
+{
+	bShowDebug = !bShowDebug;
+	UE_LOG(LogVEIL, Log, TEXT("PHI DEBUG STRIPS: %s"), bShowDebug ? TEXT("shown (F10)") : TEXT("hidden"));
 }
 
 void AVEILPlayerController::ToggleFieldManual()

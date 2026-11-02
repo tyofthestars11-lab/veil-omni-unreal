@@ -318,11 +318,14 @@ void AVEILHudCanvas::DrawHUD()
 	const float U = 8.f * UPHIMito::Phi;          // 12.944 px base unit
 	const float PX = 18.f * UPHIMito::Phi;        // 29.1 px from the edge
 	const float PY = 18.f * UPHIMITO_PHI_SAFE;    // same margin vertically
-	const float PW = 372.f * UPHIMito::Phi;       // 601.9 px plate
+	// SHRUNK. At 601 px the plate owned a third of the frame and the district was read
+	// around it. 470 is still the instrument the vision leads with, at a size that
+	// leaves the world as the subject of the picture.
+	const float PW = 470.f;                       // plate width, was 601.9
 	// Taller plate than the row count needs: the secondary rows are set on the
 	// text's own line height, not on a guess, so they never print through
 	// each other the way they did when the step was 1.3 U.
-	const float PH = 212.f * UPHIMito::Phi;       // 343 px plate: VIT, STM, LV, the
+	const float PH = 232.f;                       // plate height, was 343: VIT, STM, LV, the
 	                                              // secondary rows and the key hint all
 	                                              // sit inside it - measured, not eyeballed
 
@@ -364,7 +367,7 @@ void AVEILHudCanvas::DrawHUD()
 	const float BadgeC = PX + U * 2.f + 46.f;
 	const float BadgeY = PY + U * 5.4f;
 	const float BARX = PX + U * 2.f + 104.f;
-	const float BARW = 132.f * UPHIMito::Phi;
+	const float BARW = 150.f;                     // gauges narrowed with the plate
 
 	// NAVY GLASS, GOLD LINE - the mockup's plate. #0E1424 under #C9A24A.
 	FVeilUI::Glass(this, FLinearColor(0.055f, 0.078f, 0.141f, 0.85f), PX, PY, PW, PH, 11.f);
@@ -391,7 +394,7 @@ void AVEILHudCanvas::DrawHUD()
 		: FString(PhiStageText(Stage));
 
 	// Kicker, then the one line that matters.
-	Shadow(TEXT("CURRENT DIRECTIVE"), FLinearColor(0.98f, 0.82f, 0.45f), TX, Y, Med, 0.82f);
+	Shadow(TEXT("CURRENT DIRECTIVE"), FLinearColor(0.98f, 0.82f, 0.45f), TX, Y, Med, 0.72f);
 	Y += U * 1.45f;
 
 	// THE DIRECTIVE IS A BANNER, NOT A LINE OF TEXT. It is the one sentence the
@@ -402,7 +405,7 @@ void AVEILHudCanvas::DrawHUD()
 		FVeilUI::Ribbon(this, FLinearColor(0.16f, 0.11f, 0.03f, 0.80f),
 			TX - 9.f, Y - 4.f, OW * 1.02f + 20.f, U * 2.05f, true);
 	}
-	Shadow(Objective, FLinearColor(1.f, 0.90f, 0.46f), TX, Y, Big, 1.02f);
+	Shadow(Objective, FLinearColor(1.f, 0.90f, 0.46f), TX, Y, Big, 0.86f);
 	Y += U * 2.5f;
 
 	// Bars carry the state; the numbers stay for exact reading.
@@ -415,7 +418,7 @@ void AVEILHudCanvas::DrawHUD()
 		const FLinearColor Vit = Pct > 0.35f ? FLinearColor(0.851f, 0.204f, 0.227f) : FLinearColor(0.95f, 0.55f, 0.18f);
 		Bar(BARX, Y, BARW, 8.f * UPHIMito::Phi, Pct, Vit);
 		Shadow(FString::Printf(TEXT("VIT  %.0f / %.0f"), Pawn->Health, Pawn->MaxHealth),
-			FLinearColor(1.f, 0.86f, 0.70f), BARX + BARW + 10.f, Y - 2.f, Med, 0.9f);
+			FLinearColor(1.f, 0.86f, 0.70f), BARX + BARW + 10.f, Y - 2.f, Med, 0.8f);
 		Y += U * 1.5f;
 		// STM is the mitochondrial gradient the runner actually burns (0..100 ATP on
 		// the Countess rig), so the green bar is live state rather than decoration.
@@ -692,8 +695,12 @@ void AVEILHudCanvas::DrawHUD()
 		// the chart and printed straight through it - the eye caught the lock lines
 		// and the OMNI readout sitting across the beacon list. A page owns the
 		// frame; instrument text comes back when it closes.
+		// DEBUG TEXT LIVES BEHIND F10. The phase lock, the machine's phinary brain, the
+		// world's intent and the OMNI field are instrumentation: on screen they filled
+		// the lower right and made the game read as a debug build. F10 brings them back.
 		const AVEILPlayerController* StripPC = Cast<AVEILPlayerController>(PC);
-		const bool bStripPage = StripPC && (StripPC->bShowChart || StripPC->bShowFieldManual);
+		const bool bStripPage = !StripPC || !StripPC->bShowDebug
+			|| StripPC->bShowChart || StripPC->bShowFieldManual;
 
 		// THE 60 FPS PHASE LOCK, always visible while it is holding the frame.
 		if (const UVEILPerf* Lock = bStripPage ? nullptr : W->GetSubsystem<UVEILPerf>())
@@ -808,16 +815,16 @@ void AVEILHudCanvas::DrawHUD()
 			// QUEST BANNER, bottom left, in gold cloth: the side objective the vision
 			// carries above the legend, so the screen always names the work in progress.
 			{
-				const float QY = Canvas->ClipY - 152.f;
+				// A BANNER, NOT A BAR ACROSS THE CORNER: shorter, lighter, one line.
+				const float QY = Canvas->ClipY - 146.f;
 				float QW = 0.f, QH = 0.f;
 				Canvas->StrLen(Med, FString(TEXT("THE GOLDEN MIDST")), QW, QH);
-				FVeilUI::Ribbon(this, FLinearColor(0.16f, 0.11f, 0.03f, 0.88f), 30.f, QY, QW + 58.f, 20.f, true);
-				DrawText(TEXT("QUEST"), FLinearColor(0.62f, 0.47f, 0.20f), 40.f, QY + 3.f, Med, 0.62f);
-				DrawText(TEXT("THE GOLDEN MIDST"), FLinearColor(1.f, 0.88f, 0.50f), 86.f, QY + 3.f, Med, 0.72f);
-				// The vision's banner carries the step under the title, so the objective is a
-				// sentence you can act on rather than a name.
+				FVeilUI::Ribbon(this, FLinearColor(0.16f, 0.11f, 0.03f, 0.88f), 30.f, QY, QW * 0.86f + 46.f, 15.f, true);
+				DrawText(TEXT("QUEST"), FLinearColor(0.62f, 0.47f, 0.20f), 38.f, QY + 2.f, Med, 0.5f);
+				DrawText(TEXT("THE GOLDEN MIDST"), FLinearColor(1.f, 0.88f, 0.50f), 76.f, QY + 2.f, Med, 0.58f);
+				// The step rides on the same line, dimmer: two lines of banner was a block.
 				DrawText(TEXT("Find the hidden phi chamber"), FLinearColor(0.86f, 0.82f, 0.68f),
-					86.f, QY + 11.f, Med, 0.60f);
+					76.f + QW * 0.50f + 14.f, QY + 3.f, Med, 0.48f);
 			}
 
 			// COMBAT MODE, bottom centre, with diamond icons above it: the state the
@@ -930,12 +937,14 @@ void AVEILHudCanvas::DrawHUD()
 			&& W->GetSubsystem<UVEILDialogue>()->IsActive();
 		if (!Tut->IsHidden() && !bPageOpen && !bTalking)
 		{
-			const float CW = 360.f;
+			// THE CARD IS A CARD, NOT A PANEL. 360 x 138 covered the lower right of the
+			// district; 252 x 104 still teaches the gesture without hiding the world.
+			const float CW = 252.f;
 			const float CX = Canvas->ClipX - CW - 30.f;
 			// Under the map, not on top of it: the round instrument now reaches
 			// 30 + 220 px, so the card starts clear of the ring's halo.
 			const float CY = 30.f + 244.f;
-			const float CH = 138.f;
+			const float CH = 104.f;
 			const FVEILTutorialStep& S = Tut->GetStep();
 			const bool bDone = Tut->IsComplete();
 
@@ -944,11 +953,11 @@ void AVEILHudCanvas::DrawHUD()
 
 			DrawText(bDone ? FString(TEXT("FIELD MANUAL"))
 				: FString::Printf(TEXT("FIELD MANUAL   %d OF %d"), Tut->GetStepIndex() + 1, Tut->NumSteps()),
-				FLinearColor(0.52f, 0.60f, 0.74f), CX + 16.f, CY + 11.f, Med, 0.8f);
+				FLinearColor(0.52f, 0.60f, 0.74f), CX + 16.f, CY + 9.f, Med, 0.66f);
 
 			// The button itself, drawn as a chip: the shape is the hint.
 			const FString Glyph = Tut->GetGlyph();
-			const float GS = 0.78f;
+			const float GS = 0.66f;
 			float GW = 0.f, GH = 0.f;
 			Canvas->StrLen(Big, Glyph, GW, GH);
 			const float ChipW = GW * GS + 24.f;
@@ -960,13 +969,13 @@ void AVEILHudCanvas::DrawHUD()
 			FVeilUI::RoundRect(this, FLinearColor(1.f, 0.95f, 0.72f, 0.55f), ChipX + 3.f, CY + 11.f, ChipW - 6.f, 10.f, 5.f);
 			DrawText(Glyph, FLinearColor(0.12f, 0.08f, 0.02f), ChipX + 12.f, CY + 14.f, Big, GS);
 
-			DrawText(S.Action, FLinearColor(1.f, 0.86f, 0.34f), CX + 16.f, CY + 44.f, Big, 0.98f);
+			DrawText(S.Action, FLinearColor(1.f, 0.86f, 0.34f), CX + 16.f, CY + 36.f, Big, 0.80f);
 
 			// Wrapped hint, two or three lines at the plate's width.
 			TArray<FString> Words;
 			S.Hint.ParseIntoArray(Words, TEXT(" "), true);
 			FString Line;
-			float HY = CY + 74.f;
+			float HY = CY + 62.f;
 			for (int32 i = 0; i < Words.Num(); ++i)
 			{
 				const FString Try = Line.IsEmpty() ? Words[i] : Line + TEXT(" ") + Words[i];
@@ -974,15 +983,15 @@ void AVEILHudCanvas::DrawHUD()
 				Canvas->StrLen(Med, Try, XL, YL);
 				if (XL > CW - 34.f && !Line.IsEmpty())
 				{
-					DrawText(Line, FLinearColor(0.80f, 0.85f, 0.92f), CX + 16.f, HY, Med, 0.86f);
-					HY += 18.f;
+					DrawText(Line, FLinearColor(0.80f, 0.85f, 0.92f), CX + 16.f, HY, Med, 0.70f);
+					HY += 15.f;
 					Line = Words[i];
 				}
 				else { Line = Try; }
 			}
 			if (!Line.IsEmpty())
 			{
-				DrawText(Line, FLinearColor(0.80f, 0.85f, 0.92f), CX + 16.f, HY, Med, 0.86f);
+				DrawText(Line, FLinearColor(0.80f, 0.85f, 0.92f), CX + 16.f, HY, Med, 0.70f);
 			}
 
 			// Progress: one pip per gesture, filled when it has been taught.
@@ -990,13 +999,13 @@ void AVEILHudCanvas::DrawHUD()
 			{
 				const bool bLit = bDone || i < Tut->GetStepIndex();
 				DrawRect(bLit ? FLinearColor(1.f, 0.82f, 0.35f, 0.9f) : FLinearColor(1.f, 1.f, 1.f, 0.16f),
-					CX + 16.f + i * 15.f, CY + CH - 16.f, 9.f, 5.f);
+					CX + 16.f + i * 12.f, CY + CH - 13.f, 7.f, 4.f);
 			}
 			// The current step's own progress, a hairline under the pips.
 			if (!bDone)
 			{
 				DrawRect(FLinearColor(0.42f, 0.72f, 1.f, 0.65f),
-					CX + 16.f + Tut->GetStepIndex() * 15.f, CY + CH - 20.f, 9.f * FMath::Clamp(Tut->GetStepProgress(), 0.f, 1.f), 2.f);
+					CX + 16.f + Tut->GetStepIndex() * 12.f, CY + CH - 17.f, 7.f * FMath::Clamp(Tut->GetStepProgress(), 0.f, 1.f), 2.f);
 			}
 		}
 	}
