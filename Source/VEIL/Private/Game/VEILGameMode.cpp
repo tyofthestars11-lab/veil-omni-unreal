@@ -1,5 +1,6 @@
 // VEIL: THE LAST SIGNAL - game mode + player controller implementation.
 #include "Game/VEILGameMode.h"
+#include "World/VEILNestSanctum.h"
 
 #include "Systems/VEILOS.h"
 #include "Game/VEILHudCanvas.h"
@@ -783,6 +784,31 @@ void AVEILGameMode::BeginPlay()
 		}
 		else if (bPlacedWorld) { Builder->BuildDistrictLayer(); }
 		else { Builder->BuildWorld(); }
+
+		// THE NEST HAS A FLOOR EVEN WHEN THE HUB IS BURIED.
+		//
+		// On a baked world the builder stands down and the level is the world - and at the
+		// plaza centre that level stacks roofs at 500, 1250, 1751 and 2440 cm, so the
+		// authority spawn at 0,0,100 lands inside solid geometry and the runner wakes with
+		// the camera in a wall. The sanctum measures the surface the hub actually has and
+		// raises its deck there, then dresses it: ring, pillars, Spire, beacon shafts and
+		// water. It is built before the seat timer below, so the probe lands on the deck.
+		if (bAlreadyBuilt)
+		{
+			// TWO SECONDS LATE, ON PURPOSE. The hub's lid is a streamed cell: at 0.3 s the only
+			// collision registered at the plaza is the street, so the deck measured 98 and was
+			// raised UNDER the mass it was meant to stand above. Two seconds later it answers.
+			FTimerHandle SanctumTimer;
+			GetWorldTimerManager().SetTimer(SanctumTimer,
+				FTimerDelegate::CreateWeakLambda(this, [this]()
+				{
+					if (AVEILNestSanctum* Sanctum = GetWorld()->SpawnActor<AVEILNestSanctum>(
+						FVector::ZeroVector, FRotator::ZeroRotator))
+					{
+						Sanctum->BuildSanctum();
+					}
+				}), 2.0f, false);
+		}
 
 		// The look is applied after the world exists, whether the level was baked or the
 		// builder just raised it. It is computed from the law, so it is the same grade in
