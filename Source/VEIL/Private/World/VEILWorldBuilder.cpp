@@ -2069,11 +2069,15 @@ void AVEILWorldBuilder::DressRegions()
 	for (int32 i = 0; i < 12; ++i)
 	{
 		const double Ang = FMath::DegreesToRadians(i * GoldenDeg);
-		const double Rad = 5600.0 + (i % 5) * 480.0;
-		const float PeakH = 2600.f + (i % 4) * 700.f;
-		// A mountain is 90 m across and PeakH tall - not a plate standing on edge.
+		// FAR ENOUGH THAT IT IS A HORIZON, NOT A WALL. Measured mountains at 90 m
+		// across on a 56 m ring put their inner face 11 m from the plaza and swallowed
+		// the town - the aerial frame was solid blue, camera and all. The crystals are
+		// 130 m wide and stand on the 200 m ring, so their nearest face is still 135 m
+		// from the plaza and they read as the skyline the painting has.
+		const double Rad = 20000.0 + (i % 5) * 2200.0;
+		const float PeakH = 5200.f + (i % 4) * 1100.f;
 		Solid(FVector(FMath::Cos(Ang) * Rad, FMath::Sin(Ang) * Rad, 0.f),
-			FVector(9000.f, 9000.f, PeakH), Rock, Blue, IceC, 0.10f,
+			FVector(13000.f, 13000.f, PeakH), Rock, Blue, IceC, 0.10f,
 			(float)(i * GoldenDeg));
 		++Peaks;
 	}
