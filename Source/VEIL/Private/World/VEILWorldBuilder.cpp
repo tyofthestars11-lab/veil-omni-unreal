@@ -2134,7 +2134,11 @@ void AVEILWorldBuilder::DressPhiPalette()
 		}
 		if (Glow)
 		{
-			Place(Spire + FVector(0.f, 0.f, 9400.f), ScaleForCm(Pillar, FVector(300.f, 300.f, 700.f)),
+			// THE CAP SITS ON THE STACK. It was authored at 9400 cm while the top of the
+			// three-segment stack is 7900 - so the audit found the landmark's own cap
+			// floating 89 m above the thing it was meant to crown. 7900 + 350 = 8250 puts
+			// its centre on the top face.
+			Place(Spire + FVector(0.f, 0.f, 8250.f), ScaleForCm(Pillar, FVector(300.f, 300.f, 700.f)),
 				Pillar, Glow, GoldTint, 3.f, FRotator::ZeroRotator);
 		}
 	}

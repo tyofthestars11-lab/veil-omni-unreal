@@ -22,8 +22,8 @@ PART 1 - EVERY PLACE IN THE CODE THAT PUTS SOMETHING IN THE WORLD
       SpawnBlock/SpawnBlockRot     BuildHorizon                       VEILWorldBuilder.cpp:1922  if (UStaticMeshComponent* Comp = SpawnBlockRot(At, FVector::OneVector, Mesh, Ridge, 0.f, Face))
       SpawnBlock/SpawnBlockRot     DressBeaconSites                   VEILWorldBuilder.cpp:1961  SpawnBlock(Base + FVector(0.f, 0.f, 700.f), FVector(4.2f, 4.2f, 14.f),
       SpawnBlock/SpawnBlockRot     DressPhiPalette                    VEILWorldBuilder.cpp:2021  UStaticMeshComponent* Comp = SpawnBlockRot(At, Scale, Mesh, TintCol, Emissive, Rot);
-      SpawnBlock/SpawnBlockRot     DressRegions                       VEILWorldBuilder.cpp:2225  UStaticMeshComponent* Comp = SpawnBlockRot(At, S, M, C, E, R);
-      SpawnBlock/SpawnBlockRot     BakeToLevel                        VEILWorldBuilder.cpp:2622  UStaticMeshComponent* TileComp = SpawnBlock(FVector(IX * 200000.f, IY * 200000.f, -50.f),
+      SpawnBlock/SpawnBlockRot     DressRegions                       VEILWorldBuilder.cpp:2229  UStaticMeshComponent* Comp = SpawnBlockRot(At, S, M, C, E, R);
+      SpawnBlock/SpawnBlockRot     BakeToLevel                        VEILWorldBuilder.cpp:2626  UStaticMeshComponent* TileComp = SpawnBlock(FVector(IX * 200000.f, IY * 200000.f, -50.f),
   Source\VEIL\Private\Game\VEILGameMode.cpp                  BeginPlay x4, SpawnActor x12
       SpawnActor                   ApplyPhiGrade                      VEILGameMode.cpp:153  Volume = W->SpawnActor<APostProcessVolume>(APostProcessVolume::StaticClass(),
       BeginPlay                    BeginPlay                          VEILGameMode.cpp:278  void AVEILGameMode::BeginPlay()
