@@ -213,13 +213,13 @@ void AVEILHudCanvas::DrawMapLegend(UCanvas* C, UFont* Font, float X, float Y, bo
 			DrawLine(SX + S * 0.5f, SY, SX + S, SY + S, Col, 2.f);
 			break;
 		case EMark::Ring:
-			DrawRect(FLinearColor(0.f, 0.f, 0.f, 0.6f), SX - 1.f, SY - 1.f, S + 2.f, S + 2.f);
-			DrawRect(Col, SX, SY, S, S);
-			DrawRect(FLinearColor(0.f, 0.f, 0.f, 0.85f), SX + S * 0.3f, SY + S * 0.3f, S * 0.4f, S * 0.4f);
+			FVeilUI::Diamond(this, SX + S * 0.5f, SY + S * 0.5f, S * 0.62f, FLinearColor(0.f, 0.f, 0.f, 0.6f));
+			FVeilUI::Diamond(this, SX + S * 0.5f, SY + S * 0.5f, S * 0.5f, Col);
+			FVeilUI::Diamond(this, SX + S * 0.5f, SY + S * 0.5f, S * 0.22f, FLinearColor(0.f, 0.f, 0.f, 0.85f));
 			break;
 		default:
-			DrawRect(FLinearColor(0.f, 0.f, 0.f, 0.6f), SX - 1.f, SY - 1.f, S + 2.f, S + 2.f);
-			DrawRect(Col, SX, SY, S, S);
+			FVeilUI::Diamond(this, SX + S * 0.5f, SY + S * 0.5f, S * 0.62f, FLinearColor(0.f, 0.f, 0.f, 0.6f));
+			FVeilUI::Diamond(this, SX + S * 0.5f, SY + S * 0.5f, S * 0.5f, Col);
 			break;
 		}
 	};
@@ -600,8 +600,12 @@ void AVEILHudCanvas::DrawHUD()
 				const float Inner = MS * 0.5f - 3.f;
 				if (DX * DX + DYY * DYY > Inner * Inner) { return; }
 			}
-			DrawRect(FLinearColor(0.f, 0.f, 0.f, 0.55f), PX - S * 0.5f - 1.f, PY - S * 0.5f - 1.f, S + 2.f, S + 2.f);
-			DrawRect(Col, PX - S * 0.5f, PY - S * 0.5f, S, S);
+			// A MARKER, NOT A SQUARE. Every blip on this map was an axis-aligned rectangle,
+			// which is why the minimap read as a field of random gold and blue squares. Each
+			// one is now a phi diamond - the shape the badge and the quest markers already
+			// use - so a person, a shard and a beacon are all marks rather than boxes.
+			FVeilUI::Diamond(this, PX, PY, S * 0.5f + 1.8f, FLinearColor(0.f, 0.f, 0.f, 0.60f));
+			FVeilUI::Diamond(this, PX, PY, S * 0.5f, Col);
 		};
 
 		// The cast, in their faction colours: the Keeper gold, the Seer violet,
@@ -624,7 +628,10 @@ void AVEILHudCanvas::DrawHUD()
 		// the eye. A chevron so facing is readable at a glance.
 		{
 			const float RXP = MX + MS * 0.5f, RYP = MY + MS * 0.5f;
-			DrawRect(FLinearColor(1.f, 0.9f, 0.45f), RXP - 2.f, RYP - 2.f, 4.f, 4.f);
+			// THE RUNNER IS A PHI DIAMOND, not a 4 x 4 square: at the centre of a gold-ringed
+			// compass the player's own mark should be the brightest diamond on the map.
+			FVeilUI::Diamond(this, RXP, RYP, 6.f, FLinearColor(1.f, 0.90f, 0.45f));
+			FVeilUI::Diamond(this, RXP, RYP, 3.f, FLinearColor(0.10f, 0.07f, 0.02f, 0.95f));
 			DrawLine(RXP, RYP - 4.f, RXP - 6.f, RYP + 7.f, FLinearColor(1.f, 0.9f, 0.45f, 0.95f), 2.f);
 			DrawLine(RXP, RYP - 4.f, RXP + 6.f, RYP + 7.f, FLinearColor(1.f, 0.9f, 0.45f, 0.95f), 2.f);
 		}
