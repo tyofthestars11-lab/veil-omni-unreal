@@ -1934,18 +1934,57 @@ void AVEILWorldBuilder::DressPhiPalette()
 		}
 	}
 
-	// GOLD IN THE FLOOR: a phi spiral of tiles laid into the plaza stone, radius on
-	// phi powers and one golden angle apart - the same law the spawner uses, walkable.
+	// A PLAZA IS PAVED, NOT SCATTERED.
+	//
+	// This block used to lay 21 separate floor meshes in a golden spiral - each 85 cm,
+	// each turned to its own yaw, each floating 14 cm above the ground - so the first
+	// thing the eye met at spawn was a field of loose slabs standing at different
+	// angles and heights. That is what "random and messy" is: no shared module, no
+	// shared plane, no shared orientation. A paving is a grid. One stone size, one
+	// height, edge to edge; the golden angle is kept for the inlay ring laid flush on
+	// the plane, where a golden angle can be seen as a pattern rather than as debris.
 	if (UStaticMesh* Tile = FloorMesh ? FloorMesh.Get() : nullptr)
 	{
-		for (int32 i = 0; i < 21; ++i)
+		// SIT ON THE STREET THE RUNNER ACTUALLY STANDS ON, not on z=0. The plaza floor
+		// measured under the seat is at 65 cm, so paving authored at zero would be under
+		// the ground and invisible - the same mistake the seat search made in reverse.
+		float PaveZ = 0.5f;
+		if (UWorld* W = GetWorld())
+		{
+			FHitResult Ground;
+			FCollisionQueryParams GroundParams(SCENE_QUERY_STAT(VeilPaveProbe), false);
+			if (W->LineTraceSingleByChannel(Ground, FVector(0.f, 0.f, 3000.f),
+				FVector(0.f, 0.f, -3000.f), ECC_Visibility, GroundParams))
+			{
+				PaveZ = Ground.ImpactPoint.Z;
+			}
+		}
+		const float Module = 320.f;    // one paving stone, 3.2 m
+		const int32 Span = 5;          // five either side of centre: a 35 m square
+		int32 Laid = 0;
+		for (int32 gx = -Span; gx <= Span; ++gx)
+		{
+			for (int32 gy = -Span; gy <= Span; ++gy)
+			{
+				// A 3 cm joint, no rotation. A paving that is turned per stone is rubble.
+				SpawnBlockRot(FVector(gx * Module, gy * Module, PaveZ + 1.f),
+					ScaleForCm(Tile, FVector(Module - 3.f, Module - 3.f, 10.f)),
+					Tile, FLinearColor::White, 0.f, FRotator::ZeroRotator);
+				++Laid;
+			}
+		}
+		// THE GOLD IS AN INLAY NOW: one ring, flush, on the plane the stones make.
+		for (int32 i = 0; i < 13; ++i)
 		{
 			const double Ang = FMath::DegreesToRadians(i * GoldenDeg);
-			const double Rad = 130.0 * FMath::Pow(PhiLocal, (double)(i % 9) * 0.5);
-			Place(FVector(FMath::Cos(Ang) * Rad, FMath::Sin(Ang) * Rad, 14.f),
-				ScaleForCm(Tile, FVector(85.f, 85.f, 14.f)), Tile, Gold, GoldTint, 0.28f,
-				FRotator(0.f, (float)(i * GoldenDeg), 0.f));
+			const double Rad = 620.0;
+			Place(FVector(FMath::Cos(Ang) * Rad, FMath::Sin(Ang) * Rad, PaveZ + 5.f),
+				ScaleForCm(Tile, FVector(150.f, 150.f, 6.f)), Tile, Gold, GoldTint, 0.3f,
+				FRotator::ZeroRotator);
 		}
+		UE_LOG(LogVEIL, Warning,
+			TEXT("VEIL PLAZA: %d paving stones on a %.0f cm module, plane at z=%.1f, gold inlay flush on top."),
+			Laid, Module, PaveZ);
 	}
 
 	UE_LOG(LogVEIL, Warning,
