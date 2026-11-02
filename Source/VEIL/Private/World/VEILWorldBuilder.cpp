@@ -2065,20 +2065,37 @@ void AVEILWorldBuilder::DressPhiPalette()
 		TEXT("/Game/PHI/Palette/M_PHI_DeepBlue.M_PHI_DeepBlue"));
 	UMaterialInterface* Glow = LoadObject<UMaterialInterface>(nullptr,
 		TEXT("/Game/PHI/Palette/M_PHI_WhiteEmissive.M_PHI_WhiteEmissive"));
+	// THE PILLAR BODIES ARE STONE. Three passes of changing GoldTint numbers proved the
+	// point: the pillars do not take a colour, they take a MATERIAL, and that material was
+	// M_PHI_Gold. This is the stone the project already ships, used by the quest statues.
+	UMaterialInterface* StoneMat = LoadObject<UMaterialInterface>(nullptr,
+		TEXT("/Game/StarterContent/Materials/M_Brick_Cut_Stone.M_Brick_Cut_Stone"));
 	if (!Gold || !Blue)
 	{
 		UE_LOG(LogVEIL, Warning, TEXT("VEIL PALETTE: PHI palette materials missing - gold and crystal skipped."));
 		return;
 	}
 
-	auto Place = [this](const FVector& At, const FVector& Scale, UStaticMesh* Mesh,
+	auto Place = [this, Gold, StoneMat](const FVector& At, const FVector& Scale, UStaticMesh* Mesh,
 		UMaterialInterface* Mat, const FLinearColor& TintCol, float Emissive, const FRotator& Rot)
 	{
 		if (!Mesh || !Mat) { return; }
+		// GOLD IS FOR ACCENTS, NOT FOR BODIES. A column placed with the gold material is
+		// re-materialled to stone here, at the single point every gold pillar goes through,
+		// so the crown lights and beacons keep their gold and the bodies read as masonry.
+		// GOLD IS LIGHT, STONE IS MASS. Restricting the swap to columns left the big gold
+		// wall blocks standing there as solid gold cubes - which is exactly what the complaint
+		// was about. So the rule is now about the whole world: any surface asked for gold that
+		// is NOT emissive becomes stone; gold survives only where it is actually glowing.
+		UMaterialInterface* Use = Mat;
+		if (StoneMat && Gold && Mat == Gold && Emissive <= 0.f)
+		{
+			Use = StoneMat;
+		}
 		UStaticMeshComponent* Comp = SpawnBlockRot(At, Scale, Mesh, TintCol, Emissive, Rot);
 		if (!Comp) { return; }
-		Comp->SetMaterial(0, Mat);
-		if (UMaterialInstanceDynamic* MID = UMaterialInstanceDynamic::Create(Mat, Comp))
+		Comp->SetMaterial(0, Use);
+		if (UMaterialInstanceDynamic* MID = UMaterialInstanceDynamic::Create(Use, Comp))
 		{
 			MID->SetVectorParameterValue(TEXT("Color"), TintCol);
 			MID->SetVectorParameterValue(TEXT("BaseColor"), TintCol);
@@ -2282,6 +2299,11 @@ void AVEILWorldBuilder::DressRegions()
 		TEXT("/Game/PHI/Palette/M_PHI_DeepBlue.M_PHI_DeepBlue"));
 	UMaterialInterface* Glow = LoadObject<UMaterialInterface>(nullptr,
 		TEXT("/Game/PHI/Palette/M_PHI_WhiteEmissive.M_PHI_WhiteEmissive"));
+	// THE PILLAR BODIES ARE STONE. Three passes of changing GoldTint numbers proved the
+	// point: the pillars do not take a colour, they take a MATERIAL, and that material was
+	// M_PHI_Gold. This is the stone the project already ships, used by the quest statues.
+	UMaterialInterface* StoneMat = LoadObject<UMaterialInterface>(nullptr,
+		TEXT("/Game/StarterContent/Materials/M_Brick_Cut_Stone.M_Brick_Cut_Stone"));
 	if (!Gold || !Blue) { return; }
 
 	auto Place = [this](const FVector& At, const FVector& S, UStaticMesh* M,
