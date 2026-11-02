@@ -55,9 +55,14 @@ void AVEILLootPickup::BeginPlay()
 	Super::BeginPlay();
 
 	// The drop sits on the floor it fell on, lit in its own tier's colour.
-	if (UStaticMesh* Ball = LoadObject<UStaticMesh>(nullptr, TEXT("/Engine/BasicShapes/Sphere.Sphere")))
+	// A CARVED DROP, NOT A GOLD BALL. This loaded /Engine/BasicShapes/Sphere, so every
+	// pickup in the district lay on the plaza as an engine sphere tinted gold - the ball
+	// that reads as a placeholder no matter how it is lit. The kit's carved column is a
+	// real authored mesh and reads as a piece of the place that has been left behind.
+	if (UStaticMesh* Drop = LoadObject<UStaticMesh>(nullptr,
+		TEXT("/Game/Sicka_EnvPack2/Sicka_Ancient_Kit/Mesh/Props/SM_AncientColumn_Big.SM_AncientColumn_Big")))
 	{
-		Core->SetStaticMesh(Ball);
+		Core->SetStaticMesh(Drop);
 	}
 	const FLinearColor Colour = TierColour(Tier);
 	Light->SetLightColor(Colour);

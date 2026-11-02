@@ -2285,7 +2285,10 @@ void AVEILWorldBuilder::DressRegions()
 	UStaticMesh* Roof = RoofMesh ? RoofMesh.Get() : nullptr;
 
 	const FLinearColor GoldC(1.f, 0.76f, 0.28f);
-	const FLinearColor BlueC(0.30f, 0.62f, 1.f);
+	// STONE, NOT A BLUE BLOCK. The Nest shelves were tinted 0.30/0.62/1.0, which rendered
+	// as flat blue slabs standing in a gold-and-stone district - the "blue blocks" the
+	// player sees. Warm rock reads as the same cliff the kit authored.
+	const FLinearColor BlueC(0.44f, 0.41f, 0.36f);
 	const FLinearColor IceC(0.52f, 0.76f, 1.f);
 	const double GoldenDeg = 137.50776405003785;
 	int32 Market = 0, Nest = 0, Omni = 0, Peaks = 0, Beacons = 0;
