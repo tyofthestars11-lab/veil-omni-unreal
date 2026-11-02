@@ -251,6 +251,32 @@ static bool VeilInNest(const FVector& At)
 	return FVector::Dist2D(At, FVector::ZeroVector) < NestClearCm;
 }
 
+/**
+ * 600 CM OF CLEAR GROUND ALONG EVERY PATH, measured rather than eyeballed.
+ *
+ * The Nest has four paths - east to the Spire, north to the Keeper, and two out to the
+ * beacons - and "keep the path clear" is only true if something checks the distance to
+ * the line the path actually follows. So the segments are stated once here and every
+ * prop placement is measured against them.
+ */
+static float VeilDistToNestPath(const FVector& At)
+{
+	static const FVector2D Ends[4] = {
+		FVector2D(0.f, -2600.f),     // Keeper
+		FVector2D(2800.f, 500.f),    // beacon east
+		FVector2D(-2000.f, -900.f),  // beacon west
+		FVector2D(600.f, -2100.f) }; // beacon south
+	const FVector2D P(At.X, At.Y);
+	float Best = TNumericLimits<float>::Max();
+	for (const FVector2D& E : Ends)
+	{
+		const float Len2 = E.SizeSquared();
+		const float T = Len2 > 0.f ? FMath::Clamp((float)(P | E) / Len2, 0.f, 1.f) : 0.f;
+		Best = FMath::Min(Best, (float)FVector2D::Distance(P, E * T));
+	}
+	return Best;
+}
+
 UStaticMeshComponent* AVEILWorldBuilder::SpawnBlock(const FVector& Location,
 	const FVector& Scale, UStaticMesh* Mesh, const FLinearColor& Tint,
 	float EmissiveStrength)
@@ -284,6 +310,32 @@ UStaticMeshComponent* AVEILWorldBuilder::SpawnBlockRot(const FVector& Location,
 		for (const TObjectPtr<UStaticMesh>& Piece : DebrisVariants)
 		{
 			if (Piece.Get() == Mesh) { return nullptr; }
+		}
+
+		// PROPS, NOT ARCHITECTURE. Ground, walls, columns and roofs build the place and
+		// are not counted; every loose thing on top of them is a prop, and those are
+		// what the budget, the spacing and the path clearance apply to.
+		const bool bProp = (Mesh == SphereMesh.Get() || Mesh == ShrineMesh.Get()
+			|| Mesh == MonolithMesh.Get() || Mesh == PyramidHeadMesh.Get()
+			|| Mesh == ArchMesh.Get());
+		if (bProp)
+		{
+			if (NestPropSpots.Num() >= 150)
+			{
+				return nullptr;   // the cap: 150 in the Nest, refused after that
+			}
+			for (const FVector& Spot : NestPropSpots)
+			{
+				if (FVector::Dist2D(Spot, Location) < 300.f)
+				{
+					return nullptr;   // 300 cm between props
+				}
+			}
+			if (VeilDistToNestPath(Location) < 600.f)
+			{
+				return nullptr;       // 600 cm of clear ground along every path
+			}
+			NestPropSpots.Add(Location);
 		}
 	}
 
@@ -1196,6 +1248,33 @@ void AVEILWorldBuilder::BuildRegions()
 	LayRoad(0, 3); // Hub -> Omni District
 	LayRoad(3, 4); // Omni District -> the Deep at the heart
 
+	// THE NEST'S OWN PATHS. Region roads connect centres; they say nothing about how to
+	// walk from the plaza to the Keeper or to a beacon, so the spawn could be a courtyard
+	// whose destinations exist only as text. Four paths leave the plaza here, in the same
+	// stone as the region roads, laid flush on the paving the plaza already has.
+	{
+		auto LayPath = [&](const FVector2D& To)
+		{
+			const float Len = (float)To.Size();
+			if (Len < 100.f) { return; }
+			const float Yaw = FMath::RadiansToDegrees(FMath::Atan2((float)To.Y, (float)To.X));
+			const int32 Steps = FMath::Max(2, FMath::RoundToInt(Len / 420.f));
+			for (int32 S = 1; S <= Steps; ++S)
+			{
+				const FVector2D P = To * ((float)S / (float)Steps);
+				// FLUSH WITH THE PAVING, on top of it - a path you can see and walk on, not a
+				// kerb to trip over. The plaza plane is z=0.5 and its stones are 10 cm thick.
+				AddBlockYaw(Road, FVector(P.X, P.Y, 9.f), FVector(4.6f, 4.6f, 0.06f), Yaw);
+				++RoadSlabs;
+			}
+		};
+		LayPath(FVector2D(0.f, -2600.f));     // to the Keeper
+		LayPath(FVector2D(2800.f, 500.f));    // to the beacon east
+		LayPath(FVector2D(-2000.f, -900.f));  // to the beacon west
+		LayPath(FVector2D(600.f, -2100.f));   // to the beacon south
+		UE_LOG(LogVEIL, Warning, TEXT("VEIL NEST PATHS: four paths laid from the plaza - Keeper, east, west and south beacons."));
+	}
+
 	UE_LOG(LogVEIL, Log, TEXT("VEIL MAP BUILT: 5 regions, %d instances, %d road slabs, roads Hub-Nest, Hub-Spire, Hub-Omni, Omni-Deep."),
 		TotalInstances, RoadSlabs);
 	UE_LOG(LogVEIL, Warning, TEXT("PHI ENTERABLE: %d buildings built as rooms with a doorway, a floor and a hearth."),
@@ -1578,6 +1657,8 @@ void AVEILWorldBuilder::BuildDistrictLayer()
 	if (bBuilt) { return; }
 	bBuilt = true;
 	bSkipBase = true;
+	// A NEW BUILD COUNTS ITS PROPS FROM ZERO.
+	NestPropSpots.Reset();
 
 	// TERRAIN THAT REACHES INTO THE VIEW IS A WALL, NOT SCENERY.
 	//

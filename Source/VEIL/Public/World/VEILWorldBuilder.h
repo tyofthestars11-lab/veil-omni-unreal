@@ -138,6 +138,16 @@ private:
 	TObjectPtr<UStaticMesh> PyramidHeadMesh;        // the Vault's crown
 	TObjectPtr<UStaticMesh> StairMesh;              // steps you can walk up
 
+	/**
+	 * THE NEST'S PROP BUDGET AND ITS LAYOUT, held per build.
+	 *
+	 * The starting area is capped at 150 props, spaced at least 300 cm apart and kept
+	 * 600 cm clear of every path. It is enforced where a prop is placed - the only place
+	 * that can refuse one - and reset when a build starts, so a re-bake counts from zero
+	 * instead of inheriting the last pass's numbers.
+	 */
+	TArray<FVector> NestPropSpots;
+
 	/** The far silhouette: authored ridges on the horizon, so the world does not
 	 *  end in empty sky a hundred metres past the last street. */
 	void BuildHorizon();
