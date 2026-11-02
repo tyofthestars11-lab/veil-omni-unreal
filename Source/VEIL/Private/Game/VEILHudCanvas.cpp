@@ -315,19 +315,16 @@ void AVEILHudCanvas::DrawHUD()
 	// one gold headline, real bars for health and XP, then secondary rows and a
 	// dimmed key hint. Spacing is one phi grid, not eyeballed pixels.
 	// ------------------------------------------------------------------
-	const float U = 8.f * UPHIMito::Phi;          // 12.944 px base unit
-	const float PX = 18.f * UPHIMito::Phi;        // 29.1 px from the edge
-	const float PY = 18.f * UPHIMITO_PHI_SAFE;    // same margin vertically
-	// SHRUNK. At 601 px the plate owned a third of the frame and the district was read
-	// around it. 470 is still the instrument the vision leads with, at a size that
-	// leaves the world as the subject of the picture.
-	const float PW = 470.f;                       // plate width, was 601.9
-	// Taller plate than the row count needs: the secondary rows are set on the
-	// text's own line height, not on a guess, so they never print through
-	// each other the way they did when the step was 1.3 U.
-	const float PH = 232.f;                       // plate height, was 343: VIT, STM, LV, the
-	                                              // secondary rows and the key hint all
-	                                              // sit inside it - measured, not eyeballed
+	// 420 x 110 IS THE SPEC, AND 470 x 232 WAS MORE THAN DOUBLE IT. At 232 px tall the
+	// plate was a panel the district was read around; the brief allows 420 x 110 with the
+	// objective line, the three gauges and one stats line - everything else it used to
+	// carry belongs behind TAB. Every step below is stated in pixels, not multiples of a
+	// unit that grew the block back.
+	const float U = 5.2f * UPHIMito::Phi;         // 8.41 px base unit, was 12.944
+	const float PX = 14.f;                        // spec margin, was 29.1
+	const float PY = 14.f;
+	const float PW = 420.f;                       // spec max width, was 470
+	const float PH = 110.f;                       // spec max height, was 232
 
 	auto Shadow = [this](const FString& S, FLinearColor C, float X, float Yy, UFont* F, float Sc)
 	{
@@ -364,10 +361,10 @@ void AVEILHudCanvas::DrawHUD()
 	// before every other number, with the bars starting to its right - so the plate keeps
 	// its width and the bars start at BARX instead of being squeezed to make room. These
 	// are stated before the plate because the badge is drawn with it, not after it.
-	const float BadgeC = PX + U * 2.f + 46.f;
-	const float BadgeY = PY + U * 5.4f;
-	const float BARX = PX + U * 2.f + 104.f;
-	const float BARW = 150.f;                     // gauges narrowed with the plate
+	const float BadgeC = PX + 30.f;
+	const float BadgeY = PY + 34.f;
+	const float BARX = PX + 76.f;                 // text column aligns with the gauges
+	const float BARW = 170.f;
 
 	// NAVY GLASS, GOLD LINE - the mockup's plate. #0E1424 under #C9A24A.
 	FVeilUI::Glass(this, FLinearColor(0.055f, 0.078f, 0.141f, 0.85f), PX, PY, PW, PH, 11.f);
@@ -377,15 +374,15 @@ void AVEILHudCanvas::DrawHUD()
 	// THE PHI DIAMOND AND THE LEVEL. A gold diamond, a dark diamond inside it so the
 	// glyph reads, the phi mark itself, and LV under it - the badge the vision leads with.
 	{
-		FVeilUI::Diamond(this, BadgeC, BadgeY, 34.f, FLinearColor(1.f, 0.86f, 0.45f, 0.95f));
-		FVeilUI::Diamond(this, BadgeC, BadgeY, 27.f, FLinearColor(0.10f, 0.07f, 0.02f, 0.96f));
-		DrawText(TEXT("\u03C6"), FLinearColor(1.f, 0.93f, 0.58f), BadgeC - 7.f, BadgeY - 14.f, Big, 1.15f);
-		DrawText(FString::Printf(TEXT("LV %d"), Q ? Q->Level : 1),
-			FLinearColor(1.f, 0.90f, 0.52f), BadgeC - 24.f, BadgeY + 42.f, Med, 0.95f);
+		FVeilUI::Diamond(this, BadgeC, BadgeY, 26.f, FLinearColor(1.f, 0.86f, 0.45f, 0.95f));
+		FVeilUI::Diamond(this, BadgeC, BadgeY, 20.f, FLinearColor(0.10f, 0.07f, 0.02f, 0.96f));
+		DrawText(TEXT("\u03C6"), FLinearColor(1.f, 0.93f, 0.58f), BadgeC - 5.f, BadgeY - 11.f, Big, 0.90f);
+		// LV moved onto the XP row: the plate is 110 px tall and the badge no longer has a
+		// floor of its own to set it under.
 	}
 
-	const float TX = PX + U * 2.f;
-	float Y = PY + U * 0.9f;
+	const float TX = BARX;
+	float Y = PY + 6.f;
 	// THE DIRECTIVE IS THE ACT, NOT A TODO. The line under CURRENT DIRECTIVE is
 	// written in the spine, in the world's own voice, so what the runner is asked
 	// to do and what the statues are talking about are the same sentence.
@@ -393,20 +390,29 @@ void AVEILHudCanvas::DrawHUD()
 		? VEILSpine::DirectiveFor(LoopSys->Stage).ToString()
 		: FString(PhiStageText(Stage));
 
-	// Kicker, then the one line that matters.
-	Shadow(TEXT("CURRENT DIRECTIVE"), FLinearColor(0.98f, 0.82f, 0.45f), TX, Y, Med, 0.72f);
-	Y += U * 1.45f;
+	// NO KICKER. The spec for this panel is the objective line, the three gauges and the
+	// level, inside 420 x 110. "CURRENT DIRECTIVE" was a label for a panel that had room
+	// to explain itself; at this size the gold sentence explains itself.
+	Y = PY + 8.f;
 
 	// THE DIRECTIVE IS A BANNER, NOT A LINE OF TEXT. It is the one sentence the
 	// player is acting on, so it gets the gold cloth and the cut ends.
 	{
 		float OW = 0.f, OH = 0.f;
 		Canvas->StrLen(Big, Objective, OW, OH);
+		// THE RIBBON IS MEASURED IN THE SCALE IT IS DRAWN AT. It was sized from the font's
+		// unscaled width and ran 100 px past the plate, which is why the gold banner hung
+		// out over the district on the right.
+		// THE RIBBON IS MEASURED IN THE SCALE IT IS DRAWN AT, in both directions. Width came
+		// from the font's unscaled width and ran 100 px past the plate; height came from a
+		// fixed unit and was shorter than the type, which sheared the top off the directive.
+		// Both now come from the same measured text, so the cloth always contains the words.
 		FVeilUI::Ribbon(this, FLinearColor(0.16f, 0.11f, 0.03f, 0.80f),
-			TX - 9.f, Y - 4.f, OW * 1.02f + 20.f, U * 2.05f, true);
+			TX - 8.f, Y - 4.f, OW * 0.62f + 16.f,
+			FMath::Max(U * 2.05f, OH * 0.62f + 8.f), true);
 	}
-	Shadow(Objective, FLinearColor(1.f, 0.90f, 0.46f), TX, Y, Big, 0.86f);
-	Y += U * 2.5f;
+	Shadow(Objective, FLinearColor(1.f, 0.90f, 0.46f), TX, Y, Big, 0.62f);
+	Y += 22.f;
 
 	// Bars carry the state; the numbers stay for exact reading.
 	if (Pawn)
@@ -416,10 +422,10 @@ void AVEILHudCanvas::DrawHUD()
 		// state the vision shows - not a bar with the truth filed off.
 		// VIT #D9343A, STM #2FB36A - the two gradients the mockup leads with.
 		const FLinearColor Vit = Pct > 0.35f ? FLinearColor(0.851f, 0.204f, 0.227f) : FLinearColor(0.95f, 0.55f, 0.18f);
-		Bar(BARX, Y, BARW, 8.f * UPHIMito::Phi, Pct, Vit);
+		Bar(BARX, Y, BARW, 7.f, Pct, Vit);
 		Shadow(FString::Printf(TEXT("VIT  %.0f / %.0f"), Pawn->Health, Pawn->MaxHealth),
-			FLinearColor(1.f, 0.86f, 0.70f), BARX + BARW + 10.f, Y - 2.f, Med, 0.8f);
-		Y += U * 1.5f;
+			FLinearColor(1.f, 0.86f, 0.70f), BARX + BARW + 10.f, Y - 2.f, Med, 0.58f);
+		Y += 13.f;
 		// STM is the mitochondrial gradient the runner actually burns (0..100 ATP on
 		// the Countess rig), so the green bar is live state rather than decoration.
 		// STM is the runner's OWN ATP fuel (0..100 on AVEILCharacter) - no cast to a
@@ -428,10 +434,10 @@ void AVEILHudCanvas::DrawHUD()
 		const float Stam = Pawn->MaxATP > 0.f
 			? FMath::Clamp(Pawn->ATP / Pawn->MaxATP, 0.f, 1.f)
 			: 1.f;
-		Bar(BARX, Y, BARW, 8.f * UPHIMito::Phi, Stam, FLinearColor(0.184f, 0.702f, 0.416f));
+		Bar(BARX, Y, BARW, 7.f, Stam, FLinearColor(0.184f, 0.702f, 0.416f));
 		Shadow(FString::Printf(TEXT("STM  %.0f / %.0f"), Pawn->ATP, Pawn->MaxATP),
-			FLinearColor(0.74f, 1.f, 0.80f), BARX + BARW + 10.f, Y - 2.f, Med, 0.9f);
-		Y += U * 1.6f;
+			FLinearColor(0.74f, 1.f, 0.80f), BARX + BARW + 10.f, Y - 2.f, Med, 0.58f);
+		Y += 13.f;
 	}
 	if (Q)
 	{
@@ -439,22 +445,24 @@ void AVEILHudCanvas::DrawHUD()
 		const float Pct = Need > 0 ? (float)Q->XP / (float)Need : 0.f;
 		// LV IS A DIAMOND. The badge shape carries the number, and the XP bar fills
 		// beside it - the same level, read at a glance instead of spelled out.
-		Bar(BARX, Y, BARW, 8.f * UPHIMito::Phi, Pct, FLinearColor(0.55f, 0.80f, 1.f));
-		Shadow(FString::Printf(TEXT("XP  %d / %d"), Q->XP, Need),
-			FLinearColor(0.72f, 0.86f, 1.f), BARX + BARW + 10.f, Y - 2.f, Med, 0.9f);
-		Y += U * 1.7f;
+		Bar(BARX, Y, BARW, 7.f, Pct, FLinearColor(0.55f, 0.80f, 1.f));
+		// THE LEVEL LIVES WHERE THE XP IS. The badge is 26 px in a 110 px plate, so the
+		// number it used to carry under itself now sits on the row it belongs to.
+		Shadow(FString::Printf(TEXT("LV %d   XP %d / %d"), Q->Level, Q->XP, Need),
+			FLinearColor(0.72f, 0.86f, 1.f), BARX + BARW + 10.f, Y - 2.f, Med, 0.58f);
+		Y += 14.f;
 	}
 
 	// Hairline, then secondary rows in a quieter weight of the same face.
 	DrawRect(FLinearColor(1.f, 1.f, 1.f, 0.10f), TX, Y, PW - U * 4.f, 1.f);
-	Y += U * 0.8f;
+	Y += 5.f;
 
 	if (Q)
 	{
-		Shadow(FString::Printf(TEXT("FRAGMENTS %d / 3     GOLD %d     SHARDS %d"),
+		Shadow(FString::Printf(TEXT("FRAG %d/3   GOLD %d   SHARDS %d"),
 			Q->Fragments, Q->Gold, Q->Shards),
-			FLinearColor(0.78f, 0.84f, 0.92f), TX, Y, Med, 0.9f);
-		Y += U * 1.75f;
+			FLinearColor(0.78f, 0.84f, 0.92f), TX, Y, Med, 0.56f);
+		Y += 9.f;
 		// THE REGION IS ASKED OF THE WORLD, NOT READ OFF AN EMPTY STRING. The quest
 		// system's RegionMap was never assigned by anything, so this row printed
 		// "REGION " and stopped - a hole in the HUD exactly where a place name
@@ -465,17 +473,17 @@ void AVEILHudCanvas::DrawHUD()
 		{
 			RegionName = Regions->GetInfo(Regions->Current).Name.ToString();
 		}
-		Shadow(FString::Printf(TEXT("FORGE %d     BEACONS %d / 3     REGION %s"),
+		Shadow(FString::Printf(TEXT("FORGE %d   BEACONS %d/3   %s"),
 			Q->ForgeLevel, Q->ClaimedBeacons.Num(), *RegionName),
-			FLinearColor(0.78f, 0.84f, 0.92f), TX, Y, Med, 0.9f);
-		Y += U * 1.75f;
+			FLinearColor(0.78f, 0.84f, 0.92f), TX, Y, Med, 0.56f);
+		Y += 9.f;
 	}
 	if (LoopSys && LoopSys->Stage != EVEILStage::FindSignal && LoopSys->Stage != EVEILStage::Won)
 	{
-		Shadow(FString::Printf(TEXT("SIGNAL FRAGMENTS %d / %d     WAVES %d / %d"), LoopSys->Fragments,
+		Shadow(FString::Printf(TEXT("SIGNAL %d/%d   WAVES %d/%d"), LoopSys->Fragments,
 			UVEILLoopSubsystem::FragmentsNeeded, LoopSys->WavesCleared, UVEILLoopSubsystem::TotalWaves),
-			FLinearColor(0.55f, 0.92f, 1.f), TX, Y, Med, 0.9f);
-		Y += U * 1.75f;
+			FLinearColor(0.55f, 0.92f, 1.f), TX, Y, Med, 0.56f);
+		Y += 9.f;
 	}
 	{
 		FString Lead = TEXT("RUNNER");
@@ -485,19 +493,15 @@ void AVEILHudCanvas::DrawHUD()
 			Lead = Lead.Contains(TEXT("Countess")) ? TEXT("COUNTESS") : TEXT("RUNNER");
 		}
 		const int32 Party = W->GetSubsystem<UPHICompanionParty>() ? W->GetSubsystem<UPHICompanionParty>()->Count() : 0;
-		Shadow(FString::Printf(TEXT("LEAD %s     PARTY %d / 5"), *Lead, Party),
-			FLinearColor(0.78f, 0.84f, 0.92f), TX, Y, Med, 0.9f);
+		Shadow(FString::Printf(TEXT("LEAD %s   PARTY %d/5"), *Lead, Party),
+			FLinearColor(0.78f, 0.84f, 0.92f), TX, Y, Med, 0.56f);
 	}
 
-	// Key hints are reference, not state: smallest, dimmest, out of the way.
-	// [E] speak is the story key and it belongs in that list.
-	// The hint line names the device in the player's hands, and every key on it
-	// is really bound (the HUD used to promise TAB / R / C with nothing behind).
-	const bool bPad = VEILInput::IsGamepad();
-	Shadow(bPad
-		? TEXT("[X] speak   [A] continue   [VIEW] chart   [D-PAD LEFT] manual   [MENU] pause")
-		: TEXT("[E] speak   [SPACE] continue   [TAB] chart   [H] manual   [P] pause"),
-		FLinearColor(0.52f, 0.58f, 0.66f), PX + U * 2.2f, PY + PH - U * 1.75f, Med, 0.72f);
+	// THE KEY LIST IS GONE. At 420 x 110 the panel has no room for a permanent line of
+	// reference text, the line collided with OVERHEARD directly under it, and the field
+	// manual in the bottom right already teaches movement and the chart key. The spec for
+	// this panel is the objective, the three gauges and the level - nothing else.
+
 	// ------------------------------------------------------------------
 	// OVERHEARD. Two of them, talking to each other about the district they are
 	// standing in - not about the runner, unless the runner earned it. It fades, so
@@ -530,7 +534,7 @@ void AVEILHudCanvas::DrawHUD()
 	// the blips share one yaw, so a marker cannot lie about where a thing is.
 	// ------------------------------------------------------------------
 	{
-		const float MS = 220.f;
+		const float MS = 180.f;                   // spec: 180 x 180
 		const float MX = Canvas->ClipX - MS - 26.f, MY = 30.f;
 		const FLinearColor Gold(1.f, 0.78f, 0.3f, 0.92f);
 
