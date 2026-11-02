@@ -25,8 +25,7 @@
 #include "GameFramework/Actor.h"
 #include "VEILPhiTetraSpawner.generated.h"
 
-class UStaticMeshComponent;
-class UStaticMesh;
+class UProceduralMeshComponent;
 class UMaterialInterface;
 
 /** Which of Hark's two rules lays the tetrahedra out. */
@@ -96,11 +95,10 @@ public:
 private:
 	void BuildChain();
 
-	UPROPERTY()
-	TArray<TObjectPtr<UStaticMeshComponent>> Tetras;
-
-	UPROPERTY()
-	TObjectPtr<UStaticMesh> TetraMesh;
+	// Not a UPROPERTY on purpose: the components are owned by this actor's
+	// component list once registered, and a reflected array would force the
+	// plugin's full header into this file for nothing.
+	TArray<UProceduralMeshComponent*> Tetras;
 
 	UPROPERTY()
 	TObjectPtr<UMaterialInterface> TetraMaterial;

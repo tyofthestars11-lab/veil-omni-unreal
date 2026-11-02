@@ -2,7 +2,7 @@
 #include "VEILGolden.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/SceneComponent.h"
-#include "Engine/StaticMesh.h"
+#include "ProceduralMeshComponent.h"
 #include "Engine/World.h"
 #include "DrawDebugHelpers.h"
 #include "Materials/MaterialInterface.h"
@@ -15,11 +15,11 @@ AVEILPhiTetraSpawner::AVEILPhiTetraSpawner()
 	USceneComponent* Root = CreateDefaultSubobject<USceneComponent>(TEXT("PhiTetraRoot"));
 	SetRootComponent(Root);
 
-	// A REAL tetrahedron already in the project (Paragon travel-buff shape),
-	// never a cone standing in for one.
-	static ConstructorHelpers::FObjectFinder<UStaticMesh> TetraFinder(
-		TEXT("/Game/ParagonMinions/FX/Meshes/Shapes/SM_Travel_Tetra.SM_Travel_Tetra"));
-	if (TetraFinder.Succeeded()) { TetraMesh = TetraFinder.Object; }
+	// NO MESH ASSET. There is no tetrahedron in this project and there never was -
+	// the old link pointed at a Paragon shape that was deleted with the pack, and a
+	// constructor that names a missing package fails at CDO time on every cook. The
+	// solid is built from its own four corners in BuildChain instead: a regular
+	// tetrahedron is four points and four triangles, and it cannot go missing.
 
 	static ConstructorHelpers::FObjectFinder<UMaterialInterface> GoldFinder(
 		TEXT("/Game/PHI/Palette/M_PHI_Gold.M_PHI_Gold"));
@@ -44,11 +44,11 @@ void AVEILPhiTetraSpawner::BeginPlay()
 void AVEILPhiTetraSpawner::BuildChain()
 {
 	UWorld* World = GetWorld();
-	if (!World || !TetraMesh) { return; }
+	if (!World) { return; }
 
 	// Idempotent: OnConstruction may run more than once and a doubled chain
 	// would look like a bug in the growth.
-	for (UStaticMeshComponent* Old : Tetras)
+	for (UProceduralMeshComponent* Old : Tetras)
 	{
 		if (Old) { Old->DestroyComponent(); }
 	}
@@ -56,10 +56,51 @@ void AVEILPhiTetraSpawner::BuildChain()
 	SavedPositions.Reset();
 	SavedSizes.Reset();
 
-	// Native height of the tetra, so "size" means its real height in cm
-	// instead of a guessed scale factor.
-	const FBoxSphereBounds Bounds = TetraMesh->GetBounds();
-	const double NativeHeight = FMath::Max(1.0, (double)Bounds.BoxExtent.Z * 2.0);
+	// Native height of the tetra, so "size" means its real height in cm instead of a
+	// guessed scale factor. The solid below is authored exactly one unit tall, so
+	// the native height is 1 and the drawn size IS the scale.
+	const double NativeHeight = 1.0;
+
+	// THE SOLID, MADE HERE. Three base corners on a circle of radius 1/sqrt(2) and
+	// an apex one unit above the base plane, centred on the centroid so the actor
+	// can stand it on the ground at Spot.Z + height/2. Each face gets its own three
+	// vertices and its own normal, so the tetrahedron is faceted, not shaded like a
+	// ball. Winding is fixed against the centroid instead of trusted.
+	TArray<FVector> TetraVerts;
+	TArray<FVector> TetraNormals;
+	TArray<FVector2D> TetraUVs;
+	TArray<int32> TetraTris;
+	{
+		const double R = 0.70710678118654752;   // 1/sqrt(2): edge 1.224745, height 1
+		const double BaseZ = -0.25;
+		const double ApexZ = 0.75;
+		const FVector Corner[4] = {
+			FVector(0.0, 0.0, ApexZ),
+			FVector(R, 0.0, BaseZ),
+			FVector(-0.35355339059327376, 0.61237243569579452, BaseZ),
+			FVector(-0.35355339059327376, -0.61237243569579452, BaseZ)
+		};
+		const int32 Faces[4][3] = { {0,1,2}, {0,2,3}, {0,3,1}, {1,3,2} };
+		for (int32 f = 0; f < 4; ++f)
+		{
+			int32 I0 = Faces[f][0];
+			int32 I1 = Faces[f][1];
+			int32 I2 = Faces[f][2];
+			FVector N = FVector::CrossProduct(Corner[I1] - Corner[I0], Corner[I2] - Corner[I0]);
+			const FVector Mid = (Corner[I0] + Corner[I1] + Corner[I2]) / 3.0;
+			if (FVector::DotProduct(N, Mid) < 0.0)
+			{
+				const int32 Tmp = I1; I1 = I2; I2 = Tmp;
+				N = -N;
+			}
+			N.Normalize();
+			const int32 Start = TetraVerts.Num();
+			TetraVerts.Add(Corner[I0]); TetraVerts.Add(Corner[I1]); TetraVerts.Add(Corner[I2]);
+			TetraNormals.Add(N); TetraNormals.Add(N); TetraNormals.Add(N);
+			TetraUVs.Add(FVector2D(0.5, 1.0)); TetraUVs.Add(FVector2D(0.0, 0.0)); TetraUVs.Add(FVector2D(1.0, 0.0));
+			TetraTris.Add(Start); TetraTris.Add(Start + 1); TetraTris.Add(Start + 2);
+		}
+	}
 
 	const FVector Origin = GetActorLocation();
 
@@ -142,13 +183,15 @@ void AVEILPhiTetraSpawner::BuildChain()
 			Spot.Z += Drawn * 0.5;
 		}
 
-		UStaticMeshComponent* Tetra = NewObject<UStaticMeshComponent>(this);
+		UProceduralMeshComponent* Tetra = NewObject<UProceduralMeshComponent>(this);
 		if (!Tetra) { continue; }
 		Tetra->SetupAttachment(GetRootComponent());
-		Tetra->SetStaticMesh(TetraMesh);
+		Tetra->bUseAsyncCooking = false;
 		Tetra->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-		if (TetraMaterial) { Tetra->SetMaterial(0, TetraMaterial); }
 		Tetra->RegisterComponent();
+		Tetra->CreateMeshSection_LinearColor(0, TetraVerts, TetraTris, TetraNormals, TetraUVs,
+			TArray<FLinearColor>(), TArray<FProcMeshTangent>(), false);
+		if (TetraMaterial) { Tetra->SetMaterial(0, TetraMaterial); }
 
 		// 3. 60 degrees forward per step (the chain counts from its anchor).
 		const float YawDeg = YawStepDegrees * (float)((Rule == EPhiTetraRule::Chain60) ? Step : Index);
