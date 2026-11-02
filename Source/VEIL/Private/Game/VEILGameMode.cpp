@@ -1087,6 +1087,25 @@ void AVEILGameMode::BeginPlay()
 					}
 				}
 
+				// THE RUNNER SPAWNS AT HIS AUTHORITY ADDRESS. The Bible fixes RUNNER at
+				// 0,0,100; the search above was allowed to walk him as far as it liked, and it
+				// ended 3.2 km away to escape clutter - solving a dressing problem by moving
+				// the game. The Nest is cleared now, so the spawn is the plaza centre and the
+				// world is fixed to it, not the other way round. A seat that lands outside
+				// 8 m of the address is replaced by the address itself, on its own floor.
+				if (FVector::Dist2D(Seat, FVector::ZeroVector) > 800.f)
+				{
+					FHitResult Centre;
+					FCollisionQueryParams CentreParams = Params;
+					if (W->LineTraceSingleByChannel(Centre, FVector(0.f, 0.f, 4000.f),
+						FVector(0.f, 0.f, -4000.f), ECC_Visibility, CentreParams))
+					{
+						Seat = FVector(0.f, 0.f, Centre.ImpactPoint.Z + 98.f);
+						UE_LOG(LogVEIL, Warning, TEXT("VEIL SEAT: held to the authority spawn - runner wakes at %s, %.0f cm from 0,0."),
+							*Seat.ToCompactString(), FVector::Dist2D(Seat, FVector::ZeroVector));
+					}
+				}
+
 				Pawn->SetActorLocation(Seat, false, nullptr, ETeleportType::TeleportPhysics);
 
 				// THE FIRST FRAME POINTS AT THE FIRST OBJECTIVE. Waking with the Keeper

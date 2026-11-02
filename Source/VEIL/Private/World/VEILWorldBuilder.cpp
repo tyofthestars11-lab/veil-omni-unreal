@@ -238,6 +238,19 @@ AVEILWorldBuilder::AVEILWorldBuilder()
 	SetRootComponent(Root);
 }
 
+// THE NEST IS THE FIRST ROOM, AND IT IS CLEANED.
+//
+// The dressing passes scatter debris and crystal plates on golden angles all over the
+// district - which is right out at the beacon sites and in the wilds, and wrong inside
+// the starting area, where every piece sits in the player's first frame. This one test
+// is the boundary: inside 50 m of spawn nothing loose is placed. Authority landmarks
+// (Keeper, beacons, Vault, the Spire) are not dressing and are never refused.
+static bool VeilInNest(const FVector& At)
+{
+	static const float NestClearCm = 5000.f;
+	return FVector::Dist2D(At, FVector::ZeroVector) < NestClearCm;
+}
+
 UStaticMeshComponent* AVEILWorldBuilder::SpawnBlock(const FVector& Location,
 	const FVector& Scale, UStaticMesh* Mesh, const FLinearColor& Tint,
 	float EmissiveStrength)
@@ -263,6 +276,17 @@ UStaticMeshComponent* AVEILWorldBuilder::SpawnBlockRot(const FVector& Location,
 	// saved level - tagged as build output, so the builder did spawn it. A second load
 	// of the same engine asset is a different pointer, and an identity check cannot see
 	// it. The path can: every engine placeholder lives under /Engine/BasicShapes/.
+	// A CLEAN NEST: no loose debris inside the starting area. Refused here rather than
+	// at each call site, because every debris spawn in this file goes through this
+	// function and the call sites are added to over time.
+	if (VeilInNest(Location))
+	{
+		for (const TObjectPtr<UStaticMesh>& Piece : DebrisVariants)
+		{
+			if (Piece.Get() == Mesh) { return nullptr; }
+		}
+	}
+
 	const FString MeshPath = Mesh->GetPathName();
 	if (MeshPath.StartsWith(TEXT("/Engine/BasicShapes/")))
 	{
@@ -1906,6 +1930,10 @@ void AVEILWorldBuilder::DressPhiPalette()
 		{
 			const double CAng = Ang + 0.26;
 			const double CRad = Rad * PhiLocal * 0.86;
+			// THE BLUE PLATES WERE THE NEST'S WORST OFFENDER. A 7 x 15 m cliff shard tinted
+			// blue stands in the street like a dropped tarpaulin; inside the starting area
+			// it is refused, and the palace of gold and stone is what the player sees.
+			if (VeilInNest(FVector(FMath::Cos(CAng) * CRad, FMath::Sin(CAng) * CRad, 0.f))) { continue; }
 			// A SHARD, NOT A WAFER. These were the leaning blue plates beside the plaza:
 			// the cliff mesh scaled on Z alone. 7 m wide and 15 m tall, root on the ground.
 			Place(FVector(FMath::Cos(CAng) * CRad, FMath::Sin(CAng) * CRad, 750.f),
@@ -1918,18 +1946,27 @@ void AVEILWorldBuilder::DressPhiPalette()
 	// THE SPIRE: the district's vertical statement, stacked from the same columns.
 	if (Pillar)
 	{
+		// THE LANDMARK STANDS BESIDE THE SPAWN, NOT ON IT.
+		//
+		// The Spire was built at 0,0 - which is the authority RUNNER address. So the
+		// runner either woke inside its plinth or had to be walked 3 km out to avoid it,
+		// and I did the second, which quietly moved the game's geography to solve a
+		// dressing problem. The Bible fixes the spawn; the landmark moves instead. At
+		// 30 m east it is the tallest thing in the sky from the plaza and leaves the
+		// centre of the Nest as open ground the player can stand and walk in.
+		const FVector Spire(3000.f, 0.f, 0.f);
 		for (int32 K = 0; K < 3; ++K)
 		{
 			// Taper by the identity: 6.4 m, 4.0 m, 2.4 m across - each about 1/phi of the
 			// one below, so the stack narrows by the same law the terraces step by.
 			const float Side = 640.f / FMath::Pow((float)PhiLocal, (float)K);
-			Place(FVector(0.f, 0.f, 1400.f + K * 2600.f),
+			Place(Spire + FVector(0.f, 0.f, 1400.f + K * 2600.f),
 				ScaleForCm(Pillar, FVector(Side, Side, 2600.f)), Pillar, Gold, GoldTint, 0.8f,
 				FRotator(0.f, (float)(K * GoldenDeg), 0.f));
 		}
 		if (Glow)
 		{
-			Place(FVector(0.f, 0.f, 9400.f), ScaleForCm(Pillar, FVector(300.f, 300.f, 700.f)),
+			Place(Spire + FVector(0.f, 0.f, 9400.f), ScaleForCm(Pillar, FVector(300.f, 300.f, 700.f)),
 				Pillar, Glow, GoldTint, 3.f, FRotator::ZeroRotator);
 		}
 	}
@@ -1948,15 +1985,26 @@ void AVEILWorldBuilder::DressPhiPalette()
 		// SIT ON THE STREET THE RUNNER ACTUALLY STANDS ON, not on z=0. The plaza floor
 		// measured under the seat is at 65 cm, so paving authored at zero would be under
 		// the ground and invisible - the same mistake the seat search made in reverse.
+		// THE PROBE MUST NOT START INSIDE A ROOF. It began at z=+3000 and came back
+		// with an impact at exactly 3000 - the start was already inside geometry - and the
+		// bake laid the paving 30 m in the air. Start above everything, skip each hit that
+		// is not near the plaza floor, and take the first one that is.
 		float PaveZ = 0.5f;
 		if (UWorld* W = GetWorld())
 		{
-			FHitResult Ground;
 			FCollisionQueryParams GroundParams(SCENE_QUERY_STAT(VeilPaveProbe), false);
-			if (W->LineTraceSingleByChannel(Ground, FVector(0.f, 0.f, 3000.f),
-				FVector(0.f, 0.f, -3000.f), ECC_Visibility, GroundParams))
+			FVector From(0.f, 0.f, 60000.f);
+			for (int32 Step = 0; Step < 12; ++Step)
 			{
-				PaveZ = Ground.ImpactPoint.Z;
+				FHitResult Ground;
+				if (!W->LineTraceSingleByChannel(Ground, From, FVector(0.f, 0.f, -4000.f),
+					ECC_Visibility, GroundParams))
+				{
+					break;
+				}
+				const float HitZ = Ground.ImpactPoint.Z;
+				if (HitZ < 600.f) { PaveZ = HitZ; break; }
+				From = FVector(0.f, 0.f, HitZ - 25.f);
 			}
 		}
 		const float Module = 320.f;    // one paving stone, 3.2 m
