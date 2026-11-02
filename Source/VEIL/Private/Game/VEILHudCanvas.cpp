@@ -2,6 +2,7 @@
 #include "Game/VEILHudCanvas.h"
 #include "Game/VEILGameMode.h"
 #include "Game/VEILOSFace.h"
+#include "Game/VEILHudMockup.h"
 #include "Character/VEILCharacter.h"
 #include "Engine/Texture2D.h"
 #include "Systems/OMNIQuestSystem.h"
@@ -86,7 +87,9 @@ namespace FVeilUI
 
 	static void Glass(AHUD* H, FLinearColor Tint, float X, float Y, float W, float Ht, float R)
 	{
-		const FLinearColor Trim(1.f, 0.80f, 0.32f, 1.f);
+		// #C9A24A: the frame in the mockup is a restrained gold line, not a
+		// bright yellow stripe.
+		const FLinearColor Trim(0.788f, 0.635f, 0.290f, 1.f);
 		// halo -> trim -> body -> sheen. Four layers, so the panel has an edge
 		// that survives a bright world and a body that does not hide it.
 		RoundRect(H, FLinearColor(Trim.R, Trim.G, Trim.B, 0.07f), X - 5.f, Y - 5.f, W + 10.f, Ht + 10.f, R + 5.f);
@@ -363,9 +366,10 @@ void AVEILHudCanvas::DrawHUD()
 	const float BARX = PX + U * 2.f + 104.f;
 	const float BARW = 132.f * UPHIMito::Phi;
 
-	FVeilUI::Glass(this, FLinearColor(0.075f, 0.048f, 0.016f, 0.82f), PX, PY, PW, PH, 11.f);
-	FVeilUI::RoundRect(this, FLinearColor(1.f, 0.80f, 0.32f, 0.55f), PX + 8.f, PY + 1.f, PW - 16.f, 2.4f, 1.2f);
-	FVeilUI::RoundRect(this, FLinearColor(1.f, 0.80f, 0.32f, 0.90f), PX + 1.f, PY + 10.f, 2.6f * UPHIMito::Phi, PH - 20.f, 1.3f * UPHIMito::Phi);
+	// NAVY GLASS, GOLD LINE - the mockup's plate. #0E1424 under #C9A24A.
+	FVeilUI::Glass(this, FLinearColor(0.055f, 0.078f, 0.141f, 0.85f), PX, PY, PW, PH, 11.f);
+	FVeilUI::RoundRect(this, FLinearColor(0.788f, 0.635f, 0.290f, 0.62f), PX + 8.f, PY + 1.f, PW - 16.f, 2.4f, 1.2f);
+	FVeilUI::RoundRect(this, FLinearColor(0.788f, 0.635f, 0.290f, 0.95f), PX + 1.f, PY + 10.f, 2.6f * UPHIMito::Phi, PH - 20.f, 1.3f * UPHIMito::Phi);
 
 	// THE PHI DIAMOND AND THE LEVEL. A gold diamond, a dark diamond inside it so the
 	// glyph reads, the phi mark itself, and LV under it - the badge the vision leads with.
@@ -407,7 +411,8 @@ void AVEILHudCanvas::DrawHUD()
 		const float Pct = Pawn->MaxHealth > 0.f ? Pawn->Health / Pawn->MaxHealth : 0.f;
 		// VIT is health. The numbers stay, because "VIT 100 / 100" is the same live
 		// state the vision shows - not a bar with the truth filed off.
-		const FLinearColor Vit = Pct > 0.35f ? FLinearColor(0.98f, 0.30f, 0.24f) : FLinearColor(1.f, 0.62f, 0.20f);
+		// VIT #D9343A, STM #2FB36A - the two gradients the mockup leads with.
+		const FLinearColor Vit = Pct > 0.35f ? FLinearColor(0.851f, 0.204f, 0.227f) : FLinearColor(0.95f, 0.55f, 0.18f);
 		Bar(BARX, Y, BARW, 8.f * UPHIMito::Phi, Pct, Vit);
 		Shadow(FString::Printf(TEXT("VIT  %.0f / %.0f"), Pawn->Health, Pawn->MaxHealth),
 			FLinearColor(1.f, 0.86f, 0.70f), BARX + BARW + 10.f, Y - 2.f, Med, 0.9f);
@@ -420,7 +425,7 @@ void AVEILHudCanvas::DrawHUD()
 		const float Stam = Pawn->MaxATP > 0.f
 			? FMath::Clamp(Pawn->ATP / Pawn->MaxATP, 0.f, 1.f)
 			: 1.f;
-		Bar(BARX, Y, BARW, 8.f * UPHIMito::Phi, Stam, FLinearColor(0.36f, 0.92f, 0.52f));
+		Bar(BARX, Y, BARW, 8.f * UPHIMito::Phi, Stam, FLinearColor(0.184f, 0.702f, 0.416f));
 		Shadow(FString::Printf(TEXT("STM  %.0f / %.0f"), Pawn->ATP, Pawn->MaxATP),
 			FLinearColor(0.74f, 1.f, 0.80f), BARX + BARW + 10.f, Y - 2.f, Med, 0.9f);
 		Y += U * 1.6f;
@@ -1595,6 +1600,7 @@ void AVEILHudCanvas::DrawHUD()
 
 	// THE ONE OS rides over the world HUD in its own pass. It is a surface you
 	// raise, not more rows in the instrument, so it cannot crowd the play view.
+	VEILHudMockup::Draw(this, Canvas);
 	VEILOSFace::Draw(this, Canvas);
 }
 
