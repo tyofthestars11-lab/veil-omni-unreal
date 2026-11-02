@@ -298,10 +298,13 @@ FVector UVEILCampaignSubsystem::AnchorFor(int32 Region, int32 Slot) const
 		FVector(-4150.f, -780.f, 140.f),
 		FVector(0.f, -6200.f, 140.f)
 	};
+	// PHI EIGHT: the same country scale the concept world uses, so the marker a
+	// player is sent to and the land it stands on are the same distance away.
+	constexpr float WorldScale = 46.97871376f;
 	const int32 R = FMath::Clamp(Region, 0, 4);
 	const double Angle = FMath::DegreesToRadians(Slot * 137.50776405003785);
 	const double Radius = 700.0 + 210.0 * Slot;
-	FVector P = Anchors[R];
+	FVector P = Anchors[R] * WorldScale;
 	P.X += FMath::Cos(Angle) * Radius;
 	P.Y += FMath::Sin(Angle) * Radius;
 	return P;
@@ -322,8 +325,8 @@ void UVEILCampaignSubsystem::SpawnMarkers()
 		// Find the ground under the marker instead of trusting a constant height: the
 		// district is not flat, and a marker inside a slab is not a place.
 		FHitResult Floor;
-		const FVector From(At.X, At.Y, 30000.f);
-		const FVector To(At.X, At.Y, -4000.f);
+		const FVector From(At.X, At.Y, 400000.f);
+		const FVector To(At.X, At.Y, -40000.f);
 		if (World->LineTraceSingleByChannel(Floor, From, To, ECC_Visibility, FCollisionQueryParams::DefaultQueryParam))
 		{
 			At.Z = Floor.ImpactPoint.Z + 160.f;

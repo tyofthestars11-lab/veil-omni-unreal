@@ -15,6 +15,11 @@ namespace
 {
 	constexpr float ConceptPhi = 1.6180339887f;
 	constexpr float ConceptGoldenDeg = 137.50776405f;
+	// THE COUNTRY IS THE HUB MULTIPLIED BY PHI^8.
+	// The Bible's authority coordinates do not move; the land around them does.
+	// One exponent, applied to every exploration radius, turns a courtyard into
+	// kilometres without touching a single named character's address.
+	constexpr float ConceptWorldScale = 46.97871376f;
 
 	// The project's palette. Stone is the kit's cut stone; gold is trim and light.
 	const TCHAR* ConceptStonePath = TEXT("/Game/StarterContent/Materials/M_Brick_Cut_Stone.M_Brick_Cut_Stone");
@@ -84,6 +89,15 @@ bool AVEILConceptWorld::Build()
 	UMaterialInterface* Gold = LoadObject<UMaterialInterface>(nullptr, ConceptGoldPath);
 	UMaterialInterface* Glow = LoadObject<UMaterialInterface>(nullptr, ConceptGlowPath);
 	UMaterialInterface* Water = LoadObject<UMaterialInterface>(nullptr, ConceptWaterPath);
+
+	// THE FLOOR OF THE WORLD: the baked level only carries the hundred-metre hub,
+	// so the country gets a plate to stand on - one stone slab twelve kilometres
+	// across, top at the plaza's own ground, so every distant marker has floor.
+	{
+		const FVector FloorAt(0.f, 0.f, -14.f);
+		SpawnPiece(Cube, FloorAt, FVector(1200000.f, 1200000.f, 208.f), Stone,
+			FRotator::ZeroRotator, true);
+	}
 
 	BuildPhiPillars(Cube, Cylinder, Sphere, Gold, Stone, Glow);
 	BuildMarket(Cube, Cone, Cylinder, Gold, Stone);
@@ -278,7 +292,7 @@ void AVEILConceptWorld::BuildTerraces(UStaticMesh* Cube, UStaticMesh* Cylinder,
 	for (int32 i = 0; i < 6; ++i)
 	{
 		const float Angle = FMath::DegreesToRadians(i * ConceptGoldenDeg + 28.f);
-		const float Radius = 2600.f * FMath::Pow(ConceptPhi, i * 0.35f);
+		const float Radius = 2600.f * FMath::Pow(ConceptPhi, i * 0.35f) * ConceptWorldScale;
 		const float Drop = -220.f * i;
 		const FVector At(Plaza.X + FMath::Cos(Angle) * Radius,
 			Plaza.Y + FMath::Sin(Angle) * Radius, Drop);
@@ -311,7 +325,7 @@ void AVEILConceptWorld::BuildCrystalRange(UStaticMesh* Cone, UStaticMesh* Cylind
 	for (int32 i = 0; i < 7; ++i)
 	{
 		const float Angle = FMath::DegreesToRadians(i * ConceptGoldenDeg + 215.f);
-		const float Radius = 8000.f + 900.f * i;
+		const float Radius = (8000.f + 900.f * i) * ConceptWorldScale;
 		const FVector At(Plaza.X + FMath::Cos(Angle) * Radius,
 			Plaza.Y + FMath::Sin(Angle) * Radius, 0.f);
 		const float Height = 5000.f * FMath::Pow(ConceptPhi, (i % 3) * 0.5f);
@@ -328,7 +342,7 @@ void AVEILConceptWorld::BuildCrystalRange(UStaticMesh* Cone, UStaticMesh* Cylind
 	for (int32 i = 0; i < 20; ++i)
 	{
 		const float Angle = FMath::DegreesToRadians(i * ConceptGoldenDeg + 190.f);
-		const float Radius = 6500.f + 260.f * i;
+		const float Radius = (6500.f + 260.f * i) * ConceptWorldScale;
 		const FVector At(Plaza.X + FMath::Cos(Angle) * Radius,
 			Plaza.Y + FMath::Sin(Angle) * Radius, 0.f);
 		const float Height = 700.f * FMath::Pow(ConceptPhi, (i % 4) * 0.5f);
@@ -392,8 +406,8 @@ void AVEILConceptWorld::BuildBiomes(UStaticMesh* Cube, UStaticMesh* Cone, UStati
 	auto Ground = [W](float X, float Y, float& OutZ) -> bool
 	{
 		FHitResult Hit;
-		const FVector From(X, Y, 30000.f);
-		const FVector To(X, Y, -4000.f);
+		const FVector From(X, Y, 400000.f);
+		const FVector To(X, Y, -40000.f);
 		if (!W->LineTraceSingleByChannel(Hit, From, To, ECC_Visibility, FCollisionQueryParams::DefaultQueryParam))
 		{
 			return false;
@@ -409,7 +423,7 @@ void AVEILConceptWorld::BuildBiomes(UStaticMesh* Cube, UStaticMesh* Cone, UStati
 	for (int32 i = 0; i < 260; ++i)
 	{
 		const double Angle = FMath::DegreesToRadians(i * ConceptGoldenDeg);
-		const double Radius = 2600.0 + 62.0 * FMath::Sqrt((double)i) * 12.0;
+		const double Radius = (2600.0 + 62.0 * FMath::Sqrt((double)i) * 12.0) * ConceptWorldScale;
 		const FVector2D P(FMath::Cos(Angle) * Radius, FMath::Sin(Angle) * Radius);
 		if (Blocked(P)) { continue; }
 		float Z = 0.f;
@@ -427,7 +441,7 @@ void AVEILConceptWorld::BuildBiomes(UStaticMesh* Cube, UStaticMesh* Cone, UStati
 	for (int32 i = 0; i < 200; ++i)
 	{
 		const double Angle = FMath::DegreesToRadians(i * ConceptGoldenDeg + 41.0);
-		const double Radius = 3200.0 + 70.0 * FMath::Sqrt((double)i) * 12.0;
+		const double Radius = (3200.0 + 70.0 * FMath::Sqrt((double)i) * 12.0) * ConceptWorldScale;
 		const FVector2D P(FMath::Cos(Angle) * Radius, FMath::Sin(Angle) * Radius);
 		if (Blocked(P)) { continue; }
 		float Z = 0.f;
@@ -445,7 +459,7 @@ void AVEILConceptWorld::BuildBiomes(UStaticMesh* Cube, UStaticMesh* Cone, UStati
 	for (int32 i = 0; i < 240; ++i)
 	{
 		const double Angle = FMath::DegreesToRadians(i * ConceptGoldenDeg + 90.0);
-		const double Radius = 2800.0 + 64.0 * FMath::Sqrt((double)i) * 12.0;
+		const double Radius = (2800.0 + 64.0 * FMath::Sqrt((double)i) * 12.0) * ConceptWorldScale;
 		const FVector2D P(FMath::Cos(Angle) * Radius, FMath::Sin(Angle) * Radius);
 		if (Blocked(P)) { continue; }
 		float Z = 0.f;
@@ -473,7 +487,7 @@ void AVEILConceptWorld::BuildBiomes(UStaticMesh* Cube, UStaticMesh* Cone, UStati
 		for (int32 i = 0; i < 12; ++i)
 		{
 			const double Angle = FMath::DegreesToRadians(i * 30.0);
-			const double Radius = 2400.0 * FMath::Pow(ConceptPhi, 1.0 + (i % 3) * 0.5);
+			const double Radius = 2400.0 * FMath::Pow(ConceptPhi, 1.0 + (i % 3) * 0.5) * ConceptWorldScale;
 			const FVector2D P(FMath::Cos(Angle) * Radius, FMath::Sin(Angle) * Radius);
 			float Z = 0.f;
 			if (!Ground(P.X, P.Y, Z)) { continue; }

@@ -2,8 +2,10 @@ import math
 
 PHI = 1.618033988749895
 GA = 137.50776405
+WORLD_SCALE = 46.97871376
 PLAZA = (0.0, 0.0)
-ANCH = [(0, 0), (-450, 780), (2800, 500), (-4150, -780), (0, -6200)]
+ANCH = [(x * WORLD_SCALE, y * WORLD_SCALE) for (x, y) in
+        [(0, 0), (-450, 780), (2800, 500), (-4150, -780), (0, -6200)]]
 REG = ["THE HUB", "THE NEST", "THE SPIRE", "OMNI DISTRICT", "THE DEEP"]
 KINDS = ["kills", "fragments", "voices", "caches", "waves", "beacons"]
 STEPS = {
@@ -61,7 +63,7 @@ def ev(name, secs, why):
 ev("ACT I   count at the Keeper", 60 + 900 / WALK, "walk 9 m to the Keeper beacon, forge it")
 ev("ACT II  three fragments", 3 * (ACTION["fragments"] + 1800 / WALK), "recover the three fragments of the voice")
 ev("ACT III the Seer", 40 + 1200 / WALK, "walk the shelf, hear the ash read")
-ev("ACT IV  the cache", 40 + 6200 / WALK + ACTION["caches"], "cross the district to the survey cache")
+ev("ACT IV  the cache", 40 + 6200 * WORLD_SCALE / WALK + ACTION["caches"], "cross the district to the survey cache")
 ev("ACT V   the Warden", 5 * ACTION["waves"] + 120, "hold five waves, put WARDEN PRIME down")
 ev("ACT VI  the last beacon", 60 + 2400 / WALK, "light the final beacon - THE SIGNAL IS WHOLE")
 for at, name, why in events:
