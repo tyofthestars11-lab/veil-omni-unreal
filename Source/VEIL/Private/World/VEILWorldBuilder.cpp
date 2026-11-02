@@ -2051,18 +2051,21 @@ void AVEILWorldBuilder::DressRegions()
 	for (int32 i = 0; i < 9; ++i)
 	{
 		const double Ang = FMath::DegreesToRadians(180.0 + i * GoldenDeg * 0.5);
-		const double Rad = 3200.0 + i * 260.0;
+		// THE NEST IS A PLACE YOU WALK TO, NOT A WALL AT THE SPAWN. At 32 m the first
+		// shelf's inner face stood 15 m from the plaza and every standing frame was
+		// blue rock on three sides. 62 m out, 26 m wide: nearest face 49 m away, so the
+		// plaza stays open and the cliffs still read from it.
+		const double Rad = 6200.0 + i * 320.0;
 		const FVector At(FMath::Cos(Ang) * Rad, FMath::Sin(Ang) * Rad, 0.f);
 		const float Height = 700.f + i * 210.f;
-		// The shelf, measured: 34 m of rock, exactly Height tall.
-		Solid(At, FVector(3400.f, 3400.f, Height), Rock, Blue, BlueC, 0.12f,
+		Solid(At, FVector(2600.f, 2600.f, Height), Rock, Blue, BlueC, 0.12f,
 			(float)(i * GoldenDeg));
 		++Nest;
 		if (i % 3 == 0)
 		{
 			// A waterfall is water standing in air: one sheet from the shelf top to the
 			// ground, lit from inside so it reads at distance.
-			Solid(At + FVector(340.f, 0.f, 0.f), FVector(10.f, 1100.f, Height), Slab, Glow,
+			Solid(At + FVector(200.f, 0.f, 0.f), FVector(10.f, 900.f, Height), Slab, Glow,
 				IceC, 0.9f, 0.f);
 			++Nest;
 		}
