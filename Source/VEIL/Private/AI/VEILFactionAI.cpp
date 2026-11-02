@@ -253,8 +253,9 @@ void AVEILFactionAgent::Tick(float DeltaSeconds)
 	const bool bSanctuary = Runner && UPHIMito::IsInsideSanctuary(Runner->GetActorLocation());
 	if (bSanctuary || (GetWorld() && GetWorld()->GetTimeSeconds() < StandDownUntil))
 	{
-		// Holding station is not standing still: the guard walks its ring.
-		OrbitHome();
+		// HOLDING STATION MEANS STANDING ON IT. The guard used to walk a ring the whole
+		// time it was on duty, so no agent in the district ever stopped moving.
+		HoldPost();
 		return;
 	}
 
@@ -309,14 +310,39 @@ void AVEILFactionAgent::OrbitHome()
 	}
 }
 
+void AVEILFactionAgent::HoldPost()
+{
+	if (AAIController* AIC = Cast<AAIController>(GetController()))
+	{
+		AIC->StopMovement();
+	}
+	// Face the plaza, not the nearest wall: the runner approaches from the centre, and a
+	// guard that watches the square reads as posted rather than switched off.
+	const FVector ToPlaza = FVector::ZeroVector - GetActorLocation();
+	if (ToPlaza.SizeSquared2D() > 100.f)
+	{
+		SetActorRotation(FRotator(0.f, ToPlaza.Rotation().Yaw, 0.f));
+	}
+	// One line per post, once: proof that the ring is gone rather than merely quiet.
+	if (!bLoggedPost)
+	{
+		bLoggedPost = true;
+		UE_LOG(LogVEIL, Log, TEXT("PHI POST: %s holds its post at %s, watching the plaza."),
+			*GetActorNameOrLabel(), *GetActorLocation().ToCompactString());
+	}
+}
+
 void AVEILFactionAgent::ActPatrol()
 {
 	AAIController* AIC = Cast<AAIController>(GetController());
 	if (!AIC) return;
-	// No patrol points placed in the district: walk the machine's own ring.
+	// NO RING WHEN THERE IS NOBODY TO WALK TO. This used to call OrbitHome(), which put
+	// every agent in the district on a circle around its own home point, forever - the
+	// thing that reads as NPCs running in circles. A post is a place somebody keeps: the
+	// agent stands on it and watches the plaza, and only moves when it is hunting.
 	if (PatrolPoints.Num() == 0)
 	{
-		OrbitHome();
+		HoldPost();
 		return;
 	}
 	if (GetVelocity().SizeSquared2D() > 100.f) return; // still travelling to the current point (UE 5.8: EPathFollowingStatus has no 'Moving' member)

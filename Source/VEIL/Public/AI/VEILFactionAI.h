@@ -87,6 +87,14 @@ public:
 	 *  is a statue, and a station is not a home unless someone walks it. */
 	void OrbitHome();
 
+	/** Hold the post: stop moving, watch the plaza, stay there. The ring is gone -
+	 *  every agent used to walk a circle around its own home point for the whole
+	 *  session, which is what read as NPCs running in circles. */
+	void HoldPost();
+
+	/** One-shot guard: the post is logged once per agent, not every frame. */
+	bool bLoggedPost = false;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "VEIL|Faction")
 	EVEILFaction Faction = EVEILFaction::Void;
 
