@@ -1369,7 +1369,21 @@ void AVEILCharacter::HoldGoldenCamera(float DeltaSeconds)
 			// 40 cm floor keeps the lens out of the geometry even in a corner too
 			// tight to hold a full third-person arm.
 			const float Skin = 12.f * UPHIMito::Phi;
-			AllowedLength = FMath::Min(AllowedLength, FMath::Max(Wall.Distance - Skin, 40.f));
+			// THE FLOOR OF THIS CLAMP WAS 40 CM, AND 40 CM IS INSIDE THE RUNNER. In
+			// the plaza the probe hits dense carved stone a few centimetres behind the
+			// body, so every frame was shot from inside his back at ankle height: the
+			// opening picture was a wall of gold with no runner in it. The standoff the
+			// code already believes in - 420/phi^2 = 160.4 cm - is the floor here too.
+			// A tight corner now shows some stone at the edge of the frame, which is
+			// what a real third-person camera does, instead of showing nothing.
+			const float Standoff = 420.f / (UPHIMito::Phi * UPHIMito::Phi);
+			const float Clamped = FMath::Max(Wall.Distance - Skin, Standoff);
+			if (Clamped < AllowedLength)
+			{
+				UE_LOG(LogVEIL, Verbose, TEXT("PHI CAMERA: wall at %.0f cm behind - arm held at %.0f cm, not inside the body."),
+					Wall.Distance, Clamped);
+			}
+			AllowedLength = FMath::Min(AllowedLength, Clamped);
 		}
 	}
 

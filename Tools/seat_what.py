@@ -18,7 +18,7 @@
 import math
 import unreal
 
-SEAT = unreal.Vector(-512.05, -90.57, 598.0)
+SEAT = unreal.Vector(-317.06, -610.47, 119.09)
 CENTRE = unreal.Vector(0.0, 0.0, 300.0)
 RADIUS = 2500.0
 

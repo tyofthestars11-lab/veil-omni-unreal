@@ -861,6 +861,14 @@ void AVEILGameMode::BeginPlay()
 					}
 				}
 
+				// AUTHORED SPOTS FIRST. Two rounds of tuning the spiral still produced a
+				// bad opening frame - once on a roof, once wedged against a gold column -
+				// so the seat no longer depends on a search. These five points are on the
+				// plaza approach the region tour already walks, and the first one with
+				// real ground, standing room and nine clear metres toward the Keeper is
+				// where the runner wakes. The spiral stays underneath as the fallback it
+				// always was, for the case where the district changes and none of these
+				// five is open any more.
 				FVector Seat = Plaza;
 				FVector Fallback = FVector::ZeroVector;
 				bool bRoom = false;
@@ -871,8 +879,39 @@ void AVEILGameMode::BeginPlay()
 				// capsule could stand in it - so the spiral steps out three phi rings,
 				// 260 / 620 / 1300 cm per step, up to 36 m. The runner wakes in the
 				// first open ground the world actually has, at road scale if needed.
+				if (!bRoom)
+				{
+					const FVector Spots[] = {
+						FVector(900.f, -1500.f, Plaza.Z), FVector(-900.f, -1500.f, Plaza.Z),
+						FVector(0.f, -1800.f, Plaza.Z), FVector(1400.f, -900.f, Plaza.Z),
+						FVector(-1400.f, -900.f, Plaza.Z) };
+					for (const FVector& Spot : Spots)
+					{
+						FHitResult Floor;
+						if (!W->LineTraceSingleByChannel(Floor, Spot + FVector(0.f, 0.f, 4000.f),
+							Spot - FVector(0.f, 0.f, 4000.f), ECC_Visibility, Params)) { continue; }
+						if (Floor.ImpactPoint.Z > Plaza.Z + 40.f) { continue; }
+						const FVector Stand(Floor.ImpactPoint.X, Floor.ImpactPoint.Y,
+							Floor.ImpactPoint.Z + 98.f);
+						FCollisionQueryParams SpotParams = Params;
+						SpotParams.AddIgnoredActor(Floor.GetActor());
+						if (W->OverlapBlockingTestByChannel(Stand, FQuat::Identity, ECC_Pawn,
+							FCollisionShape::MakeCapsule(Roomy, 96.f), SpotParams)) { continue; }
+						FHitResult Ahead;
+						const FVector Eye = Stand + FVector(0.f, 0.f, 60.f);
+						if (W->LineTraceSingleByChannel(Ahead, Eye, Eye + FVector(0.f, -900.f, 0.f),
+							ECC_Visibility, SpotParams)) { continue; }
+						Seat = Stand;
+						bRoom = true;
+						UE_LOG(LogVEIL, Log, TEXT("VEIL SEAT: authored spot %s is open - runner wakes at %s."),
+							*Spot.ToCompactString(), *Stand.ToCompactString());
+						break;
+					}
+				}
+
 				for (float StepCm : { 260.f, 620.f, 1300.f })
 				{
+					if (bRoom) { break; }
 				for (int32 i = 1; i <= 34; ++i)
 				{
 					const float Ang = FMath::DegreesToRadians(i * GAngleDeg);
@@ -894,7 +933,11 @@ void AVEILGameMode::BeginPlay()
 					// him into mid-air at z=440). The roof has to be taken out of the query:
 					// the actor is added to the ignore list the first time it is seen, and the
 					// next trace reaches the ground underneath it.
-					if (Floor.ImpactPoint.Z > Plaza.Z + 150.f)
+					// GROUND, NOT A TERRACE. Plaza level is the floor the district is
+					// built on; a hit a hundred centimetres above it is a terrace lip, and
+					// the seat that accepted one woke him at z=445 - in the air again. A
+					// step and a half is the whole tolerance.
+					if (Floor.ImpactPoint.Z > Plaza.Z + 40.f)
 					{
 						if (AActor* RoofActor = Floor.GetActor())
 						{
@@ -930,6 +973,24 @@ void AVEILGameMode::BeginPlay()
 					// Room to swing the arm, not merely room to stand.
 					if (W->OverlapBlockingTestByChannel(Stand, FQuat::Identity, ECC_Pawn,
 						FCollisionShape::MakeCapsule(Roomy, 96.f), StandParams)) { continue; }
+
+					// A CLEAR ARM IS NOT A CLEAR VIEW. The seat passed every capsule test
+					// while the opening frame was a wall of gold - the runner stood at the
+					// base of SM_AncientColumn_Big, so the camera sat inside the column and
+					// the quest line pointed at nothing visible. Standing room is not
+					// enough: nine metres ahead at eye height, toward the Keeper the quest
+					// names, has to be open, or the walk moves on to the next candidate.
+					{
+						FHitResult Ahead;
+						FCollisionQueryParams ViewParams = StandParams;
+						const FVector Eye = Stand + FVector(0.f, 0.f, 60.f);
+						if (W->LineTraceSingleByChannel(Ahead, Eye, Eye + FVector(0.f, -900.f, 0.f),
+							ECC_Visibility, ViewParams))
+						{
+							++Blocked;
+							continue;
+						}
+					}
 
 					Seat = Stand;
 					bRoom = true;
