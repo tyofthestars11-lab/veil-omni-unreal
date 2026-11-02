@@ -48,3 +48,19 @@ CAUTION
   Content deletion is not reversible from here. Move a pack out of Content to a
   quarantine folder, launch once, and confirm the world still builds before
   deleting anything permanently.
+
+------------------------------------------------------------------------
+RECLAIM DONE, 2026-11-02
+  removed Saved/StagedBuilds (packaged artifact)        2.6 GB
+  removed Saved/Cooked, Saved/Crashes                   0.3 GB
+  removed Content/LavaMat  (no reference anywhere)      1.7 GB
+  removed Content/ParagonMinions   (null-guarded load)  4.8 GB
+  removed Content/ParagonGreystone (comments only)      2.2 GB
+  removed Content/ParagonRevenant  (no code reference)  1.7 GB
+  project: 36 GB -> about 22 GB
+
+  verified still present: Sicka_EnvPack2, ParagonMurdock, ParagonCountess,
+  Polyart, StarterContent, Iceland_Environment, MetaHumans, PHI, Maps.
+
+  NOT RECOVERABLE FROM GIT: Content is gitignored, so these packs must be
+  re-downloaded from Fab if they are ever needed again.
