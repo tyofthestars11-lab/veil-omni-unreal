@@ -38,6 +38,14 @@ public:
 	 * Raise the deck, the ring, the pillars, the Spire, the beacon shafts and the water.
 	 * Builds once; safe to call again. Returns false only if the engine shapes are missing.
 	 */
+	/**
+	 * Hide every actor whose bounds sit overhead within thirty metres of the plaza
+	 * and strip its collision. Returns how many lids were opened. Public and static
+	 * so the game mode can call it BEFORE the seat probe, which otherwise refuses a
+	 * roofed plaza centre and wakes the runner kilometres out.
+	 */
+	static int32 OpenSky(UWorld* World);
+
 	bool BuildSanctum();
 
 	/** The height the deck was raised to, in cm. Valid after BuildSanctum(). */

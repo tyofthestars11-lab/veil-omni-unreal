@@ -278,6 +278,13 @@ void AVEILGameMode::ApplyPhiGrade()
 
 void AVEILGameMode::BeginPlay()
 {
+	// OPEN THE SKY BEFORE ANYONE IS SEATED.
+	//
+	// The seat probe refuses a plaza whose centre is roofed and wakes the runner
+	// 2,235 cm out on the golden angle, so the sweep runs first or the front door
+	// of the game is a ceiling in a side street.
+	const int32 LidsOpened = AVEILNestSanctum::OpenSky(GetWorld());
+	UE_LOG(LogVEIL, Warning, TEXT("PHI SKY: %d lid(s) opened before seating."), LidsOpened);
 	Super::BeginPlay();
 	UE_LOG(LogTemp, Display, TEXT("PHI GAMEMODE ALIVE: %s paused=%d"), *GetClass()->GetName(), UGameplayStatics::IsGamePaused(GetWorld()) ? 1 : 0);
 

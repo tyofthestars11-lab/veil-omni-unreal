@@ -143,9 +143,9 @@ namespace
 	// inside 1,150 cm of the plaza centre, wider than 600 cm on both axes.
 	// The market ring stands outside that disc, so its rooftops stay.
 	// ------------------------------------------------------------------
-	void ClearOverheadSlabs(UWorld* World, AActor* Keeper)
+	int32 ClearOverheadSlabs(UWorld* World, AActor* Keeper)
 	{
-		if (!World) { return; }
+		if (!World) { return 0; }
 		int32 Opened = 0;
 		AActor* Biggest = nullptr;
 		float BiggestTop = 0.f;
@@ -172,7 +172,12 @@ namespace
 		UE_LOG(LogVEIL, Warning,
 			TEXT("PHI SKY: %d slab(s) overhead opened - hidden, collision off, highest at Z=%.0f (%s)."),
 			Opened, BiggestTop, Biggest ? *Biggest->GetName() : TEXT("none"));
+		return Opened;
 	}
+}
+int32 AVEILNestSanctum::OpenSky(UWorld* World)
+{
+	return ClearOverheadSlabs(World, nullptr);
 }
 
 bool AVEILNestSanctum::BuildSanctum()
