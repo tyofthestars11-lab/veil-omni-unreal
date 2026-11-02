@@ -1,9 +1,8 @@
 // VEIL OMNI // ONE OS - engine implementation.
 //
-// The reversal: the interface does not print the game's numbers, it reads them
-// as rungs. rung(v) = log_phi(v). Every surface is an address, every address
-// answers, every answer is written to a ledger, and the automations fire on a
-// CHANGE - never per frame, so a clean log stays clean.
+// domains (rung fields) -> tasks (addresses) -> skills (round-tripped rungs)
+// -> automations (on change) -> memory (phi ledger), walked by a voice door of
+// Brain / Eyes / Seat / Hands: plan, review, execute.
 #include "Systems/VEILOS.h"
 
 #include "Character/VEILCharacter.h"
@@ -36,19 +35,30 @@ bool UVEILOS::DoesSupportWorldType(const EWorldType::Type WorldType) const
 
 double UVEILOS::Rung(double Value)
 {
-	return Value > KINDA_SMALL_NUMBER ? (double)FMath::Loge((float)Value) / (double)FMath::Loge((float)OsPhi) : 0.0;
+	return Value > KINDA_SMALL_NUMBER
+		? (double)FMath::Loge((float)Value) / (double)FMath::Loge((float)OsPhi)
+		: 0.0;
 }
 
-const TArray<FString>& UVEILOS::AddressBook()
+const TArray<FString>& UVEILOS::TaskAddresses()
 {
-	// Three read-only skills. The save verb lives beside them but is not
-	// round-tripped at boot: a self-test must never write the player's run.
 	static const TArray<FString> Book =
 	{
-		TEXT("veil://os/status"),
-		TEXT("veil://os/who"),
-		TEXT("veil://os/alloff"),
-		TEXT("veil://os/save"),
+		TEXT("veil://task/status"),
+		TEXT("veil://task/who"),
+		TEXT("veil://task/save"),
+		TEXT("veil://task/alloff"),
+	};
+	return Book;
+}
+
+const TArray<FString>& UVEILOS::SkillAddresses()
+{
+	static const TArray<FString> Book =
+	{
+		TEXT("veil://skill/vitals"),
+		TEXT("veil://skill/wealth"),
+		TEXT("veil://skill/progress"),
 	};
 	return Book;
 }
@@ -60,50 +70,78 @@ void UVEILOS::OnWorldBeginPlay(UWorld& InWorld)
 {
 	Super::OnWorldBeginPlay(InWorld);
 
-	// phi^2 = phi + 1, on every boot. The whole face is a function of it.
+	// phi^2 = phi + 1, on every boot. The face is a function of it.
 	const double Residue = FMath::Abs(OsPhiSq - (OsPhi + 1.0));
 	UE_LOG(LogVEIL, Log, TEXT("PHI OS: phi^2 - (phi + 1) = %.3e, checked within 1e-6."), Residue);
 
-	RefreshFields();
-	RoundTripSkills();
-	Say(TEXT("OS online. Ask, and I answer with the engine's own numbers."));
-	AppendLedger(TEXT("veil://os/boot"), FString::Printf(
-		TEXT("engine up - %d rung fields, %d of %d skills round-tripped"),
-		RungFields.Num(), SkillsRoundTripped, SkillsTotal));
+	TaskList.Reset();
+	for (const FString& Addr : TaskAddresses())
+	{
+		FVEILOSTask T;
+		T.Address = Addr;
+		// The verb is the LAST segment: "veil://task/save" -> "save". Chopping at
+		// the first slash leaves "/task/save", and a name that lies about itself
+		// is exactly how the skills below reported 0 of 3 round-tripped.
+		FString VerbTail;
+		Addr.Split(TEXT("/"), nullptr, &VerbTail, ESearchCase::IgnoreCase, ESearchDir::FromEnd);
+		T.Verb = VerbTail;
+		T.State = TEXT("queued");
+		TaskList.Add(T);
+	}
 
-	UE_LOG(LogVEIL, Warning, TEXT("PHI OS ONLINE: %d addresses, %d skills round-tripped, ledger armed, automations on change."),
-		AddressBook().Num(), SkillsRoundTripped);
+	SkillList.Reset();
+	for (const FString& Addr : SkillAddresses())
+	{
+		FVEILOSSkill S;
+		S.Address = Addr;
+		// Same slice: the skill's name is its last segment, so the round trip
+		// compares the right value against the right recomputation.
+		FString NameTail;
+		Addr.Split(TEXT("/"), nullptr, &NameTail, ESearchCase::IgnoreCase, ESearchDir::FromEnd);
+		S.Name = NameTail;
+		SkillList.Add(S);
+	}
+
+	RefreshDomains();
+	RoundTripSkills();
+	Say(TEXT("OS online. Domains sampled, tasks armed, skills round-tripped."));
+	AppendLedger(TEXT("veil://os/boot"), FString::Printf(
+		TEXT("%d domains, %d tasks, %d skills (%d/%d round-tripped), ledger armed"),
+		DomainFields.Num(), TaskList.Num(), SkillList.Num(), SkillsRoundTripped, SkillsTotal));
+
+	UE_LOG(LogVEIL, Warning,
+		TEXT("PHI OS ONLINE: %d domains (rung fields), %d task addresses, %d skills %d/%d round-tripped."),
+		DomainFields.Num(), TaskList.Num(), SkillList.Num(), SkillsRoundTripped, SkillsTotal);
 
 	if (FParse::Param(FCommandLine::Get(), TEXT("phios")))
 	{
-		FTimerHandle OpenHandle, ShotHandle, CloseHandle;
+		FTimerHandle PlanHandle, ShotHandle, CloseHandle;
 
-		// ANSWER. The face opens and asks the engine two questions.
-		GetWorld()->GetTimerManager().SetTimer(OpenHandle, FTimerDelegate::CreateWeakLambda(this, [this]()
+		// PLAN -> REVIEW -> EXECUTE, on the M1 ask: the run must persist.
+		GetWorld()->GetTimerManager().SetTimer(PlanHandle, FTimerDelegate::CreateWeakLambda(this, [this]()
 		{
 			Open();
-			AskStatus();
-			AskSave();
-			UE_LOG(LogVEIL, Warning, TEXT("PHI OS PROOF: answered '%s' -> '%s'"), *LastAnswerAddress, *LastAnswerText);
+			Plan(TEXT("persist the run"));
+			Review();
+			Execute();
+			UE_LOG(LogVEIL, Warning, TEXT("PHI OS M1: %s"), *M1Line());
 		}), 6.0f, false);
 
-		// SHOW IT. The frame is written from inside the running game.
 		GetWorld()->GetTimerManager().SetTimer(ShotHandle, FTimerDelegate::CreateWeakLambda(this, [this]()
 		{
 			if (APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0))
 			{
 				PC->ConsoleCommand(TEXT("HighResShot 1920x1080"), true);
 				++ProofShots;
-				UE_LOG(LogVEIL, Warning, TEXT("PHI OS PROOF: frame written with the interface answering on screen."));
+				UE_LOG(LogVEIL, Warning, TEXT("PHI OS PROOF: frame written with the door open and the answer on screen."));
 			}
 		}), 9.0f, false);
 
-		// SAY WHAT HAPPENED, then close the game.
 		GetWorld()->GetTimerManager().SetTimer(CloseHandle, FTimerDelegate::CreateWeakLambda(this, [this]()
 		{
 			WriteLedgerFile();
-			UE_LOG(LogVEIL, Warning, TEXT("PHI OS PROOF: %s | ledger %d | last '%s' -> '%s'"),
-				*ObservabilityLine(), LedgerMemory.Num(), *LastAnswerAddress, *LastAnswerText);
+			UE_LOG(LogVEIL, Warning, TEXT("PHI OS PROOF: %s | memory %d | hands '%s'"),
+				*ObservabilityLine(), LedgerMemory.Num(), *PlanState.Result);
 			if (APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0))
 			{
 				PC->ConsoleCommand(TEXT("quit"));
@@ -113,26 +151,94 @@ void UVEILOS::OnWorldBeginPlay(UWorld& InWorld)
 }
 
 // ---------------------------------------------------------------------------
-// FACE STATE
+// VOICE DOOR: BRAIN -> EYES -> SEAT -> HANDS
 // ---------------------------------------------------------------------------
-void UVEILOS::Toggle() { bOpen = !bOpen; }
-
-void UVEILOS::Open()
+void UVEILOS::Plan(const FString& Intent)
 {
-	bOpen = true;
-	RefreshFields();
-	AppendLedger(TEXT("veil://os/open"), TEXT("face raised"));
-	Say(TEXT("I am here. The face is up."));
+	PlanState = FVEILOSPlan();
+	PlanState.Intent = Intent;
+	PlanState.T = GetWorld() ? (double)GetWorld()->GetTimeSeconds() : 0.0;
+
+	RefreshDomains();
+
+	// BRAIN builds the steps out of the domains it just read - not out of a
+	// script. A domain that is missing changes the plan.
+	PlanState.Steps.Add(TEXT("brain  read domains"));
+	for (const FVEILOSDomain& D : DomainFields)
+	{
+		PlanState.Steps.Add(FString::Printf(TEXT("brain  %s %.0f r%.2f"), *D.Key, D.Value, D.Rung));
+	}
+	PlanState.Steps.Add(TEXT("eyes   resolve the verb to an address"));
+	PlanState.Steps.Add(TEXT("seat   name where the runner stands"));
+	PlanState.Steps.Add(TEXT("hands  veil://task/save"));
+
+	AppendLedger(TEXT("veil://brain/plan"), FString::Printf(
+		TEXT("'%s' - %d steps drafted"), *Intent, PlanState.Steps.Num()));
+	Say(FString::Printf(TEXT("Plan drafted for %s. Sending it to the eyes."), *Intent));
 }
 
-void UVEILOS::Close()
+bool UVEILOS::Review()
 {
-	bOpen = false;
-	AppendLedger(TEXT("veil://os/close"), TEXT("face lowered"));
+	bool bOk = true;
+	FString Note;
+
+	for (const FString& Step : PlanState.Steps)
+	{
+		if (!Step.StartsWith(TEXT("hands"))) { continue; }
+		const FString Addr = Step.RightChop(Step.Find(TEXT("veil://")));
+		if (!TaskAddresses().Contains(Addr))
+		{
+			bOk = false;
+			Note = FString::Printf(TEXT("no task at %s"), *Addr);
+		}
+		else
+		{
+			Note = FString::Printf(TEXT("%s resolves"), *Addr);
+		}
+	}
+
+	PlanState.bReviewed = bOk;
+	PlanState.ReviewNote = bOk ? FString::Printf(TEXT("approved - %s"), *Note)
+		: FString::Printf(TEXT("refused - %s"), *Note);
+
+	AppendLedger(TEXT("veil://eyes/review"), PlanState.ReviewNote);
+	Say(PlanState.bReviewed ? TEXT("Eyes: approved. Standing by.") : TEXT("Eyes: refused. I will not run that."));
+	return bOk;
+}
+
+FString UVEILOS::Execute()
+{
+	if (!PlanState.bReviewed)
+	{
+		PlanState.Result = TEXT("refused - plan was never reviewed");
+		AppendLedger(TEXT("veil://hands/execute"), PlanState.Result);
+		return PlanState.Result;
+	}
+
+	// SEAT first: where did this happen. An action with no place is a rumour.
+	PlanState.Seat = MapLine();
+	AppendLedger(TEXT("veil://seat/here"), PlanState.Seat);
+
+	// HANDS: the real verb, through the same Dispatch the face uses.
+	PlanState.Result = Dispatch(TEXT("veil://task/save"));
+	Say(PlanState.Result);
+	AppendLedger(TEXT("veil://hands/execute"), PlanState.Result);
+	return PlanState.Result;
+}
+
+FString UVEILOS::GateLine() const
+{
+	const bool bPlanned = PlanState.Steps.Num() > 0;
+	return FString::Printf(
+		TEXT("BRAIN %s   EYES %s   SEAT %s   HANDS %s"),
+		bPlanned ? TEXT("planned") : TEXT("idle"),
+		PlanState.bReviewed ? TEXT("approved") : (bPlanned ? TEXT("waiting") : TEXT("-")),
+		PlanState.Seat.IsEmpty() ? (bPlanned ? TEXT("named at execute") : TEXT("-")) : TEXT("named"),
+		PlanState.Result.IsEmpty() ? TEXT("-") : TEXT("done"));
 }
 
 // ---------------------------------------------------------------------------
-// ENGINE
+// READS
 // ---------------------------------------------------------------------------
 void UVEILOS::Tick(float DeltaSeconds)
 {
@@ -140,17 +246,17 @@ void UVEILOS::Tick(float DeltaSeconds)
 	UWorld* World = GetWorld();
 	if (!World) { return; }
 
-	// A quarter-second sample: fast enough to feel live, slow enough that the
+	// A quarter-second sample: live enough to feel, slow enough that the
 	// automations below run on CHANGE rather than on every frame.
-	const double Now = World->GetTimeSeconds();
+	const double Now = (double)World->GetTimeSeconds();
 	if (Now - LastSample < 0.25) { return; }
 	LastSample = Now;
 
-	RefreshFields();
+	RefreshDomains();
 	RunAutomations();
 }
 
-void UVEILOS::RefreshFields()
+void UVEILOS::RefreshDomains()
 {
 	UWorld* World = GetWorld();
 	if (!World) { return; }
@@ -158,22 +264,22 @@ void UVEILOS::RefreshFields()
 	const AVEILCharacter* Runner = Cast<AVEILCharacter>(UGameplayStatics::GetPlayerPawn(this, 0));
 	const UOMNIQuestSystem* Quest = World->GetSubsystem<UOMNIQuestSystem>();
 
-	RungFields.Reset();
+	DomainFields.Reset();
 	auto Add = [this](const TCHAR* Key, const TCHAR* Addr, double V)
 	{
-		FVEILOSRungField F;
-		F.Key = Key;
-		F.Address = Addr;
-		F.Value = V;
-		F.Rung = Rung(V);
-		RungFields.Add(F);
+		FVEILOSDomain D;
+		D.Key = Key;
+		D.Address = Addr;
+		D.Value = V;
+		D.Rung = Rung(V);
+		DomainFields.Add(D);
 	};
 
-	Add(TEXT("VIT"), TEXT("veil://field/vit"), Runner ? (double)Runner->Health : 0.0);
-	Add(TEXT("ATP"), TEXT("veil://field/atp"), Runner ? (double)Runner->ATP : 0.0);
-	Add(TEXT("GOLD"), TEXT("veil://field/gold"), Quest ? (double)Quest->Gold : 0.0);
-	Add(TEXT("LEVEL"), TEXT("veil://field/level"), Quest ? (double)Quest->Level : 0.0);
-	Add(TEXT("BEACON"), TEXT("veil://field/beacons"), Quest ? (double)Quest->ClaimedBeacons.Num() : 0.0);
+	Add(TEXT("VIT"), TEXT("veil://domain/vit"), Runner ? (double)Runner->Health : 0.0);
+	Add(TEXT("ATP"), TEXT("veil://domain/atp"), Runner ? (double)Runner->ATP : 0.0);
+	Add(TEXT("GOLD"), TEXT("veil://domain/gold"), Quest ? (double)Quest->Gold : 0.0);
+	Add(TEXT("LEVEL"), TEXT("veil://domain/level"), Quest ? (double)Quest->Level : 0.0);
+	Add(TEXT("BEACON"), TEXT("veil://domain/beacon"), Quest ? (double)Quest->ClaimedBeacons.Num() : 0.0);
 }
 
 void UVEILOS::RunAutomations()
@@ -189,31 +295,33 @@ void UVEILOS::RunAutomations()
 	const int32 Beacons = Quest ? Quest->ClaimedBeacons.Num() : 0;
 	const int32 Level = Quest ? Quest->Level : 1;
 
-	// ON CHANGE ONLY. Each rule compares the sample with the previous one, so a
-	// still world writes nothing at all.
+	// ON CHANGE ONLY. A still world writes nothing at all.
 	if (PrevGold >= 0.0 && !FMath::IsNearlyEqual(Gold, PrevGold))
 	{
 		++Automations;
-		AppendLedger(TEXT("veil://auto/gold"), FString::Printf(
-			TEXT("gold %.0f -> %.0f, rung %.3f"), PrevGold, Gold, Rung(FMath::Max(1.0, Gold))));
-		Say(FString::Printf(TEXT("Gold is %.0f now."), Gold));
+		LastAutomation = FString::Printf(TEXT("gold %.0f -> %.0f"), PrevGold, Gold);
+		AppendLedger(TEXT("veil://auto/gold"), FString::Printf(TEXT("%s, r%.2f"), *LastAutomation, Rung(FMath::Max(1.0, Gold))));
+		Say(FString::Printf(TEXT("Gold is %.0f."), Gold));
 	}
 	if (PrevHealth >= 0.0 && Health < 35.0 && PrevHealth >= 35.0)
 	{
 		++Automations;
+		LastAutomation = TEXT("vitals under 35");
 		AppendLedger(TEXT("veil://auto/vitals"), TEXT("vitals under 35 - the voice rises"));
 		Say(TEXT("Vitals critical. The signal is thinning."));
 	}
 	if (PrevBeacons >= 0 && Beacons != PrevBeacons)
 	{
 		++Automations;
-		AppendLedger(TEXT("veil://auto/beacon"), FString::Printf(TEXT("beacons %d -> %d"), PrevBeacons, Beacons));
+		LastAutomation = FString::Printf(TEXT("beacons %d -> %d"), PrevBeacons, Beacons);
+		AppendLedger(TEXT("veil://auto/beacon"), LastAutomation);
 		Say(FString::Printf(TEXT("Beacon %d of 3 responds."), Beacons));
 	}
 	if (PrevLevel >= 0 && Level != PrevLevel)
 	{
 		++Automations;
-		AppendLedger(TEXT("veil://auto/level"), FString::Printf(TEXT("level %d -> %d at rung %.3f"), PrevLevel, Level, Rung((double)Level)));
+		LastAutomation = FString::Printf(TEXT("level %d -> %d"), PrevLevel, Level);
+		AppendLedger(TEXT("veil://auto/level"), LastAutomation);
 	}
 
 	PrevGold = Gold;
@@ -222,6 +330,9 @@ void UVEILOS::RunAutomations()
 	PrevLevel = Level;
 }
 
+// ---------------------------------------------------------------------------
+// TASKS + SKILLS
+// ---------------------------------------------------------------------------
 FString UVEILOS::Dispatch(const FString& Address)
 {
 	UWorld* World = GetWorld();
@@ -230,18 +341,18 @@ FString UVEILOS::Dispatch(const FString& Address)
 	++Dispatches;
 	FString Answer;
 
-	if (Address == TEXT("veil://os/status"))
+	// ---- tasks: things the engine makes true ------------------------------
+	if (Address == TEXT("veil://task/status"))
 	{
-		RefreshFields();
-		Answer = EngineLine();
+		RefreshDomains();
+		Answer = DomainLine();
 	}
-	else if (Address == TEXT("veil://os/who"))
+	else if (Address == TEXT("veil://task/who"))
 	{
 		Answer = MapLine();
 	}
-	else if (Address == TEXT("veil://os/save"))
+	else if (Address == TEXT("veil://task/save"))
 	{
-		// THE INTERFACE DOES THE THING, not just says it will.
 		bool bSaved = false;
 		if (UVEILOmniAll* Omni = World->GetSubsystem<UVEILOmniAll>())
 		{
@@ -254,7 +365,7 @@ FString UVEILOS::Dispatch(const FString& Address)
 		if (bSaved) { ++Saves; }
 		Answer = FString::Printf(TEXT("SAVE RESULT %s"), bSaved ? TEXT("True") : TEXT("False"));
 	}
-	else if (Address == TEXT("veil://os/alloff"))
+	else if (Address == TEXT("veil://task/alloff"))
 	{
 		if (UPHICheats* Cheats = World->GetSubsystem<UPHICheats>())
 		{
@@ -266,29 +377,86 @@ FString UVEILOS::Dispatch(const FString& Address)
 			Answer = TEXT("no cheat page in this world");
 		}
 	}
+	// ---- skills: answer a rung, proven to have come back unchanged --------
+	else if (Address == TEXT("veil://skill/vitals"))
+	{
+		const AVEILCharacter* Runner = Cast<AVEILCharacter>(UGameplayStatics::GetPlayerPawn(this, 0));
+		Answer = FString::Printf(TEXT("%.3f"), Rung(Runner ? (double)Runner->Health : 0.0));
+	}
+	else if (Address == TEXT("veil://skill/wealth"))
+	{
+		const UOMNIQuestSystem* Quest = World->GetSubsystem<UOMNIQuestSystem>();
+		Answer = FString::Printf(TEXT("%.3f"), Rung(Quest ? FMath::Max(1.0, (double)Quest->Gold) : 1.0));
+	}
+	else if (Address == TEXT("veil://skill/progress"))
+	{
+		const UOMNIQuestSystem* Quest = World->GetSubsystem<UOMNIQuestSystem>();
+		Answer = FString::Printf(TEXT("%.3f"), Rung(Quest ? (double)Quest->Level : 1.0));
+	}
 	else
 	{
-		Answer = FString::Printf(TEXT("no handler at %s"), *Address);
+		Answer = FString::Printf(TEXT("no task at %s"), *Address);
 	}
 
 	LastAnswerAddress = Address;
 	LastAnswerText = Answer;
 	++Answers;
+	MarkTask(Address);
 	AppendLedger(Address, Answer);
 	return Answer;
+}
+
+void UVEILOS::MarkTask(const FString& Address)
+{
+	for (FVEILOSTask& T : TaskList)
+	{
+		if (T.Address == Address)
+		{
+			T.State = FString::Printf(TEXT("answered %d"), Answers);
+			return;
+		}
+	}
+}
+
+void UVEILOS::RoundTripSkills()
+{
+	SkillsTotal = SkillList.Num();
+	SkillsRoundTripped = 0;
+
+	// A round trip is: the engine's own rung -> formatted into a string ->
+	// parsed back -> equal to the rung recomputed from the live value. A skill
+	// that drifts is not round-tripped, and the face says so.
+	const AVEILCharacter* Runner = Cast<AVEILCharacter>(UGameplayStatics::GetPlayerPawn(this, 0));
+	const UOMNIQuestSystem* Quest = GetWorld() ? GetWorld()->GetSubsystem<UOMNIQuestSystem>() : nullptr;
+
+	for (FVEILOSSkill& S : SkillList)
+	{
+		const FString Answer = Dispatch(S.Address);
+		const double Returned = FCString::Atod(*Answer);
+
+		double Truth = 0.0;
+		if (S.Name == TEXT("vitals")) { Truth = Rung(Runner ? (double)Runner->Health : 0.0); }
+		else if (S.Name == TEXT("wealth")) { Truth = Rung(Quest ? FMath::Max(1.0, (double)Quest->Gold) : 1.0); }
+		else if (S.Name == TEXT("progress")) { Truth = Rung(Quest ? (double)Quest->Level : 1.0); }
+
+		S.Rung = Returned;
+		S.bRoundTripped = FMath::Abs(Returned - Truth) < 1e-3;
+		if (S.bRoundTripped) { ++SkillsRoundTripped; }
+	}
+
+	UE_LOG(LogVEIL, Warning, TEXT("PHI OS SKILLS: %d of %d rungs round-tripped unchanged."),
+		SkillsRoundTripped, SkillsTotal);
 }
 
 void UVEILOS::AskStatus()
 {
 	Open();
-	const FString A = Dispatch(TEXT("veil://os/status"));
-	Say(A);
+	Say(Dispatch(TEXT("veil://task/status")));
 }
 
 void UVEILOS::AskSave()
 {
-	const FString A = Dispatch(TEXT("veil://os/save"));
-	Say(A);
+	Say(Dispatch(TEXT("veil://task/save")));
 }
 
 void UVEILOS::Say(const FString& Line)
@@ -296,11 +464,33 @@ void UVEILOS::Say(const FString& Line)
 	VoiceText = Line;
 	if (UWorld* World = GetWorld())
 	{
-		// THE VOICE IS THE TOP LAYER ONLY: the same subtitle channel the world
+		// JARVIS IS THE TOP LAYER ONLY: the same subtitle channel the world
 		// already speaks through, so there is one voice on screen, not two.
 		FPHIVoice::LastSubtitle = Line;
 		FPHIVoice::LastPlayTime = World->GetTimeSeconds();
 	}
+}
+
+void UVEILOS::Toggle()
+{
+	if (bOpen) { Close(); }
+	else { Open(); }
+}
+
+void UVEILOS::Open()
+{
+	if (bOpen) { return; }
+	bOpen = true;
+	RefreshDomains();
+	AppendLedger(TEXT("veil://os/open"), TEXT("face raised"));
+	Say(TEXT("The face is up. Ask me, and I answer from the engine."));
+}
+
+void UVEILOS::Close()
+{
+	if (!bOpen) { return; }
+	bOpen = false;
+	AppendLedger(TEXT("veil://os/close"), TEXT("face lowered"));
 }
 
 void UVEILOS::AppendLedger(const FString& Address, const FString& Note)
@@ -313,30 +503,11 @@ void UVEILOS::AppendLedger(const FString& Address, const FString& Note)
 	E.Note = Note;
 	LedgerMemory.Add(E);
 
-	// A ledger is memory, not save state: it is capped, and it never touches the
-	// one save. The file in Saved is a diagnostic copy, written on proof only.
+	// Memory, not save state: capped, and it never touches the one save.
 	if (LedgerMemory.Num() > 256)
 	{
 		LedgerMemory.RemoveAt(0, LedgerMemory.Num() - 256);
 	}
-}
-
-void UVEILOS::RoundTripSkills()
-{
-	SkillsTotal = 0;
-	SkillsRoundTripped = 0;
-
-	for (const FString& Addr : AddressBook())
-	{
-		// Never round-trip the write verb at boot.
-		if (Addr == TEXT("veil://os/save")) { continue; }
-		++SkillsTotal;
-		const FString Answer = Dispatch(Addr);
-		if (!Answer.IsEmpty() && LastAnswerAddress == Addr) { ++SkillsRoundTripped; }
-	}
-
-	UE_LOG(LogVEIL, Warning, TEXT("PHI OS SKILLS: %d of %d round-tripped address -> handler -> answer."),
-		SkillsRoundTripped, SkillsTotal);
 }
 
 void UVEILOS::WriteLedgerFile()
@@ -344,7 +515,7 @@ void UVEILOS::WriteLedgerFile()
 	TArray<FString> Lines;
 	for (const FVEILOSLedgerEntry& E : LedgerMemory)
 	{
-		Lines.Add(FString::Printf(TEXT("%8.3f  rung %7.4f  %-24s  %s"), E.T, E.Rung, *E.Address, *E.Note));
+		Lines.Add(FString::Printf(TEXT("%8.3f  rung %7.4f  %-26s  %s"), E.T, E.Rung, *E.Address, *E.Note));
 	}
 	const FString Path = FPaths::ProjectSavedDir() / TEXT("veil_os_ledger.txt");
 	FFileHelper::SaveStringToFile(FString::Join(Lines, TEXT("\n")), *Path);
@@ -353,14 +524,32 @@ void UVEILOS::WriteLedgerFile()
 // ---------------------------------------------------------------------------
 // WHAT THE FACE PRINTS
 // ---------------------------------------------------------------------------
-FString UVEILOS::EngineLine() const
+FString UVEILOS::DomainLine() const
 {
 	FString Out;
-	for (const FVEILOSRungField& F : RungFields)
+	for (const FVEILOSDomain& D : DomainFields)
 	{
-		Out += FString::Printf(TEXT("%s %.0f r%.2f   "), *F.Key, F.Value, F.Rung);
+		Out += FString::Printf(TEXT("%s %.0f r%.2f   "), *D.Key, D.Value, D.Rung);
 	}
-	return Out.IsEmpty() ? FString(TEXT("no fields sampled yet")) : Out;
+	return Out.IsEmpty() ? FString(TEXT("no domains sampled")) : Out;
+}
+
+FString UVEILOS::SkillLine() const
+{
+	FString Out;
+	for (const FVEILOSSkill& S : SkillList)
+	{
+		Out += FString::Printf(TEXT("%s %.3f %s   "), *S.Name, S.Rung,
+			S.bRoundTripped ? TEXT("ok") : TEXT("DRIFT"));
+	}
+	return FString::Printf(TEXT("%d/%d  %s"), SkillsRoundTripped, SkillsTotal, *Out);
+}
+
+FString UVEILOS::AutomationLine() const
+{
+	return Automations == 0
+		? FString(TEXT("0 fired - nothing has moved since boot (on-change only)"))
+		: FString::Printf(TEXT("%d fired, last: %s"), Automations, *LastAutomation);
 }
 
 FString UVEILOS::MapLine() const
@@ -387,18 +576,21 @@ FString UVEILOS::MapLine() const
 
 FString UVEILOS::ControlsLine() const
 {
-	return TEXT("[F1] OS    [G] GODMODE    [E] speak    [SPACE] continue    [TAB] chart    [P] pause");
+	return TEXT("[F1] OS   [G] GODMODE   [E] speak   [SPACE] continue   [TAB] chart   [P] pause");
 }
 
-FString UVEILOS::RungTableLine() const
+FString UVEILOS::M1Line() const
 {
-	return FString::Printf(TEXT("%d fields   %d addresses   ledger %d"),
-		RungFields.Num(), AddressBook().Num(), LedgerMemory.Num());
+	return FString::Printf(
+		TEXT("domains %s| plan %d steps | eyes %s | hands %s | seat %s"),
+		*DomainLine(), PlanState.Steps.Num(),
+		PlanState.bReviewed ? TEXT("approved") : TEXT("refused"),
+		*PlanState.Result, *PlanState.Seat);
 }
 
 FString UVEILOS::ObservabilityLine() const
 {
 	return FString::Printf(
-		TEXT("dispatches %d  answers %d  automations %d  saves %d  skills %d/%d  ledger %d  shots %d"),
+		TEXT("dispatches %d  answers %d  automations %d  saves %d  skills %d/%d  memory %d  shots %d"),
 		Dispatches, Answers, Automations, Saves, SkillsRoundTripped, SkillsTotal, LedgerMemory.Num(), ProofShots);
 }

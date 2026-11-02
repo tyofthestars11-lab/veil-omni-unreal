@@ -1,9 +1,10 @@
 // VEIL OMNI // ONE OS - the face.
 //
-// Screen, voice, map, controls on top; the engine's own readouts underneath,
-// because an interface that hides its machinery is a mock-up. Everything is
-// drawn from the engine's state, so the face cannot claim what the engine did
-// not do.
+// Seven labelled parts, drawn from the engine's own state so the face cannot
+// claim what the engine did not do:
+//   DOMAINS (rung fields)   TASKS (addresses)   SKILLS (round-tripped rungs)
+//   AUTOMATIONS (on change)   MEMORY (phi ledger)
+//   VOICE DOOR (Brain / Eyes / Seat / Hands)   PIPELINE (plan -> review -> execute)
 #include "Game/VEILOSFace.h"
 
 #include "Engine/Canvas.h"
@@ -33,8 +34,7 @@ namespace
 		H->DrawRect(FLinearColor(0.f, 0.f, 0.f, 0.35f), X + 3.f, Y + 3.f, W, Ht);
 		H->DrawRect(Fill, X, Y, W, Ht);
 		Frame(H, Trim, X, Y, W, Ht, 1.5f);
-		// Slanted top-right corner: the frame's crest, not a rounded box.
-		H->DrawLine(X + W - 34.f, Y, X + W, Y + 34.f, Trim, 2.f);
+		H->DrawLine(X + W - 30.f, Y, X + W, Y + 30.f, Trim, 2.f);
 	}
 }
 
@@ -53,139 +53,158 @@ void VEILOSFace::Draw(AHUD* H, UCanvas* C)
 	if (!Med) { return; }
 	if (!Big) { Big = Med; }
 
-	const FLinearColor Navy(0.055f, 0.078f, 0.141f, 0.90f);
-	const FLinearColor Body(0.075f, 0.095f, 0.165f, 0.88f);
+	const FLinearColor Navy(0.055f, 0.078f, 0.141f, 0.92f);
+	const FLinearColor Body(0.075f, 0.095f, 0.165f, 0.90f);
 	const FLinearColor Gold(0.788f, 0.635f, 0.290f, 1.f);
 	const FLinearColor LabelGold(0.910f, 0.768f, 0.416f, 1.f);
 	const FLinearColor White(0.949f, 0.949f, 0.949f, 1.f);
 	const FLinearColor Dim(0.60f, 0.65f, 0.74f, 1.f);
 	const FLinearColor Blue(0.247f, 0.663f, 1.f, 1.f);
+	const FLinearColor Green(0.184f, 0.702f, 0.416f, 1.f);
 
 	const float W = C->ClipX;
 	const float Ht = C->ClipY;
 
-	// THE FACE IS A SURFACE, NOT A LIST. Full bleed, navy, gold frame.
 	H->DrawRect(Navy, 0.f, 0.f, W, Ht);
-	Frame(H, Gold, 26.f, 20.f, W - 52.f, Ht - 40.f, 1.5f);
-	H->DrawLine(W - 26.f - 96.f, 20.f, W - 26.f, 20.f + 96.f, Gold, 2.f);
+	Frame(H, Gold, 24.f, 18.f, W - 48.f, Ht - 36.f, 1.5f);
+	H->DrawLine(W - 24.f - 92.f, 18.f, W - 24.f, 18.f + 92.f, Gold, 2.f);
 
-	Txt(H, TEXT("VEIL OMNI  //  ONE OS"), Gold, 46.f, 34.f, Big, 1.10f);
-	Txt(H, TEXT("phi reversed - every value below is a rung of a live engine field, not a label"),
-		Dim, 46.f, 60.f, Med, 0.82f);
+	Txt(H, TEXT("VEIL OMNI  //  ONE OS"), Gold, 42.f, 28.f, Big, 1.05f);
+	Txt(H, TEXT("phi reversed - domains, tasks, skills, automations, memory, and a voice door that plans before it moves"),
+		Dim, 42.f, 52.f, Med, 0.76f);
 	Txt(H, FString::Printf(TEXT("[F1] lower the face      %s"), *OS->ObservabilityLine()),
-		Dim, 46.f, 80.f, Med, 0.74f);
+		Dim, 42.f, 70.f, Med, 0.70f);
 
-	const float Gap = 22.f;
-	const float ColW = (W - 52.f - 3.f * Gap) * 0.5f;
-	const float LX = 46.f;
+	const float Gap = 18.f;
+	const float ColW = (W - 48.f - 3.f * Gap) * 0.5f;
+	const float LX = 40.f;
 	const float RX = LX + ColW + Gap;
-	float LY = 106.f;
-	float RY = 106.f;
+	float LY = 92.f;
+	float RY = 92.f;
+	const float RowH = 17.f;
 
-	// ---- SCREEN: TV / PC / GAME ------------------------------------------
+	// ---- DOMAINS // RUNG FIELDS ------------------------------------------
 	{
-		const float PW = ColW, PH = 196.f;
+		const float PW = ColW, PH = 128.f;
 		Panel(H, Body, Gold, LX, LY, PW, PH);
-		Txt(H, TEXT("SCREEN  //  LIVE SIGNAL"), LabelGold, LX + 16.f, LY + 12.f, Big, 0.86f);
+		Txt(H, TEXT("DOMAINS  //  RUNG FIELDS"), LabelGold, LX + 14.f, LY + 9.f, Big, 0.72f);
+		Txt(H, TEXT("each value read as log_phi"), Dim, LX + 14.f, LY + 30.f, Med, 0.66f);
 
-		// The signal itself: bars on a phi raster, driven by the fields.
-		const float BaseY = LY + PH - 34.f;
-		const float BarsX = LX + 18.f;
-		const int32 Bars = 21;
-		for (int32 i = 0; i < Bars; ++i)
+		float Y = LY + 48.f;
+		for (const FVEILOSDomain& D : OS->Domains())
 		{
-			const float T = (float)i / (float)(Bars - 1);
-			const float Rung = 1.f + FMath::Sin(T * 6.2831853f * 1.6180339887f) * 0.5f;
-			const float BH = 18.f + Rung * 52.f;
-			H->DrawRect(i % 4 == 0 ? Gold : Blue, BarsX + i * 9.f, BaseY - BH, 5.f, BH);
+			Txt(H, FString::Printf(TEXT("%-7s %8.0f   r%7.3f"), *D.Key, D.Value, D.Rung),
+				White, LX + 14.f, Y, Med, 0.72f);
+			Txt(H, D.Address, Dim, LX + PW - 150.f, Y, Med, 0.60f);
+			Y += RowH;
 		}
-		H->DrawRect(FLinearColor(0.95f, 0.30f, 0.24f, 1.f), LX + PW - 96.f, LY + 16.f, 8.f, 8.f);
-		Txt(H, TEXT("LIVE"), FLinearColor(0.95f, 0.45f, 0.40f, 1.f), LX + PW - 82.f, LY + 11.f, Med, 0.80f);
-		Txt(H, OS->EngineLine(), White, LX + 18.f, BaseY + 6.f, Med, 0.80f);
 		LY += PH + Gap;
 	}
 
-	// ---- VOICE -----------------------------------------------------------
+	// ---- SKILLS // ROUND-TRIPPED RUNGS -----------------------------------
 	{
-		const float PW = ColW, PH = 96.f;
+		const float PW = ColW, PH = 108.f;
 		Panel(H, Body, Gold, LX, LY, PW, PH);
-		Txt(H, TEXT("VOICE  //  THE TOP LAYER ONLY"), LabelGold, LX + 16.f, LY + 12.f, Med, 0.80f);
-		Txt(H, OS->Voice(), White, LX + 16.f, LY + 42.f, Med, 0.92f);
+		Txt(H, TEXT("SKILLS  //  ROUND-TRIPPED RUNGS"), LabelGold, LX + 14.f, LY + 9.f, Big, 0.72f);
+		Txt(H, TEXT("rung out, parsed back, compared to the live value"), Dim, LX + 14.f, LY + 30.f, Med, 0.66f);
+
+		float Y = LY + 50.f;
+		for (const FVEILOSSkill& S : OS->Skills())
+		{
+			Txt(H, FString::Printf(TEXT("%-9s r%7.3f"), *S.Name.ToUpper(), S.Rung),
+				White, LX + 14.f, Y, Med, 0.72f);
+			Txt(H, S.bRoundTripped ? TEXT("ROUND-TRIPPED") : TEXT("DRIFT"),
+				S.bRoundTripped ? Green : FLinearColor(0.95f, 0.30f, 0.24f), LX + 190.f, Y, Med, 0.68f);
+			Y += RowH;
+		}
 		LY += PH + Gap;
 	}
 
-	// ---- CONTROLS --------------------------------------------------------
+	// ---- TASKS // ADDRESSES ----------------------------------------------
 	{
-		const float PW = ColW, PH = Ht - LY - 46.f;
+		const float PW = ColW, PH = Ht - LY - 40.f;
 		Panel(H, Body, Gold, LX, LY, PW, PH);
-		Txt(H, TEXT("CONTROLS"), LabelGold, LX + 16.f, LY + 12.f, Med, 0.80f);
-		Txt(H, OS->ControlsLine(), White, LX + 16.f, LY + 42.f, Med, 0.78f);
-		Txt(H, TEXT("Every key above is bound. [F1] is the face; [G] is GODMODE with ALL OFF."),
-			Dim, LX + 16.f, LY + 68.f, Med, 0.74f);
+		Txt(H, TEXT("TASKS  //  ADDRESSES"), LabelGold, LX + 14.f, LY + 9.f, Big, 0.72f);
+
+		float Y = LY + 34.f;
+		for (const FVEILOSTask& T : OS->Tasks())
+		{
+			Txt(H, T.Address, White, LX + 14.f, Y, Med, 0.70f);
+			Txt(H, T.State, T.State.StartsWith(TEXT("answered")) ? Green : Dim, LX + PW - 120.f, Y, Med, 0.66f);
+			Y += RowH;
+		}
+		Y += 8.f;
+		Txt(H, TEXT("VOICE"), LabelGold, LX + 14.f, Y, Med, 0.68f);
+		Y += RowH + 2.f;
+		Txt(H, OS->Voice(), White, LX + 14.f, Y, Med, 0.74f);
 	}
 
-	// ---- MAP -------------------------------------------------------------
+	// ---- VOICE DOOR -------------------------------------------------------
 	{
-		const float PW = ColW, PH = 170.f;
+		const float PW = ColW, PH = 150.f;
 		Panel(H, Body, Gold, RX, RY, PW, PH);
-		Txt(H, TEXT("MAP  //  WHERE THE RUNNER STANDS"), LabelGold, RX + 16.f, RY + 12.f, Med, 0.80f);
-		Txt(H, OS->MapLine(), White, RX + 16.f, RY + 40.f, Med, 0.84f);
+		Txt(H, TEXT("VOICE DOOR  //  BRAIN  EYES  SEAT  HANDS"), LabelGold, RX + 14.f, RY + 9.f, Big, 0.72f);
+		Txt(H, OS->GateLine(), White, RX + 14.f, RY + 34.f, Med, 0.74f);
 
-		// Compass: a gold ring with a phi needle, drawn from lines.
-		const float CX = RX + PW - 60.f;
-		const float CY = RY + 92.f;
-		const float R = 44.f;
-		for (int32 i = 0; i < 48; ++i)
+		const FVEILOSPlan& P = OS->CurrentPlan();
+		Txt(H, FString::Printf(TEXT("plan: %s  (%d steps)"),
+			P.Intent.IsEmpty() ? TEXT("none yet") : *P.Intent, P.Steps.Num()),
+			Dim, RX + 14.f, RY + 56.f, Med, 0.68f);
+
+		float Y = RY + 76.f;
+		const int32 Show = FMath::Min(4, P.Steps.Num());
+		for (int32 i = 0; i < Show; ++i)
 		{
-			const float A0 = (float)i / 48.f * 6.2831853f;
-			const float A1 = (float)(i + 1) / 48.f * 6.2831853f;
-			H->DrawLine(CX + FMath::Cos(A0) * R, CY + FMath::Sin(A0) * R,
-				CX + FMath::Cos(A1) * R, CY + FMath::Sin(A1) * R, Gold, 1.2f);
+			Txt(H, P.Steps[i], Dim, RX + 14.f, Y, Med, 0.64f);
+			Y += 15.f;
 		}
-		H->DrawLine(CX, CY, CX + R * 0.72f, CY - R * 0.30f, Blue, 2.f);
-
-		Txt(H, TEXT("ADDRESS BOOK"), LabelGold, RX + 16.f, RY + PH - 52.f, Med, 0.76f);
-		Txt(H, TEXT("veil://os/status   veil://os/who   veil://os/save   veil://os/alloff"),
-			Dim, RX + 16.f, RY + PH - 32.f, Med, 0.74f);
 		RY += PH + Gap;
 	}
 
-	// ---- ENGINE ----------------------------------------------------------
+	// ---- PIPELINE // PLAN -> REVIEW -> EXECUTE ---------------------------
 	{
-		const float PW = ColW, PH = Ht - RY - 46.f;
+		const float PW = ColW, PH = 116.f;
 		Panel(H, Body, Gold, RX, RY, PW, PH);
-		Txt(H, TEXT("ENGINE  //  RUNGS, SKILLS, AUTOMATIONS, MEMORY"), LabelGold, RX + 16.f, RY + 12.f, Med, 0.80f);
+		Txt(H, TEXT("PIPELINE  //  PLAN -> REVIEW -> EXECUTE"), LabelGold, RX + 14.f, RY + 9.f, Big, 0.72f);
+		Txt(H, FString::Printf(TEXT("EYES  %s"), *OS->CurrentPlan().ReviewNote),
+			OS->CurrentPlan().bReviewed ? Green : Dim, RX + 14.f, RY + 36.f, Med, 0.70f);
+		Txt(H, FString::Printf(TEXT("SEAT  %s"), *OS->CurrentPlan().Seat), Dim, RX + 14.f, RY + 58.f, Med, 0.66f);
+		Txt(H, FString::Printf(TEXT("HANDS %s"), *OS->CurrentPlan().Result),
+			White, RX + 14.f, RY + 80.f, Med, 0.76f);
+		RY += PH + Gap;
+	}
 
-		float Y = RY + 40.f;
-		Txt(H, OS->RungTableLine(), Dim, RX + 16.f, Y, Med, 0.76f);
-		Y += 22.f;
-		Txt(H, FString::Printf(TEXT("ANSWER  %s"), *OS->LastAddress()), LabelGold, RX + 16.f, Y, Med, 0.78f);
-		Y += 20.f;
-		Txt(H, OS->LastAnswer(), White, RX + 16.f, Y, Med, 0.82f);
-		Y += 28.f;
-		H->DrawRect(FLinearColor(1.f, 1.f, 1.f, 0.10f), RX + 16.f, Y, PW - 32.f, 1.f);
-		Y += 10.f;
+	// ---- AUTOMATIONS ------------------------------------------------------
+	{
+		const float PW = ColW, PH = 60.f;
+		Panel(H, Body, Gold, RX, RY, PW, PH);
+		Txt(H, TEXT("AUTOMATIONS  //  ON CHANGE"), LabelGold, RX + 14.f, RY + 9.f, Big, 0.72f);
+		Txt(H, OS->AutomationLine(), White, RX + 14.f, RY + 34.f, Med, 0.70f);
+		RY += PH + Gap;
+	}
 
-		Txt(H, TEXT("LEDGER MEMORY  (rung-stamped, append-only)"), LabelGold, RX + 16.f, Y, Med, 0.76f);
-		Y += 22.f;
+	// ---- MEMORY // PHI LEDGER --------------------------------------------
+	{
+		const float PW = ColW, PH = Ht - RY - 40.f;
+		Panel(H, Body, Gold, RX, RY, PW, PH);
+		Txt(H, TEXT("MEMORY  //  PHI LEDGER"), LabelGold, RX + 14.f, RY + 9.f, Big, 0.72f);
+		Txt(H, TEXT("append-only, rung-stamped, capped at 256"), Dim, RX + 14.f, RY + 30.f, Med, 0.66f);
 
 		const TArray<FVEILOSLedgerEntry>& Ledger = OS->Ledger();
-		const int32 First = FMath::Max(0, Ledger.Num() - 6);
+		float Y = RY + 50.f;
+		const int32 First = FMath::Max(0, Ledger.Num() - 8);
 		for (int32 i = First; i < Ledger.Num(); ++i)
 		{
 			const FVEILOSLedgerEntry& E = Ledger[i];
-			Txt(H, FString::Printf(TEXT("%7.2fs  r%6.3f  %s"), E.T, E.Rung, *E.Note),
-				i == Ledger.Num() - 1 ? White : Dim, RX + 16.f, Y, Med, 0.74f);
-			Y += 18.f;
+			Txt(H, FString::Printf(TEXT("%6.2fs r%6.3f  %s"), E.T, E.Rung, *E.Note),
+				i == Ledger.Num() - 1 ? White : Dim, RX + 14.f, Y, Med, 0.64f);
+			Y += 15.f;
 		}
-		if (Ledger.Num() == 0)
-		{
-			Txt(H, TEXT("empty"), Dim, RX + 16.f, Y, Med, 0.74f);
-		}
+		if (Ledger.Num() == 0) { Txt(H, TEXT("empty"), Dim, RX + 14.f, Y, Med, 0.66f); }
 	}
 
 	// A hairline of gold across the bottom: the face is closed, not unfinished.
-	H->DrawRect(Gold, 46.f, Ht - 60.f, W - 92.f, 1.f);
-	Txt(H, TEXT("ONE OS - face over engine. Nothing here is written into the save."),
-		Dim, 46.f, Ht - 52.f, Med, 0.74f);
+	H->DrawRect(Gold, 42.f, Ht - 40.f, W - 84.f, 1.f);
+	Txt(H, TEXT("Brain plans, Eyes reviews, Seat names the place, Hands move. Nothing here is written into the one save."),
+		Dim, 42.f, Ht - 34.f, Med, 0.70f);
 }

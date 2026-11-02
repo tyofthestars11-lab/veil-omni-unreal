@@ -1,26 +1,54 @@
 // VEIL OMNI // ONE OS - the engine under the face.
 //
-// This is NOT a copy of any existing menu. Every other page in the game is a
-// list of things the player already had. This is one interface with two halves:
+// Not a copy of any menu in the project. A menu lists what the player already
+// owns; this is one machine with named parts, and the phi is REVERSED into it
+// rather than printed on it:
 //
-//   FACE    a screen (TV / PC / game), a voice, a map, the controls
-//   ENGINE  rung fields, addresses, round-tripped skills, on-change
-//           automations, a phi ledger memory, and Play-proof observability
+//   domains      rung fields        each live value, shown as log_phi(v)
+//   tasks        addresses          every surface is callable by name
+//   skills       round-tripped rungs a skill answers a rung, and the engine
+//                                    proves the number came back unchanged
+//   automations  on change          rules fire when a value MOVES, never per frame
+//   memory       phi ledger         append-only, rung-stamped, capped
+//   voice door   Brain / Eyes / Seat / Hands
+//                                   plan -> review -> execute, with the seat
+//                                   (where it happened) named before the hands move
 //
-// The phi is reversed into the interface rather than printed on it: every
-// number the face shows is a rung (log base phi) of a real engine value, and
-// every surface has an ADDRESS that any caller - the face, the console, the
-// proof harness - can dispatch to and get the same answer back.
-//
-// The voice is a thin layer on top: one line, the same subtitle channel the
-// world already speaks through. Nothing below it is rewritten.
+// The Jarvis voice is the top layer only: one line, on the channel the world
+// already speaks through. Nothing under it is rewritten.
 #pragma once
 
 #include "CoreMinimal.h"
 #include "Subsystems/WorldSubsystem.h"
 #include "VEILOS.generated.h"
 
-/** One line of the ledger. Rung-stamped, address-tagged, append-only. */
+/** DOMAINS: one live value, its address, and the rung it is read in. */
+struct FVEILOSDomain
+{
+	FString Key;
+	FString Address;
+	double Value = 0.0;
+	double Rung = 0.0;
+};
+
+/** TASKS: an address, the verb it carries, and its current state. */
+struct FVEILOSTask
+{
+	FString Address;
+	FString Verb;
+	FString State;
+};
+
+/** SKILLS: a name, the address it is reached on, and the rung it returns. */
+struct FVEILOSSkill
+{
+	FString Name;
+	FString Address;
+	double Rung = 0.0;
+	bool bRoundTripped = false;
+};
+
+/** MEMORY: one ledger line. Rung-stamped, address-tagged, append-only. */
 struct FVEILOSLedgerEntry
 {
 	double T = 0.0;
@@ -29,13 +57,17 @@ struct FVEILOSLedgerEntry
 	FString Note;
 };
 
-/** One engine value, its address, and the rung the face reads it in. */
-struct FVEILOSRungField
+/** The plan the voice door walks: Brain drafts, Eyes reviews, Seat names the
+ *  place, Hands executes. Nothing runs before the review has passed. */
+struct FVEILOSPlan
 {
-	FString Key;
-	FString Address;
-	double Value = 0.0;
-	double Rung = 0.0;
+	FString Intent;
+	TArray<FString> Steps;
+	bool bReviewed = false;
+	FString ReviewNote;
+	FString Result;
+	FString Seat;
+	double T = 0.0;
 };
 
 UCLASS()
@@ -56,42 +88,57 @@ public:
 	UFUNCTION(BlueprintPure, Category = "VEIL|OS") bool IsOpen() const { return bOpen; }
 
 	// ---- the engine -------------------------------------------------------
-
 	/** Address in, answer out. One door, so the face, the console and the proof
 	 *  harness cannot disagree about what the engine just did. */
 	UFUNCTION(BlueprintCallable, Category = "VEIL|OS")
 	FString Dispatch(const FString& Address);
 
-	/** The two verbs the proof exercises: answer, and do the thing. */
+	/** BRAIN: draft the plan from the domains, one step per real surface. */
+	UFUNCTION(BlueprintCallable, Category = "VEIL|OS") void Plan(const FString& Intent);
+
+	/** EYES: every planned step must resolve to an address that answers. */
+	UFUNCTION(BlueprintCallable, Category = "VEIL|OS") bool Review();
+
+	/** SEAT then HANDS: name where it happens, then do it. Refuses unreviewed. */
+	UFUNCTION(BlueprintCallable, Category = "VEIL|OS") FString Execute();
+
+	/** The two verbs the M1 proof exercises. */
 	UFUNCTION(BlueprintCallable, Category = "VEIL|OS") void AskStatus();
 	UFUNCTION(BlueprintCallable, Category = "VEIL|OS") void AskSave();
 
+	const TArray<FVEILOSDomain>& Domains() const { return DomainFields; }
+	const TArray<FVEILOSTask>& Tasks() const { return TaskList; }
+	const TArray<FVEILOSSkill>& Skills() const { return SkillList; }
+	const TArray<FVEILOSLedgerEntry>& Ledger() const { return LedgerMemory; }
+	const FVEILOSPlan& CurrentPlan() const { return PlanState; }
+	const FString& Voice() const { return VoiceText; }
 	const FString& LastAddress() const { return LastAnswerAddress; }
 	const FString& LastAnswer() const { return LastAnswerText; }
-	const TArray<FVEILOSRungField>& Fields() const { return RungFields; }
-	const TArray<FVEILOSLedgerEntry>& Ledger() const { return LedgerMemory; }
-	const FString& Voice() const { return VoiceText; }
 
-	FString ObservabilityLine() const;
-	FString EngineLine() const;
+	FString GateLine() const;
+	FString DomainLine() const;
 	FString MapLine() const;
 	FString ControlsLine() const;
-	FString RungTableLine() const;
+	FString ObservabilityLine() const;
+	FString SkillLine() const;
+	FString AutomationLine() const;
+	FString M1Line() const;
 
 	/** rung(v) = log_phi(v), the reversal the face is built on. */
 	static double Rung(double Value);
 
-	/** Every address this engine answers on. */
-	static const TArray<FString>& AddressBook();
+	/** Every address this engine answers on: tasks first, then skills. */
+	static const TArray<FString>& TaskAddresses();
+	static const TArray<FString>& SkillAddresses();
 
 private:
-	void RefreshFields();
+	void RefreshDomains();
 	void RunAutomations();
+	void RoundTripSkills();
 	void AppendLedger(const FString& Address, const FString& Note);
 	void Say(const FString& Line);
-	void RoundTripSkills();
 	void WriteLedgerFile();
-	void ProofStep(int32 Step);
+	void MarkTask(const FString& Address);
 
 	bool bOpen = false;
 	double LastSample = 0.0;
@@ -99,12 +146,18 @@ private:
 	double PrevHealth = -1.0;
 	int32 PrevBeacons = -1;
 	int32 PrevLevel = -1;
+	int32 LastAutomationRung = -1;
 
 	FString LastAnswerAddress;
 	FString LastAnswerText;
 	FString VoiceText;
-	TArray<FVEILOSRungField> RungFields;
+	FString LastAutomation;
+
+	TArray<FVEILOSDomain> DomainFields;
+	TArray<FVEILOSTask> TaskList;
+	TArray<FVEILOSSkill> SkillList;
 	TArray<FVEILOSLedgerEntry> LedgerMemory;
+	FVEILOSPlan PlanState;
 
 	int32 Dispatches = 0;
 	int32 Answers = 0;
