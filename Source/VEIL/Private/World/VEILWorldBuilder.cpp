@@ -356,6 +356,26 @@ UStaticMeshComponent* AVEILWorldBuilder::SpawnBlockRot(const FVector& Location,
 	const FVector PivotShift = Mesh->GetBounds().Origin * (Scale * Norm);
 	Block->SetActorLocation(Location - Rotation.RotateVector(PivotShift));
 
+	// ONE PALETTE NEAR THE NEST. The audit counted eight materials in the starting
+	// area - brick, gold, roofs, light, and four kit prop families - which reads as
+	// four different builders' leftovers. The two prop families are re-dressed in the
+	// plaza's own stone here, which brings the area to the six-material cap the task
+	// sets without touching a single asset.
+	if (VeilInNest(Location) && FloorMesh)
+	{
+		if (UMaterialInterface* Existing = Comp->GetMaterial(0))
+		{
+			const FString MatName = Existing->GetName();
+			if (MatName.Contains(TEXT("Props")))
+			{
+				if (UMaterialInterface* WarmStone = FloorMesh->GetMaterial(0))
+				{
+					Comp->SetMaterial(0, WarmStone);
+				}
+			}
+		}
+	}
+
 	// Tint through a dynamic instance of whatever material the shape ships
 	// with. The parameter writes are guarded by the material itself: a
 	// material without the parameter simply keeps its authored look.

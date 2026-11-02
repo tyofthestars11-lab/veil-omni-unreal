@@ -24,11 +24,17 @@ for a in actors:
             continue
         cls = a.get_class().get_name()
         mesh = ""
+        mat = ""
         if isinstance(a, unreal.StaticMeshActor):
             m = a.static_mesh_component.static_mesh
             mesh = m.get_name() if m else "NONE"
+            try:
+                mi = a.static_mesh_component.get_material(0)
+                mat = mi.get_name() if mi else "NONE"
+            except Exception:
+                mat = "?"
         s = a.get_actor_scale3d()
-        rows.append((cls, mesh, a.get_actor_label(), loc.x, loc.y, loc.z, s.x, s.y, s.z))
+        rows.append((cls, mesh, a.get_actor_label(), loc.x, loc.y, loc.z, s.x, s.y, s.z, mat))
     except Exception:
         continue
 
@@ -36,10 +42,13 @@ rows.sort(key=lambda r: (r[1], -r[5]))
 
 by_class = {}
 by_mesh = {}
-for cls, mesh, label, x, y, z, sx, sy, sz in rows:
+by_mat = {}
+for cls, mesh, label, x, y, z, sx, sy, sz, mat in rows:
     by_class[cls] = by_class.get(cls, 0) + 1
     if mesh:
         by_mesh[mesh] = by_mesh.get(mesh, 0) + 1
+    if mat:
+        by_mat[mat] = by_mat.get(mat, 0) + 1
 
 lines = []
 lines.append("VEIL NEST AUDIT - actors within %.0f units of spawn V(0,0,100)" % RADIUS)
@@ -56,10 +65,16 @@ if by_mesh:
 else:
     lines.append("  (no static meshes in the saved level inside this radius)")
 lines.append("")
-lines.append("ACTORS - class | mesh | label | x y z | scale")
-for cls, mesh, label, x, y, z, sx, sy, sz in rows:
-    lines.append("  %-26s | %-34s | %-30s | %8.1f %8.1f %8.1f | %.2f %.2f %.2f"
-                 % (cls, mesh or "-", label, x, y, z, sx, sy, sz))
+lines.append("MATERIALS IN USE (%d distinct)" % len(by_mat))
+for k in sorted(by_mat, key=lambda n: -by_mat[n]):
+    lines.append("  %-44s %d" % (k, by_mat[k]))
+if len(by_mat) > 6:
+    lines.append("  NOTE: over the six-material cap for this area.")
+lines.append("")
+lines.append("ACTORS - class | mesh | label | x y z | scale | material")
+for cls, mesh, label, x, y, z, sx, sy, sz, mat in rows:
+    lines.append("  %-26s | %-34s | %-30s | %8.1f %8.1f %8.1f | %.2f %.2f %.2f | %s"
+                 % (cls, mesh or "-", label, x, y, z, sx, sy, sz, mat or "-"))
 
 os.makedirs(os.path.dirname(OUT), exist_ok=True)
 with open(OUT, "w") as f:
