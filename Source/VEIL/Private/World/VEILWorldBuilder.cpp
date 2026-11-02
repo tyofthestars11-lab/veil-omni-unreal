@@ -101,6 +101,35 @@ namespace
 		}
 		return Out;
 	}
+
+	/**
+	 * THE SCALE THAT MAKES A MESH A GIVEN SIZE, ON EVERY AXIS.
+	 *
+	 * MeshNorm divides by the mesh's LARGEST extent, so one unit of placement scale is
+	 * 100 cm on that axis ONLY. A floor slab scaled "1" is 100 cm wide and 2 cm thick; a
+	 * modular wall scaled "1" is 100 cm tall and a few cm deep. That single fact is why
+	 * the terraced courses came out as wafers lying on the sand when they were cut from
+	 * slabs, and then as upright panels when they were cut from walls: the code asked for
+	 * a height and got a thickness. Both aerial photographs are that error, measured.
+	 *
+	 * So the want is converted axis by axis from the mesh's own bounds - no assumption
+	 * about which way round the artist built it - and a course is a metre of stone
+	 * because it was asked to be a metre of stone.
+	 */
+	static FVector ScaleForCm(const UStaticMesh* Mesh, const FVector& WantCm)
+	{
+		if (!Mesh) { return FVector::ZeroVector; }
+		const FBoxSphereBounds Bounds = Mesh->GetBounds();
+		const FVector Size = Bounds.GetBox().GetSize();
+		const float Largest = (float)Bounds.BoxExtent.GetMax();
+		if (Largest <= 1.f || Size.X <= 0.01f || Size.Y <= 0.01f || Size.Z <= 0.01f)
+		{
+			return FVector::ZeroVector;
+		}
+		const float Norm = 100.f / (2.f * Largest);   // the same law MeshNorm uses
+		const FVector Unit = Size * Norm;             // cm per 1.0 of placement scale
+		return FVector(WantCm.X / Unit.X, WantCm.Y / Unit.Y, WantCm.Z / Unit.Z);
+	}
 }
 
 AVEILWorldBuilder::AVEILWorldBuilder()
@@ -1935,6 +1964,38 @@ void AVEILWorldBuilder::DressRegions()
 	UStaticMesh* Pillar = ColumnMesh ? ColumnMesh.Get() : nullptr;
 	UStaticMesh* Rock = CliffVariants.Num() > 0 ? CliffVariants[0].Get() : nullptr;
 	UStaticMesh* Slab = FloorMesh ? FloorMesh.Get() : nullptr;
+	UStaticMesh* Course = WallMesh ? WallMesh.Get() : nullptr;
+
+	/**
+	 * A mass of EXACTLY WantCm, standing on Bottom - the build the painting asks for.
+	 *
+	 * A null material means "keep the kit's own stone", which is what masonry wants:
+	 * the palette materials are for gold, crystal and light, not for walls.
+	 */
+	auto Solid = [this](const FVector& Bottom, const FVector& WantCm, UStaticMesh* M,
+		UMaterialInterface* Mat, const FLinearColor& C, float E, float YawDeg) -> bool
+	{
+		if (!M) { return false; }
+		const FVector S = ScaleForCm(M, WantCm);
+		if (S.IsNearlyZero()) { return false; }
+		// SpawnBlockRot puts the geometry's centre on the coordinate it is given, so a
+		// mass that must stand on 'Bottom' is asked for at its own mid-height.
+		UStaticMeshComponent* Comp = SpawnBlockRot(Bottom + FVector(0.f, 0.f, WantCm.Z * 0.5f),
+			S, M, C, E, FRotator(0.f, YawDeg, 0.f));
+		if (!Comp) { return false; }
+		if (Mat)
+		{
+			Comp->SetMaterial(0, Mat);
+			if (UMaterialInstanceDynamic* MID = UMaterialInstanceDynamic::Create(Mat, Comp))
+			{
+				MID->SetVectorParameterValue(TEXT("Color"), C);
+				MID->SetVectorParameterValue(TEXT("BaseColor"), C);
+				if (E > 0.f) { MID->SetVectorParameterValue(TEXT("EmissiveColor"), C * E); }
+				Comp->SetMaterial(0, MID);
+			}
+		}
+		return true;
+	};
 	UStaticMesh* Roof = RoofMesh ? RoofMesh.Get() : nullptr;
 
 	const FLinearColor GoldC(1.f, 0.76f, 0.28f);
@@ -2019,9 +2080,103 @@ void AVEILWorldBuilder::DressRegions()
 		Beacons += 2;
 	}
 
+	// 6. TERRACES: THE HUB RISES AWAY FROM THE PLAZA.
+	//
+	// Four courses cut into the hill, each a phi step further out and one course
+	// higher, every course opened where a road leaves the plaza so the streets stay
+	// walkable. Built through Solid(), so each course is the size it is asked for on all
+	// three axes - the reason the first two attempts lay down as wafers and panels.
+	int32 Terraces = 0;
+	{
+		const float RoadZero = FMath::RadiansToDegrees(FMath::Atan2(-2600.f, 0.f));
+		for (int32 Ring = 0; Ring < 4; ++Ring)
+		{
+			const double Rad = 2400.0 * FMath::Pow(1.618033988749895, (double)Ring);
+			const float TopZ = 160.f * (float)(Ring + 1);
+			for (int32 S = 0; S < 18; ++S)
+			{
+				const double Ang = (2.0 * PI * S) / 18.0;
+				const float Deg = (float)FMath::RadiansToDegrees(Ang);
+				bool bOnRoad = false;
+				for (int32 R = 0; R < 4 && !bOnRoad; ++R)
+				{
+					if (FMath::Abs(FMath::FindDeltaAngleDegrees(Deg,
+						RoadZero + (float)R * 137.507764f)) < 16.f) { bOnRoad = true; }
+				}
+				if (bOnRoad) { continue; }
+
+				const FVector At((float)(FMath::Cos(Ang) * Rad), (float)(FMath::Sin(Ang) * Rad), 0.f);
+				// The stone of the course, in the kit's own masonry.
+				if (Solid(At, FVector(1150.f, 1150.f, TopZ), Course, nullptr,
+					FLinearColor(0.42f, 0.43f, 0.47f), 0.f, Deg))
+				{
+					// A gold course line on the lip: the step reads as BUILT, not as bare stone.
+					Solid(At + FVector(0.f, 0.f, TopZ), FVector(1200.f, 1200.f, 18.f), Slab, Gold,
+						GoldC, 0.5f, Deg);
+					++Terraces;
+				}
+			}
+		}
+	}
+
+	// 7. THE WATERFALL CLIFF, WEST OF THE PLAZA.
+	//
+	// A canyon wall with three falls coming off it into a basin - the left third of the
+	// painting. The wall is masonry courses; the falls are thin sheets of the palette's
+	// light material, which is the only thing in this project that reads as water.
+	int32 Falls = 0;
+	{
+		const float WallX = -4200.f;
+		for (int32 i = 0; i < 5; ++i)
+		{
+			const float Y = -1800.f + (float)i * 900.f;
+			const float Hgt = 3000.f + (float)(i % 2) * 420.f;
+			Solid(FVector(WallX, Y, 0.f), FVector(900.f, 900.f, Hgt), Course, nullptr,
+				FLinearColor(0.30f, 0.34f, 0.44f), 0.f, (float)i * 137.5f);
+		}
+		for (int32 i = 0; i < 3; ++i)
+		{
+			const float Y = -900.f + (float)i * 900.f;
+			if (Solid(FVector(WallX + 430.f, Y, 0.f), FVector(14.f, 170.f, 3000.f), Slab, Glow,
+				IceC, 1.15f, 0.f)) { ++Falls; }
+		}
+		// The basin they land in, and the spray standing over it.
+		Solid(FVector(WallX + 760.f, 0.f, 0.f), FVector(900.f, 900.f, 14.f), Slab, Blue, BlueC,
+			0.45f, 0.f);
+		Solid(FVector(WallX + 700.f, 0.f, 0.f), FVector(600.f, 700.f, 90.f), Slab, Glow, IceC,
+			0.28f, 0.f);
+	}
+
+	// 8. THE SPIRE, ON THE SKYLINE.
+	//
+	// The painting's Spire stands off the town and is what you orient by. Five tapered
+	// courses stepped by the golden angle, a lit band at every joint, a crown that is the
+	// brightest point in the sky - and clear of the Spire region's arrival pad at
+	// (2800, 500), so phi.goto still drops the runner on open ground beside it.
+	int32 SpireTiers = 0;
+	{
+		const FVector Base(3600.f, 900.f, 0.f);
+		const float TierH = 1800.f;
+		Solid(Base, FVector(760.f, 760.f, 320.f), Slab, Gold, GoldC, 0.3f, 0.f);
+		for (int32 K = 0; K < 5; ++K)
+		{
+			const float Side = 880.f - (float)K * 124.f;
+			const float Z = 320.f + TierH * (float)K;
+			if (Solid(Base + FVector(0.f, 0.f, Z), FVector(Side, Side, TierH), Pillar, Gold, GoldC,
+				0.45f, (float)K * 137.507764f))
+			{
+				Solid(Base + FVector(0.f, 0.f, Z + TierH - 25.f),
+					FVector(Side + 70.f, Side + 70.f, 50.f), Slab, Glow, GoldC, 2.2f, 0.f);
+				++SpireTiers;
+			}
+		}
+		Solid(Base + FVector(0.f, 0.f, 320.f + 5.f * TierH), FVector(120.f, 120.f, 360.f), Pillar,
+			Glow, GoldC, 3.4f, 0.f);
+	}
+
 	UE_LOG(LogVEIL, Warning,
-		TEXT("VEIL REGIONS: market %d pieces, nest %d, omni %d towers, %d crystal peaks, %d beacons - five places with silhouettes."),
-		Market, Nest, Omni, Peaks, Beacons);
+		TEXT("VEIL REGIONS: market %d pieces, nest %d, omni %d towers, %d crystal peaks, %d beacons, %d terraced courses, %d waterfalls on the west cliff, the Spire in %d courses - five places with silhouettes."),
+		Market, Nest, Omni, Peaks, Beacons, Terraces, Falls, SpireTiers);
 }
 
 void AVEILWorldBuilder::BakeToLevel()

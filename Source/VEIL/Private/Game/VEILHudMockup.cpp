@@ -30,7 +30,7 @@ namespace
 	const FLinearColor MockRed(0.851f, 0.204f, 0.227f, 1.f);
 	const FLinearColor MockBlue(0.247f, 0.663f, 1.f, 1.f);
 
-	void Txt(AHUD* H, const FString& S, const FLinearColor& C, float X, float Y, UFont* F, float Scale)
+	void MockTxt(AHUD* H, const FString& S, const FLinearColor& C, float X, float Y, UFont* F, float Scale)
 	{
 		if (H && F && !S.IsEmpty()) { H->DrawText(S, C, X, Y, F, Scale); }
 	}
@@ -142,7 +142,7 @@ void VEILHudMockup::Draw(AHUD* H, UCanvas* C)
 		const float BY = Ht - BH - 26.f;
 
 		Banner(H, MockNavy, BX, BY, BW, BH, MockGold);
-		Txt(H, TEXT("QUEST: THE GOLDEN MIDST"), MockGoldLit, BX + 34.f, BY + 10.f, Big, 0.82f);
+		MockTxt(H, TEXT("QUEST: THE GOLDEN MIDST"), MockGoldLit, BX + 34.f, BY + 10.f, Big, 0.82f);
 
 		FString Objective = TEXT("Follow the signal");
 		if (const UOMNIQuestSystem* QNow = Quest)
@@ -157,7 +157,7 @@ void VEILHudMockup::Draw(AHUD* H, UCanvas* C)
 			case EOMNIQuestStage::Clear:           Objective = TEXT("The signal is whole"); break;
 			}
 		}
-		Txt(H, FString::Printf(TEXT("\u25C6  %s"), *Objective), MockWhite, BX + 34.f, BY + 30.f, Med, 0.74f);
+		MockTxt(H, FString::Printf(TEXT("\u25C6  %s"), *Objective), MockWhite, BX + 34.f, BY + 30.f, Med, 0.74f);
 	}
 
 	// ---- DIAMOND HOTBAR (bottom-centre) ----------------------------------
@@ -178,7 +178,7 @@ void VEILHudMockup::Draw(AHUD* H, UCanvas* C)
 		FillDiamond(H, CX, CY, 24.f, FLinearColor(MockGold.R, MockGold.G, MockGold.B, 0.95f));
 		Diamond(H, CX, CY, 24.f, MockGoldLit, 2.4f);
 		Diamond(H, CX, CY, 17.f, FLinearColor(MockNavy.R, MockNavy.G, MockNavy.B, 0.35f), 1.f);
-		Txt(H, TEXT("\u03C6"), MockNavy, CX - 7.f, CY - 11.f, Big, 1.0f);
+		MockTxt(H, TEXT("\u03C6"), MockNavy, CX - 7.f, CY - 11.f, Big, 1.0f);
 
 		struct FSlot { const TCHAR* Key; const TCHAR* Label; FLinearColor Tint; };
 		static const FSlot Slots[3] =
@@ -198,8 +198,8 @@ void VEILHudMockup::Draw(AHUD* H, UCanvas* C)
 				Slots[i].Tint.G * 0.72f, Slots[i].Tint.B * 0.72f, 0.95f));
 			Diamond(H, SX, SY, 20.f, MockGold, 1.8f);
 			Diamond(H, SX, SY, 13.f, FLinearColor(MockNavy.R, MockNavy.G, MockNavy.B, 0.55f), 1.f);
-			Txt(H, FString::Printf(TEXT("%.0f"), RungOf(Slots[i].Key)), MockWhite, SX - 10.f, SY - 7.f, Med, 0.68f);
-			Txt(H, FString::Printf(TEXT("%s"), Slots[i].Key), MockDim, SX - 14.f, SY + 22.f, Med, 0.56f);
+			MockTxt(H, FString::Printf(TEXT("%.0f"), RungOf(Slots[i].Key)), MockWhite, SX - 10.f, SY - 7.f, Med, 0.68f);
+			MockTxt(H, FString::Printf(TEXT("%s"), Slots[i].Key), MockDim, SX - 14.f, SY + 22.f, Med, 0.56f);
 		}
 	}
 
@@ -223,8 +223,8 @@ void VEILHudMockup::Draw(AHUD* H, UCanvas* C)
 
 			Banner(H, MockNavy, PX2, PY2, PW, PH2, MockGold);
 			H->DrawRect(MockRed, PX2 + 20.f, PY2 + PH2 * 0.5f - 4.f, 8.f, 8.f);
-			Txt(H, TEXT("COMBAT MODE"), MockGoldLit, PX2 + 38.f, PY2 + 9.f, Big, 0.74f);
-			Txt(H, FString::Printf(TEXT("%d"), Near), MockWhite, PX2 + PW - 34.f, PY2 + 10.f, Med, 0.70f);
+			MockTxt(H, TEXT("COMBAT MODE"), MockGoldLit, PX2 + 38.f, PY2 + 9.f, Big, 0.74f);
+			MockTxt(H, FString::Printf(TEXT("%d"), Near), MockWhite, PX2 + PW - 34.f, PY2 + 10.f, Med, 0.70f);
 		}
 	}
 }
