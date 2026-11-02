@@ -589,8 +589,9 @@ void AVEILWorldBuilder::BuildRoom(const FVector& Centre, float HalfW, float Half
 	UStaticMesh* HearthMesh = Floor ? Floor : CubeMesh.Get();
 	SpawnBlock(Hearth + FVector(0.f, 0.f, 55.f), FVector(0.9f, 0.9f, 0.9f),
 		HearthMesh, Tint, 0.f);
-	SpawnBlock(Hearth + FVector(0.f, 0.f, 145.f), FVector(0.5f, 0.5f, 0.5f),
-		SphereMesh, FLinearColor(1.f, 0.78f, 0.30f), 2.0f);
+	// The hearth crown is the kit's carved column, not the engine sphere it used to be.
+	SpawnBlock(Hearth + FVector(0.f, 0.f, 145.f), FVector(0.45f, 0.45f, 0.9f),
+		ColumnMesh, FLinearColor(1.f, 0.78f, 0.30f), 2.0f);
 
 	// THE HEARTH LIGHTS THE ROOM. Emissive alone does not: an interior with a roof
 	// read pitch black from inside. One warm point light per room, no shadow (the
@@ -987,8 +988,10 @@ void AVEILWorldBuilder::BuildDistrict()
 	// and becomes a thing standing in the world.
 	SpawnBlock(FVector(KeeperAt.X, KeeperAt.Y, 1500.f), FVector(3.4f, 3.4f, 30.f),
 		Col, TowerTint, 0.f);
-	SpawnBlock(FVector(KeeperAt.X, KeeperAt.Y, 3100.f), FVector(1.8f, 1.8f, 1.8f),
-		SphereMesh, GoldTint, 2.5f);
+	// A CARVED CROWN, NOT A GOLD BALL. This was /Engine/BasicShapes/Sphere - the engine
+	// primitive, tinted gold and scaled 1.8 - which is a placeholder however bright it is.
+	SpawnBlock(FVector(KeeperAt.X, KeeperAt.Y, 3100.f), FVector(1.2f, 1.2f, 3.2f),
+		ColumnMesh, GoldTint, 2.5f);
 	// The beam: a thin gold column from the crown into the sky, readable over
 	// every roof in the district.
 	SpawnBlock(FVector(KeeperAt.X, KeeperAt.Y, 6200.f), FVector(0.5f, 0.5f, 62.f),
@@ -1118,7 +1121,9 @@ void AVEILWorldBuilder::BuildRegions()
 		UInstancedStaticMeshComponent* Body = MakeSet(WallMesh ? WallMesh : CubeMesh, Tint, 0.f);
 		UInstancedStaticMeshComponent* Round = MakeSet(ColumnMesh ? ColumnMesh : CylinderMesh, Tint, 0.f);
 		UInstancedStaticMeshComponent* Band = MakeSet(CubeMesh, Tint, 1.5f);
-		UInstancedStaticMeshComponent* Lamp = MakeSet(SphereMesh, Tint * 1.2f, 2.2f);
+		// A LANTERN IS CARVED, NOT A BALL. SphereMesh here is the engine sphere: every lamp
+		// globe in the Hub was a gold primitive sitting on the plaza.
+		UInstancedStaticMeshComponent* Lamp = MakeSet(ColumnMesh ? ColumnMesh : CylinderMesh, Tint * 1.2f, 2.2f);
 
 		switch (Index)
 		{
@@ -1255,7 +1260,7 @@ void AVEILWorldBuilder::BuildRegions()
 	// THE ROADS BETWEEN THEM: slabs and lamps from region to region, so every
 	// area is reachable on the ground instead of only by name.
 	UInstancedStaticMeshComponent* Road = MakeSet(FloorMesh ? FloorMesh : CubeMesh, FLinearColor(0.13f, 0.13f, 0.16f), 0.f);
-	UInstancedStaticMeshComponent* RoadLamp = MakeSet(SphereMesh, FLinearColor(1.f, 0.78f, 0.3f), 1.8f);
+	UInstancedStaticMeshComponent* RoadLamp = MakeSet(ColumnMesh ? ColumnMesh : CylinderMesh, FLinearColor(1.f, 0.78f, 0.3f), 1.8f);
 	int32 RoadSlabs = 0;
 
 	auto LayRoad = [&](int32 FromIndex, int32 ToIndex)
@@ -1982,8 +1987,9 @@ void AVEILWorldBuilder::DressBeaconSites()
 			SpawnBlock(Base + FVector(FMath::Cos(Ang) * Rad, FMath::Sin(Ang) * Rad, 60.f),
 				FVector(1.6f, 1.6f, 1.2f), DebrisVariants[d % DebrisVariants.Num()], Stone, 0.f);
 		}
-		SpawnBlock(Base + FVector(0.f, 0.f, 1450.f), FVector(1.1f, 1.1f, 1.1f),
-			SphereMesh, GoldTint, 2.4f);
+		// Same replacement at the beacon: the engine sphere becomes the kit's carved column.
+		SpawnBlock(Base + FVector(0.f, 0.f, 1450.f), FVector(0.8f, 0.8f, 2.2f),
+			ColumnMesh, GoldTint, 2.4f);
 	}
 
 	UE_LOG(LogVEIL, Log, TEXT("VEIL DRESSING: 3 beacon sites dressed - monolith, shrine, stair, debris ring, crown light."));
