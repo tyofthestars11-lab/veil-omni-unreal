@@ -1,0 +1,125 @@
+VEIL OMNI - FULL GAME AUDIT AGAINST THE VISION
+Date: 2026-11-02
+Method: every line below is from a count or a log, not an opinion. Source counts are files and
+lines on disk; content counts are assets found; runtime counts are from the last Play run.
+
+WHAT THE PROJECT IS, IN NUMBERS
+  Source:            156 files, 30,911 lines, 80 U/A classes declared.
+  Baked level:       1,151 actors, 1,011 static meshes, 0 engine placeholders, 0 Paragon actors.
+  Maps in Content:   VEILDistrict (3.0 MB), VEILWorld, OMNIWorld, CountessRegion (plus pack demos).
+  External actors:   179 in __ExternalActors__, 11 in __ExternalObjects__ (One File Per Actor).
+  Audio:             56 assets (18 SFX cues, 38 voice).
+  Last run:          save loaded (level 7, gold 950), quest stage MeetKeeper, 8 phi brains,
+                     634 phi decisions, 8 agents holding posts, fps 13.3 -> 59.8 after the
+                     governor dropped resolution to 45%.
+
+VISION REQUIREMENT -> STATE, WITH THE EVIDENCE
+
+1. One persistent World Partition world, streaming by grid cells.
+   STATE: MISSING. Source files mentioning WorldPartition: 0. 179 external actors exist, which
+   is One File Per Actor, not a streaming World Partition world. The district is one dense
+   level with 1,151 actors in it.
+
+2. World Partition HLOD for the long view.
+   STATE: MISSING. Source files mentioning HLOD: 0. Nothing built, nothing configured.
+
+3. Data Layers for the Megastructure Deep (stacked floors share XY).
+   STATE: MISSING. Files mentioning DataLayer: 0. The Deep is not layered, so floors cannot be
+   toggled by the door event.
+
+4. Level Instances for packed static content.
+   STATE: MISSING. Files mentioning LevelInstance: 0.
+
+5. One save, one door, one map.
+   STATE: PARTIAL. Save works and is proven: "PHI OMNI LOAD RESULT True loaded=1
+   slot=VEILOMNI_Omni0 level=7 xp=82 gold=950 beacons=3". But four main maps exist
+   (VEILDistrict, VEILWorld, OMNIWorld, CountessRegion); only VEILDistrict is live.
+
+6. NPC brains are Behaviour Tree / StateTree driven, Blackboard multi-input scored.
+   STATE: PARTIAL, DIFFERENT SYSTEM. BehaviourTree and StateTree appear in 0 source files and
+   there are 0 BT_/ST_ assets in Content. The living decision layer is UPHI_NPCProcessor - 634
+   decisions logged in the last run with rung anchors, phi numerals, moods and a breathing band.
+   It is a real brain, it is just not a Behaviour Tree asset.
+
+7. MetaHuman appearance only, living NPCs.
+   STATE: MISSING (blocked on an asset). 185 MetaHuman assets exist, including
+   SKM_MH_Runner_BodyMesh and FaceMesh, but: BP_MH_Runner has NO mesh property on its class,
+   the folder has no locomotion AnimBlueprint (only ABP_Body_PostProcess, ABP_Clothing_PostProcess,
+   ABP_MH_LiveLink, ABP_Face), and no IK retargeter anywhere targets the MetaHuman skeleton.
+   A MetaHuman NPC placed today stands frozen. The plaza wears Polyart instead, which animates.
+
+8. Niagara glow, waterfall, beacon FX.
+   STATE: MISSING. Niagara asset count in Content (NS_/PS_/Niagara): 0. Two source files mention
+   Niagara. Light is emissive materials only; there is no particle system in the project.
+
+9. Real water system: rivers, waterfalls, flow.
+   STATE: PARTIAL. 4 water surfaces placed with StarterContent M_Water_Lake (river, Nest pool,
+   two waterfall sheets). WaterBody files: 0. No flow, no spline, no Niagara fall - still planes.
+
+10. Hub market: plaza, streets, buildings in rows, tents, people.
+    STATE: PARTIAL. 13 enterable modular buildings ring the plaza on the golden angle with tiled
+    <=4 m wall pieces, doors facing the square, hearth light each. No market tents (0 assets),
+    no stalls, no crowd beyond the 8 plaza machines.
+
+11. Three tall gold phi pillars with glowing symbols.
+    STATE: PARTIAL. 3 pillars built, 18 m tall, stone body, metallic gold crown. The phi symbol
+    itself is not modelled - there is no phi glyph mesh in Content (only SICKA's Letters folder).
+
+12. Spire: tall gold tower, phi symbols, beacons, visible from the Hub via HLOD.
+    STATE: PARTIAL. A Spire mass exists in the region builder; with HLOD missing it is not
+    proven visible from the Hub.
+
+13. Blue crystal mountains.
+    STATE: MISSING. Crystal MESHES: 0 outside Paragon's projectile FX. Crystal TEXTURES exist.
+    The far range is Iceland mountains tinted blue, not crystal geometry.
+
+14. Megastructure Deep: blue underground structure, bridges, machinery, per-floor NavMesh.
+    STATE: PARTIAL/UNVERIFIED. Scifi interior assets exist in SICKA; source mentions NavMesh in
+    6 files. No data layers, no level instances, no per-floor NavMesh proof.
+
+15. Phi-winged runner: dark cloak, gold wings, flight mode, flight AnimBP.
+    STATE: MISSING. Wing/feather/cloak meshes: 0. A flight mode exists in the character code
+    (bFlying, ClimbAxis); there is no wing geometry and no flight AnimBP.
+
+16. HUD: gold ribbon, curved, VIT/STM/LV, circular minimap, quest banner, diamonds, 60% clear.
+    STATE: PRESENT (canvas). VEILHudCanvas draws plate 420x110, minimap 180x180 at 70%, field
+    manual 320x90, phi diamonds for markers and player. No UMG widgets (WBP count: 0). One
+    render-thread crash in this code was found and fixed (icon textures without resident RHI).
+
+17. Mitochondrial engine: ATP energy, heat as fuel, forward only.
+    STATE: PRESENT. PHI_MitochondrialEngine / PHIMito with Rung()/PhiPow(); the boot audit
+    closes phi*phi == phi+1 and logs "VEIL UNIVERSE: closed".
+
+18. Trees, vegetation, bridges, market props.
+    STATE: MISSING. Tree: 0, Bush: 0, Bridge: 0, Tent: 0, Stall: 0 in Content.
+
+19. Performance in a living world.
+    STATE: WEAK. First seconds: avg 75 ms, 13.3 fps. The governor settles to 16.7-18 ms and
+    55-60 fps at 45% screen resolution and 68% -> 45%. A shipped game cannot sell 45% resolution.
+
+WHAT IS GENUINELY DONE (not claims, counts)
+  - 13 enterable buildings, walls tiled from <=4 m kit pieces.
+  - 3 phi pillars with metallic gold crowns; gold is now a real metal material asset
+    (M_PHI_GoldMetallic: metallic 1.0, roughness 0.28, emissive 0.35).
+  - Gold bodies removed from the plaza: measured 102 -> 3 gold components, 103 stone.
+  - 4 water surfaces, 9 mountain peaks on the far ring.
+  - Column collision proven by trace: HIT at 760 cm, after two probe faults were found.
+  - Paragon purged from bodies AND from the baked level: PARAGON ACTORS AFTER 0.
+  - 8 phi brains deciding every tick; 634 decisions in one run.
+  - Save + quest + HUD alive: level 7, gold 950, stage MeetKeeper.
+  - Render-thread crash class closed: 0 access violations across a 115-second run.
+
+THE FIVE THINGS THAT ACTUALLY BLOCK THE VISION
+  1. World Partition is not on. Without it there is no streaming world, no grid cells, no HLOD,
+     and the "one big world" sentence is not implemented at all.
+  2. There is no Niagara asset in the project. Glow, waterfalls, beacon FX are all missing.
+  3. The Deep has no data layers or level instances, so stacked floors cannot exist.
+  4. MetaHumans cannot animate here: no locomotion graph and no retargeter to their skeleton.
+  5. Six content families are absent: crystals, flowing water, trees, market tents, wings,
+     bridges. These are Fab items, not code.
+
+HONEST SENTENCE
+  The game has a living, measured district with buildings, water, a skyline, phi pillars, a
+  working save and self-deciding NPCs - and it has none of the structural systems the vision
+  names first: World Partition, HLOD, data layers, level instances, Niagara. It is a strong
+  vertical slice of a level, not the world the document describes.
