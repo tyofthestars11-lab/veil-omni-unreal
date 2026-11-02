@@ -867,7 +867,18 @@ void AVEILHudCanvas::DrawHUD()
 				{
 					const float IX = Canvas->ClipX * 0.5f - 168.f + i * 88.f;
 					const float IY = Canvas->ClipY - 132.f;
-					if (PackIcons.IsValidIndex(i) && PackIcons[i] && PackIcons[i]->GetResource())
+					// A RESOURCE IS NOT A RESIDENT TEXTURE. This drew whenever GetResource()
+					// was non-null, and the run crashed on the render thread in
+					// RDGExecute_RenderThread / CanvasRenderThreadScope with an access violation
+					// at 0xffffffffffffffff, immediately after "3 of 4 pack icons loaded". In
+					// -game the streamer has not filled the RHI texture, and FCanvas dereferences
+					// it while drawing. Textures are drawn in the editor only; a -game run gets
+					// the labelled slot, which cannot fault.
+					const bool bIconDrawable = GIsEditor
+						&& PackIcons.IsValidIndex(i) && PackIcons[i]
+						&& PackIcons[i]->GetResource() != nullptr
+						&& PackIcons[i]->GetSizeX() > 0;
+					if (bIconDrawable)
 					{
 						DrawTexture(PackIcons[i], IX, IY, 36.f, 36.f, 0.f, 0.f, 1.f, 1.f,
 							FLinearColor::White, BLEND_Translucent);
