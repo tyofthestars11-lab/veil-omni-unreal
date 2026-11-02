@@ -3,6 +3,7 @@
 #include "World/VEILNestSanctum.h"
 #include "World/VEILConceptWorld.h"
 #include "World/VEILCrowd.h"
+#include "World/VEILWilds.h"
 
 #include "Systems/VEILOS.h"
 #include "Game/VEILHudCanvas.h"
@@ -821,6 +822,13 @@ void AVEILGameMode::BeginPlay()
 						FVector::ZeroVector, FRotator::ZeroRotator))
 					{
 						Concept->Build();
+
+					// THE COUNTRY HAS INHABITANTS: six species, their camps, and mines.
+					if (AVEILWildsPopulation* Wilds = GetWorld()->SpawnActor<AVEILWildsPopulation>(
+						FVector::ZeroVector, FRotator::ZeroRotator))
+					{
+						Wilds->Populate(14, 24);
+					}
 					// THE MARKET HAS PEOPLE IN IT: two instanced meshes, one tick.
 					if (AVEILCrowd* Crowd = GetWorld()->SpawnActor<AVEILCrowd>(
 						FVector::ZeroVector, FRotator::ZeroRotator))
