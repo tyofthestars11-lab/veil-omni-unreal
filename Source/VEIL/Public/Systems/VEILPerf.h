@@ -120,7 +120,7 @@ private:
 
 	static constexpr float Phi = 1.618033988749895f;
 	/** 1000 / 60: the budget for a 60 fps frame. */
-	static constexpr float BudgetMs = 16.6667f;
+	static constexpr float BudgetMs = 17.0324f; /* the golden pitch: 1000/58.71 fps */
 
 private:
 	void RecomputeStats();
