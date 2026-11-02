@@ -188,6 +188,9 @@ private:
 
 	/** Enterable buildings from the modular kit, ringed around the plaza on the golden angle. */
 	void BuildMarketRing();
+
+	/** Water surfaces, the mountain skyline, and the three tall gold phi pillars. */
+	void BuildWaterAndSkyline();
 	void AddBlock(UInstancedStaticMeshComponent* Set, const FVector& Location, const FVector& Scale);
 	void AddBlockYaw(UInstancedStaticMeshComponent* Set, const FVector& Location,
 		const FVector& Scale, float YawDegrees);

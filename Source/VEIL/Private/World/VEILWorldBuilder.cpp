@@ -2355,6 +2355,107 @@ void AVEILWorldBuilder::DressPhiPalette()
 	// BuildRoom already composes a correct building out of the kit - 2.6 m doorway, jambs,
 	// lintel, roof, hearth light - so the ring is that function used properly at last.
 	BuildMarketRing();
+
+	// WATER, SKYLINE AND THE THREE PHI PILLARS - the pieces of the vision image that the
+	// project already owns assets for: a lake material in StarterContent, nine mountains in
+	// the Iceland pack, and the ancient column for the pillars.
+	BuildWaterAndSkyline();
+}
+
+void AVEILWorldBuilder::BuildWaterAndSkyline()
+{
+	UStaticMesh* Slab = FloorMesh ? FloorMesh.Get() : CubeMesh.Get();
+	if (!Slab) { return; }
+
+	// REAL WATER SURFACES. StarterContent ships M_Water_Lake and M_Water_Ocean; the vision
+	// asks for rivers and pools, and a still surface with the water material is what this
+	// project owns. Flow and waterfalls as Niagara do not exist yet - they are a Fab item.
+	UMaterialInterface* Water = LoadObject<UMaterialInterface>(nullptr,
+		TEXT("/Game/StarterContent/Materials/M_Water_Lake.M_Water_Lake"));
+	if (!Water)
+	{
+		Water = LoadObject<UMaterialInterface>(nullptr,
+			TEXT("/Game/StarterContent/Materials/M_Water_Ocean.M_Water_Ocean"));
+	}
+
+	int32 Surfaces = 0;
+	auto WaterAt = [this, Slab, Water, &Surfaces](const FVector& At, const FVector& Cm)
+	{
+		UStaticMeshComponent* C = SpawnBlockRot(At,
+			FVector(Cm.X / 100.f, Cm.Y / 100.f, FMath::Max(0.02f, Cm.Z / 100.f)),
+			Slab, FLinearColor::White, 0.f, FRotator::ZeroRotator);
+		if (C && Water)
+		{
+			C->SetMaterial(0, Water);
+			++Surfaces;
+		}
+	};
+
+	// A river along the plaza's east side, and the pool at the Nest's foot.
+	WaterAt(FVector(0.f, 1500.f, 24.f), FVector(9000.f, 700.f, 8.f));
+	WaterAt(FVector(-450.f, 780.f, 130.f), FVector(1500.f, 950.f, 8.f));
+	// Three sheets falling toward the Deep, thin and tall: the waterfall read from the plaza.
+	WaterAt(FVector(600.f, -2900.f, 800.f), FVector(1500.f, 30.f, 1600.f));
+	WaterAt(FVector(-2000.f, -900.f, 700.f), FVector(1200.f, 30.f, 1400.f));
+
+	// THE SKYLINE. Nine Iceland mountains on a far ring: the district now has a horizon
+	// instead of a flat edge. Blue-tinted, because the vision's far range is crystal.
+	// THE REAL FOLDER IS Static_Meshes, not Meshes. The first build of this function would
+	// have loaded nine null meshes and logged a skyline of zero peaks; find named the paths.
+	static const TCHAR* MountainPaths[] =
+	{
+		TEXT("/Game/Iceland_Environment/Static_Meshes/SM_Mountain_01.SM_Mountain_01"),
+		TEXT("/Game/Iceland_Environment/Static_Meshes/SM_Mountain_02.SM_Mountain_02"),
+		TEXT("/Game/Iceland_Environment/Static_Meshes/SM_Mountain_03.SM_Mountain_03"),
+		TEXT("/Game/Iceland_Environment/Static_Meshes/SM_Mountain_04.SM_Mountain_04"),
+		TEXT("/Game/Iceland_Environment/Static_Meshes/SM_Mountain_05.SM_Mountain_05"),
+		TEXT("/Game/Iceland_Environment/Static_Meshes/SM_Mountain_06.SM_Mountain_06"),
+		TEXT("/Game/Iceland_Environment/Static_Meshes/SM_Mountain_07.SM_Mountain_07"),
+		TEXT("/Game/Iceland_Environment/Static_Meshes/SM_Mountain_08.SM_Mountain_08"),
+		TEXT("/Game/Iceland_Environment/Static_Meshes/SM_Mountain_09.SM_Mountain_09")
+	};
+	int32 Peaks = 0;
+	for (int32 K = 0; K < 9; ++K)
+	{
+		UStaticMesh* Peak = LoadObject<UStaticMesh>(nullptr, MountainPaths[K]);
+		if (!Peak) { continue; }
+		const float Ang = FMath::DegreesToRadians(K * 137.50776405f);
+		const float Rad = 7200.f + 900.f * (float)(K % 3);
+		const FVector At(FMath::Cos(Ang) * Rad, FMath::Sin(Ang) * Rad, -400.f);
+		const float Height = 2600.f + 700.f * (float)(K % 4);
+		UStaticMeshComponent* C = SpawnBlockRot(At + FVector(0.f, 0.f, Height * 0.5f),
+			FVector(6.f, 6.f, Height / 100.f), Peak, FLinearColor(0.52f, 0.72f, 1.f), 0.f,
+			FRotator(0.f, K * 37.f, 0.f));
+		if (C) { ++Peaks; }
+	}
+
+	// THE THREE GOLD PHI PILLARS. Three, tall, on the plaza: the image's foreground markers.
+	UStaticMesh* PillarMesh = ColumnMesh ? ColumnMesh.Get() : nullptr;
+	UMaterialInterface* GoldMetal = LoadObject<UMaterialInterface>(nullptr,
+		TEXT("/Game/PHI/Palette/M_PHI_GoldMetallic.M_PHI_GoldMetallic"));
+	int32 Pillars = 0;
+	if (PillarMesh)
+	{
+		for (int32 K = 0; K < 3; ++K)
+		{
+			const float Ang = FMath::DegreesToRadians(K * 120.f + 137.50776405f);
+			const FVector At(FMath::Cos(Ang) * 760.f, FMath::Sin(Ang) * 760.f, 0.f);
+			UStaticMeshComponent* Body = SpawnBlockRot(At + FVector(0.f, 0.f, 900.f),
+				FVector(2.2f, 2.2f, 18.f), PillarMesh, FLinearColor(0.42f, 0.36f, 0.29f), 0.f,
+				FRotator::ZeroRotator);
+			if (!Body) { continue; }
+			// The glow is the gold band at the top, not the body: metal light on stone mass.
+			UStaticMeshComponent* Crown = SpawnBlockRot(At + FVector(0.f, 0.f, 1780.f),
+				FVector(2.4f, 2.4f, 1.4f), PillarMesh, FLinearColor(1.f, 0.766f, 0.336f), 2.4f,
+				FRotator::ZeroRotator);
+			if (Crown && GoldMetal) { Crown->SetMaterial(0, GoldMetal); }
+			++Pillars;
+		}
+	}
+
+	UE_LOG(LogVEIL, Warning,
+		TEXT("VEIL WATER/SKYLINE: %d water surfaces (%s), %d mountain peaks, %d tall phi pillars with gold crowns."),
+		Surfaces, Water ? *Water->GetName() : TEXT("no water material"), Peaks, Pillars);
 }
 
 void AVEILWorldBuilder::BuildMarketRing()
