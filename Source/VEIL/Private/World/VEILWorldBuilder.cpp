@@ -539,10 +539,29 @@ void AVEILWorldBuilder::BuildRoom(const FVector& Centre, float HalfW, float Half
 	// Local axes are built with the room: x runs along the door direction, y across
 	// the street, z up. Every wall is placed in that frame, so the doorway always
 	// faces the road no matter which golden angle the street left the plaza at.
+	// A LONG WALL IS SEVERAL PIECES, NOT ONE STRETCHED PIECE.
+	// This is why the market ring first looked like flat panels standing in the plaza: one
+	// SM_Wall scaled to 6.4 m is a photograph of a wall. The kit is modular, so a wall is now
+	// tiled at no more than 4 m per piece and butted together, which is what the asset was
+	// authored for.
 	auto Wall3 = [&](const FVector& Offset, float SizeX, float SizeY, float SizeZ, float Z) -> UStaticMeshComponent*
 	{
-		return SpawnBlockRot(Centre + F * Offset.X + R * Offset.Y + FVector(0.f, 0.f, Z),
-			FVector(SizeX / 100.f, SizeY / 100.f, SizeZ / 100.f), Wall, Tint, 0.f, Yaw);
+		const float Span = FMath::Max(SizeX, SizeY);
+		const int32 Pieces = FMath::Clamp(FMath::CeilToInt(Span / 400.f), 1, 8);
+		const float Piece = Span / (float)Pieces;
+		const bool bAlongY = SizeY >= SizeX;
+		UStaticMeshComponent* First = nullptr;
+		for (int32 P = 0; P < Pieces; ++P)
+		{
+			const float Slide = (P + 0.5f) * Piece - Span * 0.5f;
+			const FVector Local = Offset + (bAlongY ? FVector(0.f, Slide, 0.f) : FVector(Slide, 0.f, 0.f));
+			UStaticMeshComponent* Comp = SpawnBlockRot(
+				Centre + F * Local.X + R * Local.Y + FVector(0.f, 0.f, Z),
+				FVector((bAlongY ? SizeX : Piece) / 100.f, (bAlongY ? Piece : SizeY) / 100.f, SizeZ / 100.f),
+				Wall, Tint, 0.f, Yaw);
+			if (!First) { First = Comp; }
+		}
+		return First;
 	};
 
 	// BACK
