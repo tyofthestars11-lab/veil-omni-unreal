@@ -64,10 +64,15 @@ void APhiOcean::GrowFish(int32 Count)
 	if (!W || !Cube) return;
 	for (int32 i = 0; i < Count; ++i)
 	{
-		FVector At = GetActorLocation() + FVector(
-			FMath::FRandRange(-WaterSize.X / 3, WaterSize.X / 3),
-			FMath::FRandRange(-WaterSize.Y / 3, WaterSize.Y / 3),
-			FMath::FRandRange(-100.f, 60.f));
+		// GOLDEN ANGLE, NOT A DICE ROLL. The school was scattered with FRandRange, so the
+		// same water looked different on every run and nothing could be checked twice. Index
+		// on the golden angle at a phi-spaced radius: the same fish are in the same places,
+		// every session, and a screenshot can be compared with the last one.
+		const float Ang = FMath::DegreesToRadians(i * 137.50776405f);
+		const float Rad = FMath::Sqrt((float)i + 0.5f) * (WaterSize.X * 0.18f);
+		const FVector At = GetActorLocation() + FVector(
+			FMath::Cos(Ang) * Rad, FMath::Sin(Ang) * Rad,
+			-100.f + 60.f * FMath::Frac(i * 0.6180339887f));
 		if (AActor* One = W->SpawnActor<AActor>(AActor::StaticClass(), At, FRotator::ZeroRotator))
 		{
 			UStaticMeshComponent* Body = NewObject<UStaticMeshComponent>(One);
@@ -92,15 +97,20 @@ void APhiOcean::GrowFlora(int32 Count)
 	Base.Z -= WaterSize.Z / 2;
 	for (int32 i = 0; i < Count; ++i)
 	{
-		FVector At = Base + FVector(
-			FMath::FRandRange(-WaterSize.X / 2, WaterSize.X / 2),
-			FMath::FRandRange(-WaterSize.Y / 2, WaterSize.Y / 2),
-			FMath::FRandRange(0.f, 120.f));
+		// THE BED IS PLANTED, NOT SOWN AT RANDOM. Same golden angle as the fish, so the
+		// fronds follow one law instead of two different dice.
+		const float Ang = FMath::DegreesToRadians(i * 137.50776405f);
+		const float Rad = FMath::Sqrt((float)i + 0.5f) * (WaterSize.X * 0.12f);
+		const FVector At = Base + FVector(
+			FMath::Cos(Ang) * Rad, FMath::Sin(Ang) * Rad,
+			120.f * FMath::Frac(i * 0.3819660113f));
 		if (AActor* One = W->SpawnActor<AActor>(AActor::StaticClass(), At, FRotator::ZeroRotator))
 		{
 			UStaticMeshComponent* Frond = NewObject<UStaticMeshComponent>(One);
 			Frond->SetStaticMesh(Cube);
-			Frond->SetWorldScale3D(FVector(0.3f, 0.3f, FMath::FRandRange(1.f, 3.f)));
+			// Height is a phi walk, not a dice roll: 1.0, 1.618, 1.0, 1.618 across the bed.
+			Frond->SetWorldScale3D(FVector(0.3f, 0.3f,
+				1.f + 2.f * FMath::Frac(i * 0.6180339887f)));
 			if (Blue) { Frond->SetMaterial(0, Blue); }
 			Frond->RegisterComponent();
 			One->SetRootComponent(Frond);

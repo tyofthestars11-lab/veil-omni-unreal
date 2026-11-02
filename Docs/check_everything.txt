@@ -1,0 +1,176 @@
+VEIL - CHECK EVERYTHING
+map under audit: /Game/Maps/VEILDistrict
+
+PART 1 - EVERY PLACE IN THE CODE THAT PUTS SOMETHING IN THE WORLD
+  Source\VEIL\Private\World\VEILWorldBuilder.cpp             AddBlock/AddBlockYaw x38, AddInstance x2, SpawnActor x10, SpawnBlock/SpawnBlockRot x35
+      SpawnBlock/SpawnBlockRot     SpawnBlock                         VEILWorldBuilder.cpp:296  UStaticMeshComponent* AVEILWorldBuilder::SpawnBlock(const FVector& Location,
+      SpawnBlock/SpawnBlockRot     SpawnBlockRot                      VEILWorldBuilder.cpp:303  UStaticMeshComponent* AVEILWorldBuilder::SpawnBlockRot(const FVector& Location,
+      SpawnActor                   SpawnBlockRot                      VEILWorldBuilder.cpp:366  AStaticMeshActor* Block = World->SpawnActor<AStaticMeshActor>(
+      SpawnBlock/SpawnBlockRot     BuildRoom                          VEILWorldBuilder.cpp:544  return SpawnBlockRot(Centre + F * Offset.X + R * Offset.Y + FVector(0.f, 0.f, Z),
+      SpawnActor                   BuildRoom                          VEILWorldBuilder.cpp:601  if (APointLight* Lamp = W->SpawnActor<APointLight>(
+      SpawnActor                   BuildLighting                      VEILWorldBuilder.cpp:662  if (ADirectionalLight* Sun = World->SpawnActor<ADirectionalLight>(
+      SpawnBlock/SpawnBlockRot     BuildDistrict                      VEILWorldBuilder.cpp:805  SpawnBlock(FVector(0.f, 0.f, -50.f), FVector(2000.f, 2000.f, 1.f),
+      AddBlock/AddBlockYaw         BuildDistrict                      VEILWorldBuilder.cpp:835  AddBlock(Plain, FVector(gx * TileCm, gy * TileCm, -50.f),
+      SpawnActor                   BuildDistrict                      VEILWorldBuilder.cpp:1000  World->SpawnActor<APlayerStart>(APlayerStart::StaticClass(),
+      AddBlock/AddBlockYaw         AddBlock                           VEILWorldBuilder.cpp:1044  void AVEILWorldBuilder::AddBlock(UInstancedStaticMeshComponent* Set, const FVector& Location,
+      AddInstance                  AddBlock                           VEILWorldBuilder.cpp:1054  Set->AddInstance(FTransform(FRotator::ZeroRotator, Location - Shift, Scale * Norm), true);
+      AddBlock/AddBlockYaw         AddBlockYaw                        VEILWorldBuilder.cpp:1058  void AVEILWorldBuilder::AddBlockYaw(UInstancedStaticMeshComponent* Set, const FVector& Location,
+      AddInstance                  AddBlockYaw                        VEILWorldBuilder.cpp:1066  Set->AddInstance(FTransform(R, Location - Shift, Scale * Norm), true);
+      AddBlock/AddBlockYaw         BuildRegions                       VEILWorldBuilder.cpp:1128  AddBlock(Round, FVector(C.X, C.Y, 4.f), FVector(9.f, 9.f, 0.1f));
+      SpawnActor                   GoToRegion                         VEILWorldBuilder.cpp:1657  ACameraActor* Cam = World->SpawnActor<ACameraActor>(ACameraActor::StaticClass(), CamAt,
+      SpawnActor                   BuildDistrictLayer                 VEILWorldBuilder.cpp:1832  if (APostProcessVolume* PP = W2->SpawnActor<APostProcessVolume>(
+      SpawnBlock/SpawnBlockRot     BuildHorizon                       VEILWorldBuilder.cpp:1922  if (UStaticMeshComponent* Comp = SpawnBlockRot(At, FVector::OneVector, Mesh, Ridge, 0.f, Face))
+      SpawnBlock/SpawnBlockRot     DressBeaconSites                   VEILWorldBuilder.cpp:1961  SpawnBlock(Base + FVector(0.f, 0.f, 700.f), FVector(4.2f, 4.2f, 14.f),
+      SpawnBlock/SpawnBlockRot     DressPhiPalette                    VEILWorldBuilder.cpp:2021  UStaticMeshComponent* Comp = SpawnBlockRot(At, Scale, Mesh, TintCol, Emissive, Rot);
+      SpawnBlock/SpawnBlockRot     DressRegions                       VEILWorldBuilder.cpp:2225  UStaticMeshComponent* Comp = SpawnBlockRot(At, S, M, C, E, R);
+      SpawnBlock/SpawnBlockRot     BakeToLevel                        VEILWorldBuilder.cpp:2622  UStaticMeshComponent* TileComp = SpawnBlock(FVector(IX * 200000.f, IY * 200000.f, -50.f),
+  Source\VEIL\Private\Game\VEILGameMode.cpp                  BeginPlay x4, SpawnActor x12
+      SpawnActor                   ApplyPhiGrade                      VEILGameMode.cpp:153  Volume = W->SpawnActor<APostProcessVolume>(APostProcessVolume::StaticClass(),
+      BeginPlay                    BeginPlay                          VEILGameMode.cpp:278  void AVEILGameMode::BeginPlay()
+      SpawnActor                   BeginPlay                          VEILGameMode.cpp:317  if (AActor* FloorActor = FloorWorld->SpawnActor<AActor>(
+      SpawnActor                   SpawnDefaultPawnAtTransform_Implementation VEILGameMode.cpp:1735  APawn* Runner = W->SpawnActor<APawn>(PawnClass, Where, SpawnInfo);
+  Source\VEIL\Private\World\OMNIQuestContent.cpp             BeginPlay x8
+      BeginPlay                    BeginPlay                          OMNIQuestContent.cpp:153  void AOMNIQuestGiver::BeginPlay()
+  Source\VEIL\Private\Systems\PHIOcean.cpp                   BeginPlay x2, RANDOM x1, SpawnActor x2
+      BeginPlay                    BeginPlay                          PHIOcean.cpp:23  void APhiOcean::BeginPlay()
+      RANDOM                       GrowFish                           PHIOcean.cpp:67  // GOLDEN ANGLE, NOT A DICE ROLL. The school was scattered with FRandRange, so the
+      SpawnActor                   GrowFish                           PHIOcean.cpp:76  if (AActor* One = W->SpawnActor<AActor>(AActor::StaticClass(), At, FRotator::ZeroRotator))
+      SpawnActor                   GrowFlora                          PHIOcean.cpp:107  if (AActor* One = W->SpawnActor<AActor>(AActor::StaticClass(), At, FRotator::ZeroRotator))
+  Source\VEIL\Private\Systems\VEILOmniAll.cpp                SpawnActor x5
+      SpawnActor                   BuildNestRegion                    VEILOmniAll.cpp:672  AVEILFragment* Fragment = World->SpawnActor<AVEILFragment>(
+      SpawnActor                   BuildRegionChain                   VEILOmniAll.cpp:791  AVEILFragment* Shard = World->SpawnActor<AVEILFragment>(
+      SpawnActor                   PlaceAt                            VEILOmniAll.cpp:975  AStaticMeshActor* Actor = World->SpawnActor<AStaticMeshActor>(
+  Source\VEIL\Private\AI\VEILFactionAI.cpp                   BeginPlay x2, SpawnActor x2
+      BeginPlay                    BeginPlay                          VEILFactionAI.cpp:112  void AVEILFactionAgent::BeginPlay()
+      SpawnActor                   AwardKill                          VEILFactionAI.cpp:595  if (AVEILLootPickup* Pickup = World->SpawnActorDeferred<AVEILLootPickup>(
+      SpawnActor                   SpawnReinforcement                 VEILFactionAI.cpp:739  AVEILFactionAgent* Agent = World->SpawnActor<AVEILFactionAgent>(ReinforcementClass, Location, FRotator::ZeroRotator, Par
+  Source\VEIL\Private\Systems\VEILEnemy.cpp                  BeginPlay x2, RANDOM x1, SpawnActor x1
+      BeginPlay                    BeginPlay                          VEILEnemy.cpp:114  void AVEILEnemy::BeginPlay()
+      SpawnActor                   Die                                VEILEnemy.cpp:405  if (APhiGear* Drop = DieW->SpawnActorDeferred<APhiGear>(APhiGear::StaticClass(), FTransform(FRotator::ZeroRotator, GetAc
+      RANDOM                       Die                                VEILEnemy.cpp:407  // NO DICE ON LOOT. The champion's stat came from RandRange, so the same fight
+  Source\VEIL\Private\World\VEILDistrictStreaming.cpp        BeginPlay x4
+      BeginPlay                    BeginPlay                          VEILDistrictStreaming.cpp:58  void ADistrict::BeginPlay()
+  Source\VEIL\Public\World\VEILWorldBuilder.h                AddBlock/AddBlockYaw x2, SpawnBlock/SpawnBlockRot x2
+      SpawnBlock/SpawnBlockRot     BuildWorld                         VEILWorldBuilder.h:94  UStaticMeshComponent* SpawnBlock(const FVector& Location, const FVector& Scale,
+      AddBlock/AddBlockYaw         BuildWorld                         VEILWorldBuilder.h:184  void AddBlock(UInstancedStaticMeshComponent* Set, const FVector& Location, const FVector& Scale);
+  Source\VEIL\Private\Systems\PHIPortal.cpp                  BeginPlay x2, OpenLevel/ServerTravel x1
+      BeginPlay                    BeginPlay                          PHIPortal.cpp:31  void APhiPortal::BeginPlay()
+      OpenLevel/ServerTravel       OnPortalTouch                      PHIPortal.cpp:64  UGameplayStatics::OpenLevel(this, TargetMap);
+  Source\VEIL\Private\Systems\VEILBurstFX.cpp                BeginPlay x2, SpawnActor x1
+      SpawnActor                   Fire                               VEILBurstFX.cpp:49  AVEILBurstFX* Burst = World->SpawnActorDeferred<AVEILBurstFX>(
+      BeginPlay                    BeginPlay                          VEILBurstFX.cpp:59  void AVEILBurstFX::BeginPlay()
+  Source\VEIL\Private\Systems\VEILVault.cpp                  BeginPlay x2, SpawnActor x1
+      BeginPlay                    BeginPlay                          VEILVault.cpp:60  void AVEILVault::BeginPlay()
+      SpawnActor                   BeginPlay                          VEILVault.cpp:70  AVEILVaultAnchor* A = GetWorld()->SpawnActor<AVEILVaultAnchor>(AnchorClass ? *AnchorClass : AVEILVaultAnchor::StaticClas
+  Source\VEIL\Private\Systems\VEILWaveSpawner.cpp            BeginPlay x2, SpawnActor x1
+      BeginPlay                    BeginPlay                          VEILWaveSpawner.cpp:17  void AVEILWaveSpawner::BeginPlay()
+      SpawnActor                   SpawnOne                           VEILWaveSpawner.cpp:71  AVEILEnemy* E = GetWorld()->SpawnActor<AVEILEnemy>(EnemyClass, Pos, FRotator::ZeroRotator, P);
+  Source\VEIL\Private\AI\OMNIWardenPrime.cpp                 BeginPlay x2
+      BeginPlay                    BeginPlay                          OMNIWardenPrime.cpp:19  void AOMNIWardenPrime::BeginPlay()
+  Source\VEIL\Private\AI\VEILCompanion.cpp                   BeginPlay x2
+      BeginPlay                    BeginPlay                          VEILCompanion.cpp:74  void AVEILCompanion::BeginPlay()
+  Source\VEIL\Private\Character\VEILCharacter.cpp            BeginPlay x2
+      BeginPlay                    BeginPlay                          VEILCharacter.cpp:240  void AVEILCharacter::BeginPlay()
+  Source\VEIL\Private\Systems\OMNIQuestSystem.cpp            SpawnActor x2
+      SpawnActor                   Describe                           OMNIQuestSystem.cpp:8  //    SpawnActorDeferred call was left unclosed. Fixed here: the call
+      SpawnActor                   SpawnCacheGear                     OMNIQuestSystem.cpp:263  AActor* CacheEpic = World->SpawnActorDeferred<AActor>(AActor::StaticClass(), CacheTransform);
+  Source\VEIL\Private\Systems\PHIForge.cpp                   BeginPlay x2
+      BeginPlay                    BeginPlay                          PHIForge.cpp:31  void APhiForge::BeginPlay()
+  Source\VEIL\Private\Systems\PHIGear.cpp                    BeginPlay x2
+      BeginPlay                    BeginPlay                          PHIGear.cpp:31  void APhiGear::BeginPlay()
+  Source\VEIL\Private\Systems\PHI_DynamicMusic.cpp           BeginPlay x2
+      BeginPlay                    BeginPlay                          PHI_DynamicMusic.cpp:17  void UPHI_DynamicMusicComponent::BeginPlay()
+  Source\VEIL\Private\Systems\PHI_WorldDress_Vault.cpp       BeginPlay x2
+      BeginPlay                    BeginPlay                          PHI_WorldDress_Vault.cpp:3  void APHI_WorldDress_Vault::BeginPlay()
+  Source\VEIL\Private\Systems\VEILLootPickup.cpp             BeginPlay x2
+      BeginPlay                    BeginPlay                          VEILLootPickup.cpp:53  void AVEILLootPickup::BeginPlay()
+  Source\VEIL\Private\Systems\VEILMusicDirector.cpp          BeginPlay x2
+      BeginPlay                    BeginPlay                          VEILMusicDirector.cpp:23  void AVEILMusicDirector::BeginPlay()
+  Source\VEIL\Private\UI\VEILMinimap.cpp                     BeginPlay x2
+      BeginPlay                    BeginPlay                          VEILMinimap.cpp:23  void AVEILMinimapCapture::BeginPlay()
+  Source\VEIL\Private\World\VEILGoldenSpawner.cpp            BeginPlay x2
+      BeginPlay                    BeginPlay                          VEILGoldenSpawner.cpp:32  void AVEILGoldenSpawner::BeginPlay()
+  Source\VEIL\Private\World\VEILPhiTetraSpawner.cpp          BeginPlay x2
+      BeginPlay                    BeginPlay                          VEILPhiTetraSpawner.cpp:35  void AVEILPhiTetraSpawner::BeginPlay()
+  Source\VEIL\Private\Game\VEILPauseMenu.cpp                 OpenLevel/ServerTravel x1
+      OpenLevel/ServerTravel       OnTitleClicked                     VEILPauseMenu.cpp:145  UGameplayStatics::OpenLevel(this, FName(*GetWorld()->GetName()));
+  Source\VEIL\Private\Game\VEILWinScreen.cpp                 OpenLevel/ServerTravel x1
+      OpenLevel/ServerTravel       OnNewGameClicked                   VEILWinScreen.cpp:118  UGameplayStatics::OpenLevel(this, FName(*GetWorld()->GetName()));
+  Source\VEIL\Private\Systems\PHICompanionParty.cpp          SpawnActor x1
+      SpawnActor                   Recruit                            PHICompanionParty.cpp:71  AVEILCompanion* C = W->SpawnActor<AVEILCompanion>(AVEILCompanion::StaticClass(), At, FRotator::ZeroRotator, PSP);
+  Source\VEIL\Private\Systems\PHIONE.cpp                     SpawnActor x1
+      SpawnActor                   SpawnSpiral                        PHIONE.cpp:388  if (AVEILGoldenSpawner* Spiral = W->SpawnActor<AVEILGoldenSpawner>(AVEILGoldenSpawner::StaticClass(), At, FRotator::Zero
+  Source\VEIL\Private\Systems\PHIWeather.cpp                 SpawnActor x1
+      SpawnActor                   TickWorld                          PHIWeather.cpp:220  Rain = W->SpawnActor<APhiRainStreaks>(APhiRainStreaks::StaticClass(), FVector::ZeroVector, FRotator::ZeroRotator);
+  Source\VEIL\Private\Systems\VEILDialogue.cpp               RANDOM x1
+      RANDOM                       Begin                              VEILDialogue.cpp:35  // is what lets the same person open differently without being random.
+  Source\VEIL\Private\Systems\VEILPerf.cpp                   RANDOM x1
+      RANDOM                       Initialize                         VEILPerf.cpp:34  *FPlatformMisc::GetPrimaryGPUBrand(),
+  Source\VEIL\Private\World\VEILLevelLink.cpp                OpenLevel/ServerTravel x1
+      OpenLevel/ServerTravel       TravelToRegion                     VEILLevelLink.cpp:26  UGameplayStatics::OpenLevel(World, Map);
+  Source\VEIL\Private\World\VEILMapCapture.cpp               SpawnActor x1
+      SpawnActor                   Initialize                         VEILMapCapture.cpp:66  CaptureActor = World->SpawnActor<ASceneCapture2D>(ASceneCapture2D::StaticClass(), Start, FRotator::ZeroRotator, Params);
+
+RANDOM CALLS FOUND: 4
+  Source\VEIL\Private\Systems\PHIOcean.cpp:67 in GrowFish  // GOLDEN ANGLE, NOT A DICE ROLL. The school was scattered with FRandRange, so the
+  Source\VEIL\Private\Systems\VEILDialogue.cpp:35 in Begin  // is what lets the same person open differently without being random.
+  Source\VEIL\Private\Systems\VEILEnemy.cpp:407 in Die  // NO DICE ON LOOT. The champion's stat came from RandRange, so the same fight
+  Source\VEIL\Private\Systems\VEILPerf.cpp:34 in Initialize  *FPlatformMisc::GetPrimaryGPUBrand(),
+
+PART 2 - THE SAVED LEVEL
+  static mesh actors: 747
+  duplicated (same mesh, same point): 1
+      SM_Floor1_Big and SM_Floor1_Big at (-100000,-55556,-51)
+  floating (no ground within 80 cm): 65
+      SM_AncientColumn_Big       at (3000,0,9050) gap=8950
+      SM_HolderRoof              at (-1520,-8568,1465) gap=1365
+      SM_HolderRoof              at (6908,5291,1465) gap=1365
+      SM_HolderRoof              at (-8668,765,1465) gap=1365
+      SM_HolderRoof              at (5874,-6419,1465) gap=1365
+      SM_HolderRoof              at (1140,-8568,1154) gap=1054
+      SM_HolderRoof              at (526,2261,1154) gap=1054
+      SM_HolderRoof              at (1140,-1250,1024) gap=924
+      SM_HolderRoof              at (4896,-2317,1024) gap=924
+      SM_HolderRoof              at (-1520,-3273,909) gap=809
+      SM_HolderRoof              at (3331,1386,909) gap=809
+      SM_HolderRoof              at (-3160,-1422,909) gap=809
+      SM_HolderRoof              at (-3393,1228,909) gap=809
+      SM_HolderRoof              at (1672,-3197,909) gap=809
+      SM_CliffSlate2             at (-8641,466,868) gap=768
+      SM_CliffMed2               at (-1220,-8568,807) gap=707
+      SM_CliffSlate2             at (3460,-4190,719) gap=619
+      SM_PyramidHead             at (1140,-8568,686) gap=586
+      SM_CliffSlate3             at (5692,-6657,664) gap=564
+      SM_CliffSlate3             at (6113,-6602,664) gap=564
+      SM_CliffSlate3             at (5636,-6237,664) gap=564
+      SM_CliffSlate3             at (6228,-6312,664) gap=564
+      SM_CliffSlate3             at (5886,-6050,664) gap=564
+      SM_CliffMed                at (-1220,-5295,651) gap=551
+      SM_CliffMed2               at (-1820,-8568,616) gap=516
+  overlapping pairs (bounds, >100 cm each axis): 215
+      SM_CliffBig x SM_CliffBig  1069306.7 m3 at (16184,21110,0)
+      SM_CliffBig x SM_CliffBig  656305.7 m3 at (2133,-24307,0)
+      SM_CliffBig x SM_CliffBig  638812.4 m3 at (-16370,14996,0)
+      SM_CliffBig x SM_CliffBig  594348.2 m3 at (16875,-10735,0)
+      SM_CliffBig x SM_CliffBig  441194.8 m3 at (-16370,14996,0)
+      SM_CliffBig x SM_CliffBig  434672.5 m3 at (-5763,21439,0)
+      SM_CliffBig x SM_CliffBig  304268.5 m3 at (20000,0,0)
+      SM_CliffBig x SM_CliffBig  292474.5 m3 at (20000,0,0)
+      SM_CliffBig x SM_CliffBig  245673.1 m3 at (16184,21110,0)
+      SM_CliffBig x SM_CliffBig  236392.2 m3 at (2133,-24307,0)
+      SM_CliffBig x SM_CliffBig  19629.4 m3 at (2133,-24307,0)
+      SM_AncientColumn_Big x SM_AncientColumn_Big  4254.4 m3 at (2705,-3427,0)
+      SM_CliffBig x SM_CliffBig  3156.4 m3 at (6421,3168,0)
+      SM_CliffBig x SM_Wall1_Big  2687.1 m3 at (4382,-7213,0)
+      SM_CliffBig x SM_CliffBig  2373.8 m3 at (-2363,-6077,0)
+      SM_CliffBig x SM_Wall1_Big  2365.6 m3 at (6421,3168,0)
+      SM_CliffBig x SM_Wall1_Big  2365.6 m3 at (-7489,2180,0)
+      SM_CliffBig x SM_Wall1_Big  2015.3 m3 at (-2363,-6077,0)
+      SM_CliffBig x SM_Wall1_Big  1958.6 m3 at (-4941,-6444,0)
+      SM_CliffBig x SM_Wall1_Big  1894.9 m3 at (-654,7451,0)
+      SM_CliffBig x SM_Wall1_Big  1845.5 m3 at (-2363,-6077,0)
+      SM_AncientColumn_Big x SM_AncientColumn_Big  1782.5 m3 at (1821,2040,0)
+      SM_CliffBig x SM_CliffBig  1591.7 m3 at (5044,-4620,0)
+      SM_CliffBig x SM_Wall1_Big  1581.3 m3 at (6421,3168,0)
+      SM_AncientColumn_Big x SM_AncientColumn_Big  1551.6 m3 at (3455,892,0)
+  no collision: 0

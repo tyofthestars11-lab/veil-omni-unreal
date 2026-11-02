@@ -404,7 +404,10 @@ void AVEILEnemy::Die()
 			{
 				if (APhiGear* Drop = DieW->SpawnActorDeferred<APhiGear>(APhiGear::StaticClass(), FTransform(FRotator::ZeroRotator, GetActorLocation())))
 				{
-					Drop->Stat = (EPHIGearStat)FMath::RandRange(0, 3);
+					// NO DICE ON LOOT. The champion's stat came from RandRange, so the same fight
+					// paid differently every run. Tier decides the stat: a rule the player can
+					// learn, and a drop a proof can predict.
+					Drop->Stat = (EPHIGearStat)FMath::Clamp((int32)ChampTier, 0, 3);
 					Drop->Tier = ChampTier;
 					Drop->GearName = FName(TEXT("Champion Spoil"));
 					Drop->FinishSpawning(FTransform(FRotator::ZeroRotator, GetActorLocation()));
