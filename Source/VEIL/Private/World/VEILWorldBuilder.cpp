@@ -1961,7 +1961,7 @@ void AVEILWorldBuilder::DressBeaconSites()
 	};
 
 	const FLinearColor Stone(0.62f, 0.58f, 0.52f);
-	const FLinearColor GoldTint(1.f, 0.72f, 0.24f);
+	const FLinearColor GoldTint(0.55f, 0.47f, 0.34f);   // bronze-stone, as the plaza pass
 
 	for (const FSite& Site : Sites)
 	{
@@ -2046,7 +2046,7 @@ void AVEILWorldBuilder::DressPhiPalette()
 
 	const double PhiLocal = 1.618033988749895;
 	const double GoldenDeg = 137.50776405003785;
-	const FLinearColor GoldTint(1.f, 0.78f, 0.30f);
+	const FLinearColor GoldTint(0.55f, 0.47f, 0.34f);   // bronze-stone, not plastic gold
 	const FLinearColor CrystalTint(0.30f, 0.62f, 1.f);
 
 	UStaticMesh* Pillar = ColumnMesh ? ColumnMesh.Get() : CylinderMesh.Get();
