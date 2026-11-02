@@ -708,28 +708,35 @@ void AVEILGameMode::BeginPlay()
 	// Placed worlds (the district / generated-world levels) already hold
 	// the city as real actors - the runtime builder stands down there, so
 	// one world is never built twice. On bare maps it still raises it.
+	// THE LEVEL DECIDES, NOT ITS NAME.
+	//
+	// This was a name test - "District" or "World" - with a redirect to VEILDistrict for
+	// anything else. That is the Cartesian move: enumerate the cases, then force every
+	// case that is not on the list into the one destination. It also cost a real crash:
+	// starting the arena travelled mid-frame to another map and the renderer died on the
+	// transition (EXCEPTION_ACCESS_VIOLATION reading 0xffffffffffffffff, six seconds after
+	// "Browse Started /Game/Maps/VEILDistrict").
+	//
+	// The whole carries its own state and does not need a list: a level that already holds
+	// generated actors IS a placed world, and a level that does not is empty ground that
+	// gets built where it stands. No whitelist, no redirect, and no map the game refuses
+	// to show.
 	const FString OpenMap = GetWorld()->GetName();
-	// EVERY GENERATED MAP IS A PLACED WORLD. The test was "District" or "World", which
-	// quietly excluded CountessRegion - so starting the arena travelled straight back to
-	// VEILDistrict and the arena could never be seen. The list is now the project's four
-	// maps, by name, and a map outside it is the only thing that gets redirected.
-	const bool bPlacedWorld = OpenMap.Contains(TEXT("District"))
-		|| OpenMap.Contains(TEXT("World"))
-		|| OpenMap.Contains(TEXT("CountessRegion"));
+	bool bPlacedWorld = false;
+	for (TActorIterator<AActor> It(GetWorld()); It; ++It)
+	{
+		if (It->Tags.Contains(FName(TEXT("VEIL_BAKE")))) { bPlacedWorld = true; break; }
+	}
 
-	// PLAY ALWAYS OPENS THE REAL MAP. This is why the game "goes back to blocks":
-	// pressing Play on any map that is not the district took the primitive build
-	// branch, which tears the level down and raises a world of engine shapes. Same
-	// code, different starting map, completely different game on screen. Rather than
-	// keep two worlds in sync, a non-district start travels to the district; the
-	// block world is not reachable from Play at all.
+	// NO REDIRECT. A map is never abandoned for another one: it is either already built,
+	// or it is built here. The old branch below - which raised a primitive world on any
+	// map outside the list - is gone with the list, because "not on the list" no longer
+	// means "wrong map"; it means "not built yet".
 	if (!bPlacedWorld)
 	{
 		UE_LOG(LogVEIL, Warning,
-			TEXT("VEIL STAGE: map=%s is not the district - travelling to /Game/Maps/VEILDistrict so Play always shows the real world."),
-			*GetWorld()->GetName());
-		UGameplayStatics::OpenLevel(this, FName(TEXT("/Game/Maps/VEILDistrict")));
-		return;
+			TEXT("VEIL STAGE: map=%s holds no generated world - raising it here, in place."),
+			*OpenMap);
 	}
 
 	AVEILWorldBuilder* Builder = GetWorld()->SpawnActor<AVEILWorldBuilder>(
