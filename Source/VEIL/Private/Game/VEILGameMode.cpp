@@ -1527,6 +1527,38 @@ void AVEILGameMode::BeginPlay()
 					{
 						UE_LOG(LogVEIL, Log, TEXT("PHI CAMERA PROBE: nothing within 2000 cm of the lens."));
 					}
+					// GOLD COLUMN COLLISION, MEASURED. The doc says SM_AncientColumn_Big is
+					// visual-only and every probe reports clear while the lens sits inside solid
+					// gold. Rather than argue, this finds the nearest column and traces straight
+					// at it: a hit proves collision exists, "clear" proves it does not.
+					{
+						AStaticMeshActor* NearestColumn = nullptr;
+						float BestDist = 1.0e9f;
+						for (TActorIterator<AStaticMeshActor> ColIt(GetWorld()); ColIt; ++ColIt)
+						{
+							UStaticMeshComponent* MC = ColIt->GetStaticMeshComponent();
+							if (!MC || !MC->GetStaticMesh()) { continue; }
+							if (!MC->GetStaticMesh()->GetName().Contains(TEXT("AncientColumn"))) { continue; }
+							const float D = FVector::Dist(ColIt->GetActorLocation(), Runner->GetActorLocation());
+							if (D < BestDist) { BestDist = D; NearestColumn = *ColIt; }
+						}
+						if (NearestColumn)
+						{
+							FHitResult ColHit;
+							FCollisionQueryParams ColParams(SCENE_QUERY_STAT(PhiColumnProbe), false, Runner);
+							const FVector Target = NearestColumn->GetActorLocation() + FVector(0.f, 0.f, 100.f);
+							const bool bColHit = GetWorld()->LineTraceSingleByChannel(ColHit,
+								LensLocation, Target, ECC_Visibility, ColParams);
+							FString Detail = TEXT("CLEAR - no collision on the column");
+							if (bColHit && ColHit.GetActor())
+							{
+								Detail = FString::Printf(TEXT("HIT %s at %.0f cm"),
+									*ColHit.GetActor()->GetName(), ColHit.Distance);
+							}
+							UE_LOG(LogVEIL, Log, TEXT("PHI COLUMN PROBE: nearest column %s is %.0f cm from the runner; trace %s"),
+								*NearestColumn->GetName(), BestDist, *Detail);
+						}
+					}
 				}), 4.f, false);
 		}
 

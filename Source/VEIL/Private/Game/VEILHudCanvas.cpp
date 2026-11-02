@@ -941,12 +941,14 @@ void AVEILHudCanvas::DrawHUD()
 		{
 			// THE CARD IS A CARD, NOT A PANEL. 360 x 138 covered the lower right of the
 			// district; 252 x 104 still teaches the gesture without hiding the world.
-			const float CW = 252.f;
+			// SPEC IS 320 x 90. At 252 x 104 the card was narrower and taller than the brief
+			// allows - a column of text where a single wide line belongs.
+			const float CW = 320.f;
 			const float CX = Canvas->ClipX - CW - 30.f;
 			// Under the map, not on top of it: the round instrument now reaches
 			// 30 + 220 px, so the card starts clear of the ring's halo.
 			const float CY = 30.f + 244.f;
-			const float CH = 104.f;
+			const float CH = 90.f;
 			const FVEILTutorialStep& S = Tut->GetStep();
 			const bool bDone = Tut->IsComplete();
 
