@@ -1605,9 +1605,13 @@ void AVEILHudCanvas::DrawHUD()
 			FVeilUI::Chip(this, FLinearColor(0.03f, 0.05f, 0.09f, 0.66f), OX - 18.f, OY - 6.f, OW + 36.f, OH + 12.f);
 			const bool bSpeaking = One->GetState() == EONEState::Speaking;
 			const bool bWorking = One->GetState() == EONEState::Thinking;
+			// Ready is deliberately dim: the dot only lights while the key is
+			// actually down, so "listening" can never be shown when it is not.
+			const bool bHearing = One->GetState() == EONEState::Listening;
 			const FLinearColor Orb = bSpeaking ? FLinearColor(1.f, 0.85f, 0.35f)
 				: bWorking ? FLinearColor(0.45f, 0.95f, 0.85f)
-				: FLinearColor(0.52f, 0.60f, 0.76f);
+				: bHearing ? FLinearColor(0.85f, 0.92f, 1.f)
+				: FLinearColor(0.30f, 0.34f, 0.44f);
 			DrawRect(Orb, OX - 12.f, OY + OH * 0.5f - 3.f, 6.f, 6.f);
 			DrawText(OneLine, bSpeaking ? FLinearColor(1.f, 0.92f, 0.72f) : FLinearColor(0.82f, 0.88f, 1.f),
 				OX, OY, Med, 0.9f);

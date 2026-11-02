@@ -13,6 +13,7 @@ public class VEIL : ModuleRules
 			"CoreUObject",
 			"Engine",
 			"ProceduralMeshComponent",
+			"Voice",
 			"InputCore",
 			"EnhancedInput",
 			"AIModule",

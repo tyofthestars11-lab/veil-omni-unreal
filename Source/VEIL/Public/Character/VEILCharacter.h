@@ -41,6 +41,10 @@ public:
 
 	virtual void Tick(float DeltaSeconds) override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+
+	/** PUSH TO TALK: B opens ONE's microphone while held, closes it on release. */
+	void OneTalkPressed();
+	void OneTalkReleased();
 	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent,
 		class AController* EventInstigator, AActor* DamageCauser) override;
 

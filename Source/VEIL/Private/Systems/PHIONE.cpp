@@ -14,6 +14,7 @@
 #include "HAL/IConsoleManager.h"
 #include "Misc/FileHelper.h"
 #include "Misc/Paths.h"
+#include "VoiceModule.h"
 
 namespace
 {
@@ -101,14 +102,22 @@ void UPHIONE::OnWorldBeginPlay(UWorld& InWorld)
 	Add(TEXT("fly.on"), TEXT("game"), OnePhi, TEXT("fly"),
 		{ TEXT("fly"), TEXT("take off") });
 
-	State = EONEState::Listening;
-	UE_LOG(LogVEIL, Warning, TEXT("PHI ONE: awake. %d skills across game / ledger / pc / voice. Memory: Saved/ONE/ledger.txt"),
+	State = EONEState::Ready;
+	UE_LOG(LogVEIL, Warning, TEXT("PHI ONE: awake, ready - hold B to speak. %d skills across game / ledger / pc / voice. Memory: Saved/ONE/ledger.txt"),
 		SkillTable.Num());
 }
 
 void UPHIONE::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+
+	// A key held and never let go (alt-tab, unplugged controller) must not hold the
+	// microphone open forever. Twenty seconds is a ceiling on one breath, not a
+	// conversation limit.
+	if (bTalking && GetWorld() && GetWorld()->GetTimeSeconds() - TalkStart > 20.f)
+	{
+		EndTalk();
+	}
 
 	if (SpeakTime > 0.f)
 	{
@@ -195,10 +204,65 @@ void UPHIONE::Tick(float DeltaTime)
 // ---------------------------------------------------------------------------
 FString UPHIONE::StateLine() const
 {
-	const TCHAR* StateWord = State == EONEState::Listening ? TEXT("listening")
+	const TCHAR* StateWord = State == EONEState::Ready ? TEXT("ready - hold B to speak")
+		: State == EONEState::Listening ? TEXT("listening")
 		: State == EONEState::Thinking ? TEXT("working") : TEXT("speaking");
 	if (Reply.IsEmpty()) { return FString::Printf(TEXT("ONE  %s"), StateWord); }
 	return FString::Printf(TEXT("ONE  %s  -  %s"), StateWord, *Reply);
+}
+
+void UPHIONE::BeginTalk()
+{
+	UWorld* W = GetWorld();
+	if (!W || bTalking) { return; }
+	// Never talk over itself: if ONE is mid-sentence the key is ignored rather
+	// than cutting the reply off half-spoken.
+	if (State == EONEState::Speaking) { return; }
+
+	// The microphone is opened HERE and only here. If the machine has no capture
+	// device the state still changes and the hold is still measured - the honest
+	// answer is "held, but I could not open a microphone", not silence.
+	if (!Voice.IsValid() && FVoiceModule::IsAvailable())
+	{
+		Voice = FVoiceModule::Get().CreateVoiceCapture(FString(), 16000, 1);
+	}
+	bMicOpened = false;
+	if (Voice.IsValid())
+	{
+		Voice->Start();
+		bMicOpened = Voice->IsCapturing();
+	}
+
+	bTalking = true;
+	TalkStart = W->GetTimeSeconds();
+	State = EONEState::Listening;
+	Reply = TEXT("Listening - let go to send.");
+	UE_LOG(LogVEIL, Warning,
+		TEXT("PHI ONE: TALK DOWN. microphone %s. Nothing is captured before this key goes down."),
+		bMicOpened ? TEXT("open") : TEXT("could not be opened"));
+}
+
+void UPHIONE::EndTalk()
+{
+	if (!bTalking) { return; }
+	UWorld* W = GetWorld();
+	LastHeld = W ? FMath::Max(0.f, W->GetTimeSeconds() - TalkStart) : 0.f;
+	bTalking = false;
+
+	if (Voice.IsValid() && bMicOpened) { Voice->Stop(); }
+	const bool bHadMic = bMicOpened;
+	bMicOpened = false;
+
+	State = EONEState::Ready;
+	// HONEST: this project has no speech-to-text wired in, so the hold is measured
+	// and reported instead of pretending a sentence was understood and acted on.
+	Reply = bHadMic
+		? FString::Printf(TEXT("Heard %.1f s. No words yet - nothing here turns sound into text."), LastHeld)
+		: TEXT("No microphone on this machine.");
+	WriteLedger(TEXT("[push-to-talk] key held"), Reply, TEXT("voice"), RungOf(FMath::Max(LastHeld, 0.01f)));
+	UE_LOG(LogVEIL, Warning,
+		TEXT("PHI ONE: TALK UP. held %.2f s, microphone opened=%d. No transcriber is wired, so no skill fired."),
+		LastHeld, bHadMic ? 1 : 0);
 }
 
 void UPHIONE::Speak(const FString& InReply, const FString& InHand)
@@ -426,6 +490,19 @@ static FAutoConsoleCommandWithWorldAndArgs GOneSay(
 		const bool bFired = One->Say(Spoken);
 		UE_LOG(LogVEIL, Warning, TEXT("PHI ONE RESULT: fired=%d reply=\"%s\" hand=%s"),
 			bFired ? 1 : 0, *One->GetReply(), *One->GetHand());
+	}));
+
+static FAutoConsoleCommandWithWorldAndArgs GOneTalk(
+	TEXT("one.talk"),
+	TEXT("Push to talk: one.talk start | one.talk stop"),
+	FConsoleCommandWithWorldAndArgsDelegate::CreateLambda([](const TArray<FString>& Args, UWorld* World)
+	{
+		UPHIONE* One = World ? World->GetSubsystem<UPHIONE>() : nullptr;
+		if (!One) { return; }
+		const FString What = Args.Num() > 0 ? Args[0].ToLower() : TEXT("start");
+		if (What == TEXT("stop")) { One->EndTalk(); } else { One->BeginTalk(); }
+		UE_LOG(LogVEIL, Warning, TEXT("PHI ONE STATE: %s  talking=%d"),
+			*One->StateLine(), One->IsTalking() ? 1 : 0);
 	}));
 
 static FAutoConsoleCommandWithWorldAndArgs GOneState(

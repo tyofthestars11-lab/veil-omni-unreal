@@ -1,5 +1,6 @@
 // VEIL: THE LAST SIGNAL - player character implementation.
 #include "Character/VEILCharacter.h"
+#include "Systems/PHIONE.h"
 
 #include "Engine/OverlapResult.h"
 #include "Camera/CameraComponent.h"
@@ -536,6 +537,12 @@ void AVEILCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 	PlayerInputComponent->BindKey(EKeys::Gamepad_LeftTrigger, IE_Released, this, &AVEILCharacter::FlyUpStop);
 	PlayerInputComponent->BindKey(EKeys::Gamepad_LeftShoulder, IE_Pressed, this, &AVEILCharacter::FlyDownStart);
 	PlayerInputComponent->BindKey(EKeys::Gamepad_LeftShoulder, IE_Released, this, &AVEILCharacter::FlyDownStop);
+
+	// PUSH TO TALK: B, held. ONE's microphone is open only between these two
+	// events - there is no always-listening mode to switch off. LeftAlt is the
+	// dodge, so talking could never share it.
+	PlayerInputComponent->BindKey(EKeys::B, IE_Pressed, this, &AVEILCharacter::OneTalkPressed);
+	PlayerInputComponent->BindKey(EKeys::B, IE_Released, this, &AVEILCharacter::OneTalkReleased);
 
 	// 1st/3rd person toggle: V on keyboard, right-stick click (R3) on the pad.
 	PlayerInputComponent->BindKey(EKeys::V, IE_Pressed, this, &AVEILCharacter::ToggleCameraMode);
@@ -1548,3 +1555,20 @@ static FAutoConsoleCommandWithWorldAndArgs GPhiState(
 			C->GetVelocity().Size(), C->GetVelocity().Z, C->GetATP(),
 			C->IsGodMode() ? 1 : 0, *C->GetActorLocation().ToCompactString());
 	}));
+
+
+void AVEILCharacter::OneTalkPressed()
+{
+	if (UWorld* W = GetWorld())
+	{
+		if (UPHIONE* One = W->GetSubsystem<UPHIONE>()) { One->BeginTalk(); }
+	}
+}
+
+void AVEILCharacter::OneTalkReleased()
+{
+	if (UWorld* W = GetWorld())
+	{
+		if (UPHIONE* One = W->GetSubsystem<UPHIONE>()) { One->EndTalk(); }
+	}
+}

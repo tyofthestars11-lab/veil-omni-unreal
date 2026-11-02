@@ -30,6 +30,9 @@
 UENUM(BlueprintType)
 enum class EONEState : uint8
 {
+	/** Awake and available, microphone CLOSED. This is where ONE lives by default. */
+	Ready,
+	/** Only while the talk key is held: the microphone is open. */
 	Listening,
 	Thinking,
 	Speaking
@@ -60,6 +63,14 @@ public:
 
 	/** Speak an intent. ONE answers in one breath. True if a skill fired. */
 	bool Say(const FString& Utterance);
+
+	/** PUSH TO TALK. ONE is not always listening. The microphone opens while the
+	 *  key is held and closes the instant it is let go; between presses the state
+	 *  is Ready, not Listening. Always available, never always listening. */
+	void BeginTalk();
+	void EndTalk();
+	bool IsTalking() const { return bTalking; }
+	float LastTalkSeconds() const { return LastHeld; }
 
 	/** The skill table, as data - the HUD and the ledger read the same list. */
 	const TArray<FONESkill>& Skills() const { return SkillTable; }
@@ -94,11 +105,18 @@ private:
 	TArray<FONESkill> SkillTable;
 	TArray<FString> LedgerLines;
 
-	EONEState State = EONEState::Listening;
+	EONEState State = EONEState::Ready;
 	FString Reply;
 	FString HandUsed;
 	/** Seconds of "speaking" left, so the orb has something honest to show. */
 	float SpeakTime = 0.f;
+
+	/** Push-to-talk state: captured only while the key is down. */
+	bool bTalking = false;
+	float TalkStart = 0.f;
+	float LastHeld = 0.f;
+	bool bMicOpened = false;
+	TSharedPtr<class IVoiceCapture> Voice;
 
 	/** The flight ONE is currently driving, if any. */
 	bool bCarrying = false;
