@@ -1,0 +1,124 @@
+// VEIL OMNI quest system, VEIL module version.
+// Replaces the PC-only D:\VEIL-OMNI\Source\VEIL\Private\Systems\OMNIQuestSystem.cpp
+// that failed to build (photos 246/247). That PC file is not the 145-line
+// OMNI-tree file: it was at least 276 lines, with ChoiceOpen / AnswerChoice,
+// a CacheEpic spawn, and a faction rep call. This file is a clean,
+// brace-balanced version of the same chain, using only APIs that exist
+// in the VEIL module: UVEILFactionManager (with AdjustRep, added in
+// VEILFactionAI), UVEILProgression, and standard Engine calls.
+// No APhiGear class exists in the repo, so CacheEpic is spawned as a
+// plain AActor at the same location (300, -6200, 80) — see SpawnCacheGear.
+// No AOMNIWardenPrime class exists in the VEIL module, so WakeWarden
+// opens the arena gate in code and logs it; the arena itself is
+// UVEILQuest::StartWardenArena, not a cross-module spawn.
+#pragma once
+
+#include "CoreMinimal.h"
+#include "Subsystems/WorldSubsystem.h"
+#include "OMNIQuestSystem.generated.h"
+
+UENUM(BlueprintType)
+enum class EOMNIQuestStage : uint8
+{
+	MeetKeeper,
+	GatherFragments,
+	MeetSeer,
+	ReachCache,
+	WardenAwake,
+	Clear
+};
+
+UCLASS()
+class VEIL_API UOMNIQuestSystem : public UWorldSubsystem
+{
+	GENERATED_BODY()
+
+public:
+	virtual void OnWorldBeginPlay(UWorld& InWorld) override;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "VEIL|Quest")
+	EOMNIQuestStage Stage = EOMNIQuestStage::MeetKeeper;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "VEIL|Quest")
+	int32 Level = 1;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "VEIL|Quest")
+	int32 XP = 0;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "VEIL|Quest")
+	int32 Gold = 0;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "VEIL|Quest")
+	int32 Fragments = 0;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "VEIL|Quest")
+	int32 Shards = 0;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "VEIL|Quest")
+	int32 ForgeLevel = 0;
+
+	// Phi framework fix, not Cartesian: RegionMap is ONE region name string, never a whole map printed as %s.
+	// PC call sites, whole: PHICompanionParty.cpp(202) Q->RegionMap.Contains(TEXT("OMNIWorld")) works on FString,
+	// VEILHudCanvas.cpp(108) *Q->RegionMap as %s works on FString only. TMap broke the HUD line — removed.
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "VEIL|Quest")
+	FString RegionMap;
+
+	// PC call site VEILHudCanvas.cpp(65): Q->ClaimedBeacons
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "VEIL|Quest")
+	TArray<FName> ClaimedBeacons;
+
+	// CLAIMING A BEACON. Nothing in the project ever added to ClaimedBeacons, so the
+	// HUD counter was structurally pinned at 0/3 no matter how much was played - the
+	// number had no writer. These two are that writer: the player's own interact
+	// calls the near-claim, and the proof hook calls the SAME index claim, so a photo
+	// cannot show a beacon a player could not have forged.
+	bool ClaimBeacon(int32 Index);
+	bool ClaimBeaconNear(const FVector& From, float ReachCm = 0.f);
+
+	/** Re-seat the HUD's beacon counter from a loaded save, in site order, so a
+	 *  reload shows the stones that were actually forged and nothing else. */
+	void RestoreBeacons(int32 Count);
+
+	/** Read the one save at the panel's OWN boot. Subsystem begin-play order is not
+	 *  guaranteed, so the HUD's book cannot wait for another system to hand it the
+	 *  run - it opens the same file itself, and then there is no order that leaves
+	 *  a saved run looking like a fresh one. */
+	void LoadFromSave();
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "VEIL|Quest")
+	bool bLoadedFromSave = false;
+
+	/** Write this book's numbers into the progression book, which is the one that
+	 *  touches the file. Without it the panel and the save drift apart. */
+	void PersistToBook();
+
+	// Phi read, not Cartesian flat print: one region name, never the whole map as %s.
+	// PC VEILHudCanvas.cpp(108) failed FormatStringSan printing *Q->RegionMap as %s.
+	FString GetRegionName() const;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "VEIL|Quest")
+	bool bChoiceOpen = false;
+
+	static int32 XPNeedForLevel(int32 InLevel);
+	void AwardXP(int32 Amount, const TCHAR* Reason);
+	void TalkTo(FName Giver);
+	void CollectFragment();
+	// PC call site VEILEnemy.cpp(174): DieQ->AddShard() — shard count, same as a fragment.
+	void AddShard();
+	void ReachCache();
+	void WakeWarden();
+	void DefeatWarden();
+
+	// Choice dialogue, as in the PC file (lines 243 / 248 there).
+	// ChoiceOpen reports whether a choice is currently offered.
+	bool ChoiceOpen() const;
+	// AnswerChoice applies the chosen answer and closes the choice.
+	void AnswerChoice(int32 N);
+
+	// Cache gear, as in the PC file (line 234 there).
+	// Spawns the cache actor at (300, -6200, 80) and returns it, or null.
+	AActor* SpawnCacheGear();
+
+private:
+	void AdvanceTo(EOMNIQuestStage NewStage);
+};

@@ -1,0 +1,99 @@
+﻿{
+ "Category": "Games",
+ "Description": "VEIL: THE LAST SIGNAL - original sci-fi RPG. Prototype 01 foundation: character, factions, district streaming, discovery.",
+ "EngineAssociation": "5.8",
+ "FileVersion": 3,
+ "Modules": [
+  {
+   "LoadingPhase": "Default",
+   "Name": "VEIL",
+   "Type": "Runtime"
+  }
+ ],
+ "Plugins": [
+  {
+   "Enabled": true,
+   "Name": "EnhancedInput"
+  },
+  {
+   "Name": "PythonScriptPlugin",
+   "Enabled": true
+  },
+  {
+   "Name": "EditorScriptingUtilities",
+   "Enabled": true
+  },
+  {
+   "Name": "GeometryScripting",
+   "Enabled": true
+  },
+  {
+   "Name": "ModelingToolsEditorMode",
+   "Enabled": true
+  },
+  {
+   "Name": "PCG",
+   "Enabled": true
+  },
+  {
+   "Enabled": true,
+   "Name": "MetaHuman",
+   "SupportedTargetPlatforms": [
+    "Win64",
+    "Linux",
+    "Mac"
+   ]
+  },
+  {
+   "Enabled": true,
+   "Name": "MetaHumanCharacter"
+  },
+  {
+   "Name": "ModelContextProtocol",
+   "Enabled": true
+  },
+  {
+   "Name": "Nwiro",
+   "MarketplaceURL": "com.epicgames.launcher://ue/Fab/product/22e3bc90-ed91-4154-8bea-21c33e6a51b7",
+   "Enabled": true,
+   "TargetAllowList": [ "Editor" ]
+  },
+  {
+   "Name": "WebBrowserWidget",
+   "Enabled": true,
+   "TargetAllowList": [ "Editor" ]
+  },
+  {
+   "Name": "Niagara",
+   "Enabled": true
+  },
+  {
+   "Name": "StateTree",
+   "Enabled": true
+  },
+  {
+   "Name": "IKRig",
+   "Enabled": true
+  },
+  {
+   "Name": "PoseSearch",
+   "Enabled": true
+  },
+  {
+   "Name": "HDRIBackdrop",
+   "Enabled": true
+  },
+  {
+   "Name": "LandscapePatch",
+   "Enabled": true
+  },
+  {
+   "Name": "AllToolsets",
+   "Enabled": true
+  },
+  {
+   "Name": "ToolsetRegistry",
+   "Enabled": true
+  }
+ ]
+}

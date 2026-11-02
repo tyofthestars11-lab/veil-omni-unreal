@@ -1,0 +1,21 @@
+# VEIL OMNI - repository guard.
+# The game assets are the one thing that must never be lost, and they are not
+# something git should carry without LFS. Content, Saved and the packs stay on
+# disk exactly as they are; this repository tracks the code that builds them.
+Content/
+Saved/
+DerivedDataCache/
+Intermediate/
+Binaries/
+Packaged/
+Backup_veil_omni_install_*/
+Backup_*/
+Build/
+.vs/
+*.sln
+*.slnx
+*.log
+*.uba
+*.sav
+*.bak*
+*.phi-backup-*
