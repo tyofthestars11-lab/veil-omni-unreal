@@ -1084,7 +1084,16 @@ UInstancedStaticMeshComponent* AVEILWorldBuilder::MakeSet(UStaticMesh* Mesh,
 	UInstancedStaticMeshComponent* Set = NewObject<UInstancedStaticMeshComponent>(this);
 	Set->SetStaticMesh(Mesh);
 	Set->SetMobility(EComponentMobility::Movable);
+	// AN INSTANCED SET TAKES ITS COLLISION FROM THE MESH, NOT FROM THIS COMPONENT.
+	// SetCollisionEnabled alone left the plaza columns as pictures: the column probe traced
+	// horizontally at z=+700 straight at the nearest AncientColumn and reported CLEAR.
+	// bUseDefaultCollision makes each instance use the mesh's own collision body, and the
+	// profile names the response set explicitly instead of relying on the default.
 	Set->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	Set->SetCollisionProfileName(UCollisionProfile::BlockAll_ProfileName);
+	// There is no SetUseDefaultCollision() on this class in 5.8 - it is the
+	// bUseDefaultCollision property, which is what the compiler said (C2039).
+	Set->bUseDefaultCollision = true;
 	Set->SetCastShadow(true);
 	if (UMaterialInterface* Base = Mesh->GetMaterial(0))
 	{
