@@ -948,7 +948,12 @@ void AVEILHudCanvas::DrawHUD()
 			const FVEILTutorialStep& S = Tut->GetStep();
 			const bool bDone = Tut->IsComplete();
 
-			FVeilUI::Glass(this, FLinearColor(0.022f, 0.030f, 0.056f, 0.82f), CX, CY, CW, CH, 12.f);
+			// 85%, BECAUSE THE BIBLE IS THE LAW. The spec sheet for this pass says 55% so
+			// the world shows through the smaller windows; the Bible says "fill Navy #0E1424
+			// at 85% opacity" (Docs/VEIL_Bible.md:48). The Bible wins: one number, stated
+			// once, and every panel reads the same. This card was the one panel that had
+			// drifted to 82%, so it is the one line changed.
+			FVeilUI::Glass(this, FLinearColor(0.022f, 0.030f, 0.056f, 0.85f), CX, CY, CW, CH, 12.f);
 			FVeilUI::RoundRect(this, FLinearColor(1.f, 0.80f, 0.32f, 0.92f), CX + 1.f, CY + 12.f, 3.f, CH - 24.f, 1.5f);
 
 			DrawText(bDone ? FString(TEXT("FIELD MANUAL"))
