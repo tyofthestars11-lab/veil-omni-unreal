@@ -64,7 +64,7 @@
   },
   {
    "Name": "WebBrowserWidget",
-   "Enabled": true,
+   "Enabled": false,
    "TargetAllowList": [ "Editor" ]
   },
   {
