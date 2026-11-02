@@ -63,9 +63,18 @@ Asset:  /Game/Sicka_EnvPack2/Sicka_Ancient_Kit/Mesh/Props/SM_AncientColumn_Big
         tinted with /Game/PHI/Palette/M_PHI_Gold
 Maker:  AVEILWorldBuilder::SpawnBlockRot / SpawnBlock
 File:   Source/VEIL/Private/World/VEILWorldBuilder.cpp lines 164 (load) and 766 (tint)
-Status: these are real kit meshes, not engine primitives, but the gold tint is applied
-so widely that they read as stacked boxes. Not fixed in this pass. Next step is a
-material pass: gold on trim, pillars as accents and beacons only, warm stone for walls.
+Status: these are real kit meshes, not engine primitives, but they read as stacked gold
+boxes because of the MATERIAL, not the tint. `AVEILWorldBuilder` builds the pillars through
+its `Place()` lambda (VEILWorldBuilder.cpp ~line 2027), which explicitly assigns
+/Game/PHI/Palette/M_PHI_Gold as the material. Recolouring the GoldTint constants therefore
+does almost nothing: the gold comes from the material's own base colour, and the tint only
+multiplies against it. Three colour passes (d7b46eb, d3ed4ff and the one before) changed
+values without changing the look, which is a useful negative result.
+
+WHAT ACTUALLY FIXES IT: assign a stone material (for example
+/Game/StarterContent/Materials/M_Brick_Cut_Stone) to the pillar bodies inside `Place()`,
+and keep M_PHI_Gold only for the beacon and crown accents. That is a material swap in one
+function, not a palette change, and it has not been made yet.
 
 --------------------------------------------------------------------------
 5. BLUE BLOCKS / WIREFRAME-LOOKING BLUE PILLARS
