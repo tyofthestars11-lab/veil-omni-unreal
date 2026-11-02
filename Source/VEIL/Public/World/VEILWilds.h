@@ -65,7 +65,11 @@ struct FVEILCamp
 	float Intent = 0.f;
 	float BaseDamage = 10.f;
 	float BaseSpeed = 300.f;
+	/** Where the camp stands: the place its members retreat to. */
+	FVector Center = FVector::ZeroVector;
 	bool bResting = false;
+	/** Last order issued, as an int so the enum stays out of the header. */
+	int32 Order = -1;
 };
 
 /**

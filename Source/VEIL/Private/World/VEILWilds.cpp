@@ -1,10 +1,12 @@
 #include "World/VEILWilds.h"
 
+#include "AIController.h"
 #include "Components/PointLightComponent.h"
 #include "Components/SphereComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Engine/StaticMesh.h"
 #include "Engine/World.h"
+#include "Kismet/GameplayStatics.h"
 #include "Materials/MaterialInterface.h"
 #include "Systems/OMNIQuestSystem.h"
 #include "Systems/VEILEnemy.h"
@@ -16,6 +18,20 @@ namespace
 	constexpr float WildsPhi = 1.6180339887f;
 	/** 1/phi^2: the decide threshold. Below it a camp rests, above it hunts. */
 	constexpr float WildsRestDigit = 0.3819660113f;
+
+	/** What a camp does, chosen by its numerals. */
+	enum class EWildsOrder : uint8 { Hold, Hunt, Encircle, Retreat };
+
+	inline const TCHAR* OrderName(EWildsOrder Order)
+	{
+		switch (Order)
+		{
+		case EWildsOrder::Hold:     return TEXT("HOLD");
+		case EWildsOrder::Encircle: return TEXT("ENCIRCLE");
+		case EWildsOrder::Retreat:  return TEXT("RETREAT");
+		default:                    return TEXT("HUNT");
+		}
+	}
 
 	const TCHAR* WildsGoldPath = TEXT("/Game/PHI/Palette/M_PHI_GoldMetallic.M_PHI_GoldMetallic");
 	const TCHAR* WildsCrystalPath = TEXT("/Game/PHI/Palette/M_PHI_DeepBlue.M_PHI_DeepBlue");
@@ -176,6 +192,7 @@ void AVEILWildsPopulation::Populate(int32 Camps_, int32 Mines_)
 		Camp.BaseDamage = Species.Damage;
 		Camp.BaseSpeed = Species.Speed;
 		Camp.Intent = FMath::Frac(Camp.Phase * WildsPhi);
+		Camp.Center = FVector(CX, CY, CZ);
 
 		// The camp's gold post, so a player can find it from a distance.
 		if (UStaticMesh* Post = LoadObject<UStaticMesh>(nullptr, TEXT("/Engine/BasicShapes/Cylinder.Cylinder")))
@@ -266,33 +283,84 @@ void AVEILWildsPopulation::Tick(float DeltaSeconds)
 	const float Step = DecideClock;
 	DecideClock = 0.f;
 
+	APawn* Runner = UGameplayStatics::GetPlayerPawn(this, 0);
+
 	for (int32 c = 0; c < Camps.Num(); ++c)
 	{
 		FVEILCamp& Camp = Camps[c];
-		Camp.Phase += Step;                                  // the camp's own clock
-		Camp.Intent = FMath::Frac(Camp.Phase * WildsPhi);     // the decide digit
+		Camp.Phase += Step;
 
-		// Two quantities on opposite phases: aggression rises as weight falls.
+		// THREE DIGITS, THREE INDEPENDENT DECISIONS. Times phi, phi^2, phi^3: the
+		// numerals are incommensurate, so a camp can be hunting, encircling and
+		// willing to retreat at the same time without the three agreeing by accident.
+		Camp.Intent = FMath::Frac(Camp.Phase * WildsPhi);
+		const float OrderDigit = FMath::Frac(Camp.Phase * WildsPhi * WildsPhi);
+		const float RetreatDigit = FMath::Frac(Camp.Phase * WildsPhi * WildsPhi * WildsPhi);
+
 		const float Breath = 1.f + 0.09f * FMath::Sin(Camp.Phase * WildsPhi);
-		const bool bRest = Camp.Intent < WildsRestDigit;
+
+		EWildsOrder Order = EWildsOrder::Hunt;
+		if (Camp.Intent < WildsRestDigit) { Order = EWildsOrder::Hold; }
+		else if (OrderDigit < WildsRestDigit) { Order = EWildsOrder::Encircle; }
 
 		for (int32 m = Camp.Members.Num() - 1; m >= 0; --m)
 		{
 			AVEILEnemy* Foe = Camp.Members[m].Get();
 			if (!Foe) { Camp.Members.RemoveAt(m); continue; }
 
+			// The body breathes on the same clock: aggression up, weight down.
 			Foe->AttackDamage = Camp.BaseDamage * Breath;
 			Foe->MoveSpeed = Camp.BaseSpeed * (2.f - Breath);
-			// The digit is a decision, not a die roll: below 1/phi^2 the camp holds.
-			if (bRest) { Foe->StandDown(1.2f); }
+
+			EWildsOrder Member = Order;
+			const float HealthFraction = Foe->MaxHealth > 0.f ? Foe->Health / Foe->MaxHealth : 1.f;
+			if (HealthFraction < 0.25f && RetreatDigit < 0.5f)
+			{
+				Member = EWildsOrder::Retreat;
+			}
+
+			AAIController* AI = Cast<AAIController>(Foe->GetController());
+			switch (Member)
+			{
+			case EWildsOrder::Hold:
+				// The digit says hold: stand down and stop, rather than orbit.
+				Foe->StandDown(1.2f);
+				if (AI) { AI->StopMovement(); }
+				break;
+
+			case EWildsOrder::Retreat:
+				// Hurt and the retreat numeral is low: fall back to the camp post.
+				Foe->StandDown(0.f);
+				if (AI) { AI->MoveToLocation(Camp.Center, 150.f); }
+				break;
+
+			case EWildsOrder::Encircle:
+				// The order numeral says encircle: each member takes a golden-angle
+				// station around the runner at a radius set by its index.
+				Foe->StandDown(0.f);
+				if (AI && Runner)
+				{
+					const float A = FMath::DegreesToRadians(m * WildsGoldenDeg);
+					const float R = 520.f + 90.f * m;
+					AI->MoveToLocation(Runner->GetActorLocation() +
+						FVector(FMath::Cos(A) * R, FMath::Sin(A) * R, 0.f), 110.f);
+				}
+				break;
+
+			case EWildsOrder::Hunt:
+			default:
+				Foe->StandDown(0.f);
+				if (AI && Runner) { AI->MoveToActor(Runner, 160.f); }
+				break;
+			}
 		}
 
-		if (bRest != Camp.bResting)
+		if ((int32)Order != Camp.Order)
 		{
-			Camp.bResting = bRest;
-			UE_LOG(LogVEIL, Log, TEXT("PHI ECOLOGY: camp %d %s (decide digit %.3f, %s 0.382)."),
-				c, bRest ? TEXT("HOLDS") : TEXT("HUNTS"), Camp.Intent,
-				bRest ? TEXT("below") : TEXT("above"));
+			Camp.Order = (int32)Order;
+			UE_LOG(LogVEIL, Warning,
+				TEXT("PHI ECOLOGY: camp %d order %s (digits intent %.3f order %.3f retreat %.3f)."),
+				c, OrderName(Order), Camp.Intent, OrderDigit, RetreatDigit);
 		}
 	}
 }
