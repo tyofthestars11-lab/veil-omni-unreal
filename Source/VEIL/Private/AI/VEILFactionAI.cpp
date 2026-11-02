@@ -112,6 +112,15 @@ AVEILFactionAgent::AVEILFactionAgent()
 	// none of them is running a 0/1 flag. The enemy class already had this; the plaza
 	// guards did not, which is why the district's people acted like switches.
 	Brain = CreateDefaultSubobject<UPHI_NPCProcessor>(TEXT("PhiBrain"));
+	// A BRAIN THAT NEVER TICKS IS A LABEL. The first run seeded every machine and logged
+	// phase 0.0000, band 0.0000, mood 0.0000 for all of them: the component's clock was not
+	// running, so no intent was ever chosen. The tick is switched on here, at the component.
+	if (Brain)
+	{
+		Brain->PrimaryComponentTick.bCanEverTick = true;
+		Brain->PrimaryComponentTick.bStartWithTickEnabled = true;
+		Brain->SetComponentTickEnabled(true);
+	}
 
 	Health = MaxHealth;
 }
@@ -237,6 +246,25 @@ void AVEILFactionAgent::Tick(float DeltaSeconds)
 	Super::Tick(DeltaSeconds);
 	if (!IsAlive()) return;
 
+	// DECIDE AT THE TOP, BEFORE ANY GATE. The first version put this below the sanctuary
+	// and stand-down return, so a machine holding its post never reached its own brain - the
+	// run showed eight seeds and not one decision. Every living machine decides every tick.
+	if (Brain)
+	{
+		const float Dist = TargetActor.IsValid()
+			? (float)FVector::Dist(TargetActor->GetActorLocation(), GetActorLocation()) : 1.e9f;
+		const float Threat01 = FMath::Clamp(1.f - Dist / FMath::Max(1.f, SightRange), 0.f, 1.f);
+		const float Health01 = FMath::Clamp(Health / FMath::Max(1.f, MaxHealth), 0.f, 1.f);
+		const EPhiIntent Intent = Brain->ChooseIntent(Threat01, Health01, TargetActor.IsValid());
+		if (Intent != LastPhiIntent)
+		{
+			LastPhiIntent = Intent;
+			UE_LOG(LogVEIL, Log, TEXT("PHI BRAIN: %s -> %s | threat %.2f health %.2f | %s"),
+				*GetActorNameOrLabel(), *UPHI_NPCProcessor::IntentName(Intent), Threat01, Health01,
+				*Brain->StatusLine());
+		}
+	}
+
 	// GODMODE PAGE: frozen means frozen - the agent keeps its post and its
 	// memories, it simply stops living for as long as the switch is on.
 	if (UPHICheats::AreEnemiesFrozen(GetWorld())) return;
@@ -285,15 +313,9 @@ void AVEILFactionAgent::Tick(float DeltaSeconds)
 		const float Dist = TargetActor.IsValid()
 			? (float)FVector::Dist(TargetActor->GetActorLocation(), GetActorLocation()) : 1.e9f;
 		const float Threat01 = FMath::Clamp(1.f - Dist / FMath::Max(1.f, SightRange), 0.f, 1.f);
-		const float Health01 = FMath::Clamp(Health / FMath::Max(1.f, MaxHealth), 0.f, 1.f);
-		const EPhiIntent Intent = Brain->ChooseIntent(Threat01, Health01, TargetActor.IsValid());
-		if (Intent != LastPhiIntent)
-		{
-			LastPhiIntent = Intent;
-			UE_LOG(LogVEIL, Log, TEXT("PHI BRAIN: %s -> %s | threat %.2f health %.2f | %s"),
-				*GetActorNameOrLabel(), *UPHI_NPCProcessor::IntentName(Intent), Threat01, Health01,
-				*Brain->StatusLine());
-		}
+		// The decision was made at the top of Tick; this only acts on it. One brain, one
+		// decision per frame, and the gate down here cannot hide it from the log.
+		const EPhiIntent Intent = Brain->GetIntent();
 		// With nothing in hand, the brain chooses between standing the post and walking
 		// its ground. A restful machine stands still; a restless one patrols.
 		if (!TargetActor.IsValid())
