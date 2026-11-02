@@ -1,0 +1,47 @@
+==============================================================================
+VEIL OMNI - SIMULATED RUN (no engine, real constants)
+==============================================================================
+ACTIVITY BOARD
+  activities: 50   regions: 5   slots: 10
+  unreachable by supply: 0
+  marker spread per region: 700 cm .. 2590 cm
+  farthest marker from plaza: 8187 cm (0.1 km)
+  kills     supply inf   max ask 66   closes 8
+  fragments supply 3     max ask 3    closes 8
+  voices    supply inf   max ask 10   closes 8
+  caches    supply 1     max ask 1    closes 9
+  waves     supply 5     max ask 5    closes 9
+  beacons   supply 3     max ask 3    closes 8
+
+THE SIX ACTS (as the campaign gates them)
+     1.0 min  ACT I   count at the Keeper  walk 9 m to the Keeper beacon, forge it
+     2.7 min  ACT II  three fragments      recover the three fragments of the voice
+     3.4 min  ACT III the Seer             walk the shelf, hear the ash read
+     5.8 min  ACT IV  the cache            cross the district to the survey cache
+    29.5 min  ACT V   the Warden           hold five waves, put WARDEN PRIME down
+    30.5 min  ACT VI  the last beacon      light the final beacon - THE SIGNAL IS WHOLE
+  story length before activities: 30.5 min
+
+THE RUN
+     32.1 min   1/50  caches    THE NEST       reached from 486 cm
+     33.3 min   2/50  voices    THE HUB        reached from 900 cm
+     34.0 min   3/50  kills     THE HUB        reached from 1268 cm
+     39.8 min   4/50  kills     THE NEST       reached from 363 cm
+     39.8 min   5/50  kills     THE SPIRE      reached from 468 cm
+     62.6 min  10/50  voices    THE NEST       reached from 789 cm
+     71.0 min  20/50  waves     THE SPIRE      reached from 1390 cm
+     71.3 min  30/50  kills     OMNI DISTRICT  reached from 1573 cm
+     78.9 min  40/50  voices    THE SPIRE      reached from 3262 cm
+     79.4 min  48/50  kills     THE DEEP       reached from 1390 cm
+     79.4 min  49/50  beacons   THE DEEP       reached from 1365 cm
+     79.5 min  50/50  kills     THE DEEP       reached from 4241 cm
+  ...
+
+RESULT
+  activities closed:        50 / 50
+  total run time:           79.5 min (1.3 h)
+  distance walked:          736 m (0.7 km)
+  counters:                 kills=66  fragments=3  voices=9  caches=1  waves=5  beacons=3
+  ending condition:         beacons 3/3 and warden down -> COMPLETE
+  phi check:                phi^2 - phi - 1 = 0.000e+00
+  golden-angle closure:     360 / 137.50776405 = 2.618034 (continued fraction of phi)
