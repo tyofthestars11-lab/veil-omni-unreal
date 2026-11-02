@@ -764,7 +764,12 @@ void AVEILWorldBuilder::BuildDistrict()
 	// Cool blue-grey stone, one rung below white, so the plain reads as flagstone in
 	// daylight and the plaza stays a shade warmer than the ground around it.
 	const FLinearColor PlazaTint(0.40f, 0.42f, 0.46f);
-	const FLinearColor GoldTint(1.0f, 0.78f, 0.30f);
+	// GOLD IS AN ACCENT, NOT THE BUILDING. At 1.0/0.78/0.30 every column, arch and menhir in
+	// the district rendered as a bright plastic-gold box, which is why a plaza built from
+	// real kit meshes still read as stacked cubes to the eye. Aged bronze-stone keeps the
+	// warmth and the phi language while letting the stone and the silhouettes carry the
+	// place; the beacon and crown lights below stay fully gold.
+	const FLinearColor GoldTint(0.55f, 0.47f, 0.34f);
 
 	// THE WORLD HAS A FLOOR, ALWAYS. On a bare map the builder raised one; on the
 	// placed district it stood down and ASSUMED the level carried one. It does
@@ -2089,7 +2094,9 @@ void AVEILWorldBuilder::DressPhiPalette()
 			// A SHARD, NOT A WAFER. These were the leaning blue plates beside the plaza:
 			// the cliff mesh scaled on Z alone. 7 m wide and 15 m tall, root on the ground.
 			Place(FVector(FMath::Cos(CAng) * CRad, FMath::Sin(CAng) * CRad, 750.f),
-				ScaleForCm(Crystal, FVector(700.f, 700.f, 1500.f)), Crystal, Blue, CrystalTint, 0.45f,
+				// 7 m wide by 15 m tall was a slab, not a shard: it read as a blue block standing
+				// in the street. 4.2 m by 9 m keeps the crystal read at a scale that belongs.
+				ScaleForCm(Crystal, FVector(420.f, 420.f, 900.f)), Crystal, Blue, CrystalTint, 0.45f,
 				FRotator(0.f, (float)(i * 61.f), 7.f));
 			++Clusters;
 		}
