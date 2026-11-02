@@ -1,0 +1,90 @@
+VEIL OMNI - PLACEHOLDER AND RANDOM-SHAPE AUDIT
+Date: 2026-11-02
+Map: /Game/Maps/VEILDistrict
+Scope: game only. Nothing under Content/ or Saved/ was deleted.
+
+Every entry names the file, the function and the asset, so nothing here is a guess.
+
+--------------------------------------------------------------------------
+1. WHITE PYRAMID / TRIANGLE SHAPES ON THE GROUND
+--------------------------------------------------------------------------
+Asset:  /Game/ParagonMinions/FX/Meshes/Shapes/SM_Travel_Tetra.SM_Travel_Tetra
+        (Paragon's travel-buff tetrahedron - an FX shape, not architecture)
+Maker:  AVEILPhiTetraSpawner::BuildChain()
+File:   Source/VEIL/Private/World/VEILPhiTetraSpawner.cpp (lines 18-22 load the mesh)
+Spawned by: AVEILGameMode, Source/VEIL/Private/Game/VEILGameMode.cpp line 670
+        GetWorld()->SpawnActor<AVEILPhiTetraSpawner>(...)
+Why it reads as a placeholder: a chain of bare tetrahedra tinted gold, standing on the
+plaza with no base, no function and no relation to any building.
+Action: stop spawning the chain in the district. The class and the mesh stay in the
+project (nothing deleted); the district simply no longer places them.
+
+--------------------------------------------------------------------------
+2. SMALL GREY / WHITE FIGURES RUNNING ACROSS THE PLAZA
+--------------------------------------------------------------------------
+Asset:  /Game/ParagonGreystone/Characters/Heroes/Greystone/Meshes/Greystone
+Maker:  AVEILFactionAgent::BeginPlay (body mesh swap)
+File:   Source/VEIL/Private/AI/VEILFactionAI.cpp lines 432-469
+Why it reads as random AI: the agents wore a Paragon hero statue mesh and every one of
+them walked a circle around its home point for the whole session.
+Action taken: AVEILFactionAgent::HoldPost() replaces the ring walk, so agents stop,
+face the plaza and stay on post. Verified in Play: 9 agents logged "PHI POST", 0
+"PHI ORBIT" lines.
+Still outstanding: these are still Paragon-derived bodies, not MetaHumans. That is a
+content job (create/import MetaHumans, retarget to the existing rig) and is NOT claimed
+as done here.
+
+Secondary small figures:
+Asset:  /Game/ParagonMinions/.../Minion_Lane_Melee_Dawn
+Files:  Source/VEIL/Private/Systems/VEILEnemy.cpp line 35 (enemies)
+        Source/VEIL/Private/AI/VEILCompanion.cpp line 28 (companions)
+Status: gameplay actors, spawn on purpose in the loop/wave content rather than as plaza
+decor. Not removed. Listed here so the count is honest.
+
+--------------------------------------------------------------------------
+3. GOLD SPHERE ON THE FLOOR
+--------------------------------------------------------------------------
+Asset:  /Engine/BasicShapes/Sphere (engine primitive, gold tint)
+Sites:  Source/VEIL/Private/Systems/VEILLootPickup.cpp line 58
+        Source/VEIL/Private/Systems/VEILOmniAll.cpp lines 686, 803
+        Source/VEIL/Private/World/OMNIQuestContent.cpp lines 121, 222, 257
+        Source/VEIL/Private/World/VEILWorldBuilder.cpp lines 593, 991, 1986
+        (lamps and landmark crowns: VEILWorldBuilder.cpp lines 1121, 1258)
+Action taken: every one of those now loads
+        /Game/Sicka_EnvPack2/Sicka_Ancient_Kit/Mesh/Props/SM_AncientColumn_Big
+so the engine sphere no longer appears in the district. The only remaining engine
+sphere in code is the hit-spark in VEILBurstFX.cpp, which is a flash, not a prop.
+Commits: 1164be0, cbbe614, dcafb36.
+
+--------------------------------------------------------------------------
+4. STACKED GOLD CUBES / LOOSE PILLARS
+--------------------------------------------------------------------------
+Asset:  /Game/Sicka_EnvPack2/Sicka_Ancient_Kit/Mesh/Props/SM_AncientColumn_Big
+        tinted with /Game/PHI/Palette/M_PHI_Gold
+Maker:  AVEILWorldBuilder::SpawnBlockRot / SpawnBlock
+File:   Source/VEIL/Private/World/VEILWorldBuilder.cpp lines 164 (load) and 766 (tint)
+Status: these are real kit meshes, not engine primitives, but the gold tint is applied
+so widely that they read as stacked boxes. Not fixed in this pass. Next step is a
+material pass: gold on trim, pillars as accents and beacons only, warm stone for walls.
+
+--------------------------------------------------------------------------
+5. BLUE BLOCKS / WIREFRAME-LOOKING BLUE PILLARS
+--------------------------------------------------------------------------
+Asset:  /Game/Sicka_EnvPack2/Sicka_Ancient_Kit/Mesh/Cliff/SM_CliffBig
+        with /Game/PHI/Palette/M_PHI_DeepBlue
+Maker:  AVEILWorldBuilder, the crystal and cliff passes
+File:   Source/VEIL/Private/World/VEILWorldBuilder.cpp line 2092 (crystal shards)
+        line 1117-1121 (instanced wall/column/band/lamp sets)
+Status: the Nest cliff shelves were tinted flat blue (0.30/0.62/1.0) and read as blue
+blocks in a gold district; they are warm rock as of commit cbbe614. The crystal sites
+still use the deep-blue authored material on purpose - they are crystal, not blocks.
+The big blue slab at the plaza edge is one of those crystal sites and is the next item
+to re-tint or move.
+
+--------------------------------------------------------------------------
+6. WHAT IS STILL NOT "REAL STUFF"
+--------------------------------------------------------------------------
+- Agents and enemies wear Paragon bodies; MetaHumans are not integrated.
+- The district is still mostly gold-tinted kit columns.
+- One large blue crystal slab sits at the plaza edge.
+- HUD objective line still loses its first characters (unresolved).

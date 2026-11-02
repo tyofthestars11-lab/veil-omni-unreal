@@ -1,0 +1,66 @@
+VEIL OMNI - NPC AND AI AUDIT
+Date: 2026-11-02
+Map: /Game/Maps/VEILDistrict
+Scope: every agent, enemy and companion that can walk in the district, with the file,
+function and asset that produce it.
+
+--------------------------------------------------------------------------
+1. AVEILFactionAgent - the plaza guards
+--------------------------------------------------------------------------
+Class:  Source/VEIL/Public/AI/VEILFactionAI.h
+Body:   Source/VEIL/Private/AI/VEILFactionAI.cpp lines 432-469
+        Asset /Game/ParagonGreystone/Characters/Heroes/Greystone/Meshes/Greystone
+States: EVEILAgentState (Patrol, Alert, Hunt, Combat, Defend, Retreat)
+Spawned: AVEILGameMode::BeginPlay area, Source/VEIL/Private/Game/VEILGameMode.cpp
+        lines 1170 and 1472 (camp machines and plaza posts)
+Random behaviour found: OrbitHome() walked a circle around HomeLocation forever - both
+when an agent had no patrol points and every frame it was "holding station". That is the
+"random AI running" in the photos.
+Fixed:   AVEILFactionAgent::HoldPost() - stop movement, face the plaza, stay put, log the
+        post once. Called from the no-patrol-points branch of ActPatrol() and from the
+        holding-station branch of Tick().
+Proof:   Play run 2026-11-02 17:46 - 9 lines "PHI POST: ... holds its post ...", 0 lines
+        "PHI ORBIT". Commit 66f9275.
+Still outstanding: the body is Paragon Greystone, not a MetaHuman. Replacing it is a
+content job: import MetaHumans, retarget to the rig the runner already uses, then point
+the agent's body load at them.
+
+--------------------------------------------------------------------------
+2. AVEILEnemy - the wave enemies
+--------------------------------------------------------------------------
+Class:  Source/VEIL/Public/Systems/VEILEnemy.h
+Body:   Source/VEIL/Private/Systems/VEILEnemy.cpp line 35
+        Asset /Game/ParagonMinions/.../Meshes/Minion_Lane_Melee_Dawn
+Status: gameplay enemies in the loop/wave content. They exist on purpose and target the
+player first (ActCombat sets the player as target every tick). Not plaza decor, not
+removed.
+
+--------------------------------------------------------------------------
+3. AVEILCompanion - party members
+--------------------------------------------------------------------------
+Class:  Source/VEIL/Public/AI/VEILCompanion.h
+Body:   Source/VEIL/Private/AI/VEILCompanion.cpp line 28, same Minion mesh
+Status: party followers, spawned on purpose when the party grows. Not random.
+
+--------------------------------------------------------------------------
+4. AVEILPhiTetraSpawner - not an NPC, but it was mistaken for one
+--------------------------------------------------------------------------
+Asset:  /Game/ParagonMinions/FX/Meshes/Shapes/SM_Travel_Tetra
+File:   Source/VEIL/Private/World/VEILPhiTetraSpawner.cpp
+Spawned by AVEILGameMode at Source/VEIL/Private/Game/VEILGameMode.cpp line 670.
+Status: a chain of bare Paragon tetrahedra. Being removed from the district in this pass.
+
+--------------------------------------------------------------------------
+5. KEEPER, SERA VAHL, QUEST ACTORS
+--------------------------------------------------------------------------
+Kept exactly where they are, at authority coordinates:
+  RUNNER 0,0,100   Keeper 900,0   Seer -450,780   Cartographer -4150,-780
+  Countess 809,-309,64.7   Vault 0,0,-80.9   Cache 0,-6200
+  Beacons 2800,500 / -2000,-900 / 600,-2100
+None of these were moved by this pass.
+
+--------------------------------------------------------------------------
+6. WHAT IS NOT DONE
+--------------------------------------------------------------------------
+No MetaHuman is integrated. Every humanoid in the district is still a Paragon asset worn
+by one of the C++ classes above. The circling is fixed and proven; the bodies are not.

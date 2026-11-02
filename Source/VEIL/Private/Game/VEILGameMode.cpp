@@ -616,7 +616,13 @@ void AVEILGameMode::BeginPlay()
 			// with that floor's height instead of a guessed +300.
 			int32 TetraExisting = 0;
 			for (TActorIterator<AVEILPhiTetraSpawner> It(GetWorld()); It; ++It) { ++TetraExisting; }
-			if (TetraExisting == 0)
+			// THE PARAGON TETRAHEDRA ARE NOT PLACED IN THE DISTRICT ANY MORE. They were a
+			// chain of bare SM_Travel_Tetra shapes - Paragon's travel-buff FX mesh - standing
+			// on the plaza, and in the Play frame they read as white pyramids and triangles
+			// dropped on the ground. The switch stays so the art can be turned back on
+			// deliberately; the district no longer places them.
+			static const bool bPlaceTetraChain = false;
+			if (bPlaceTetraChain && TetraExisting == 0)
 			{
 				const FVector Right = FVector::CrossProduct(Ahead, FVector::UpVector).GetSafeNormal();
 				FCollisionQueryParams GroundParams(SCENE_QUERY_STAT(VEILGoldenPlacement), false);
