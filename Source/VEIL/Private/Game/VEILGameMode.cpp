@@ -1546,16 +1546,24 @@ void AVEILGameMode::BeginPlay()
 						{
 							FHitResult ColHit;
 							FCollisionQueryParams ColParams(SCENE_QUERY_STAT(PhiColumnProbe), false, Runner);
-							const FVector Target = NearestColumn->GetActorLocation() + FVector(0.f, 0.f, 100.f);
+							// TRACE ABOVE THE SLAB. The first version aimed from the lens at the column's
+							// base and hit Actor_1 at 579 cm - the meshless collision proxy whose top is
+							// at z=500 - so it measured the proxy, not the column. This traces
+							// horizontally at z = +700, which is above that proxy and inside the column's
+							// own body, from 800 cm out straight at its centre.
+							const FVector ColCentre = NearestColumn->GetActorLocation();
+							const FVector Target = ColCentre + FVector(0.f, 0.f, 700.f);
+							const FVector Out = (Runner->GetActorLocation() - ColCentre).GetSafeNormal2D();
+							const FVector Start = Target + Out * 800.f;
 							const bool bColHit = GetWorld()->LineTraceSingleByChannel(ColHit,
-								LensLocation, Target, ECC_Visibility, ColParams);
+								Start, Target, ECC_Visibility, ColParams);
 							FString Detail = TEXT("CLEAR - no collision on the column");
 							if (bColHit && ColHit.GetActor())
 							{
 								Detail = FString::Printf(TEXT("HIT %s at %.0f cm"),
 									*ColHit.GetActor()->GetName(), ColHit.Distance);
 							}
-							UE_LOG(LogVEIL, Log, TEXT("PHI COLUMN PROBE: nearest column %s is %.0f cm from the runner; trace %s"),
+							UE_LOG(LogVEIL, Log, TEXT("PHI COLUMN PROBE: nearest column %s is %.0f cm from the runner; horizontal trace at z=+700 %s"),
 								*NearestColumn->GetName(), BestDist, *Detail);
 						}
 					}
