@@ -60,6 +60,24 @@ namespace
 		H->DrawLine(CX, CY + R, CX - R, CY, C, Thick);
 		H->DrawLine(CX - R, CY, CX, CY - R, C, Thick);
 	}
+
+	/**
+	 * The same diamond, FILLED.
+	 *
+	 * Outline-only slots were the one thing the mockup's hotbar did not do - its gems
+	 * are solid faces with a lit rim. A diamond is a stack of scanlines whose half-width
+	 * falls to zero at both tips, so the fill is one loop of DrawRect and no new path.
+	 */
+	void FillDiamond(AHUD* H, float CX, float CY, float R, const FLinearColor& C)
+	{
+		const int32 Rows = FMath::Max(3, (int32)(R * 2.f));
+		for (int32 i = 0; i < Rows; ++i)
+		{
+			const float T = (float)i / (float)(Rows - 1);
+			const float Half = R * (1.f - FMath::Abs(2.f * T - 1.f));
+			if (Half > 0.5f) { H->DrawRect(C, CX - Half, CY - R + (float)i, Half * 2.f, 1.f); }
+		}
+	}
 }
 
 void VEILHudMockup::Draw(AHUD* H, UCanvas* C)
@@ -89,21 +107,31 @@ void VEILHudMockup::Draw(AHUD* H, UCanvas* C)
 	{
 		const float BaseX = 18.f;
 		const float BaseY = 14.f;
+		// THICK, NOT A HAIRLINE. The first pass drew 1 px rows at 55% alpha and read as
+		// nothing at 720p - a highlight you have to be told is there. Each row is now a
+		// 4 px band, the strip is longer, and the top edge carries its own lit line, so
+		// the sweep is a gilded ribbon in the corner instead of a rumour of one.
+		for (int32 i = 0; i < 34; ++i)
+		{
+			const float T = (float)i / 33.f;
+			const float A = 1.f - T;
+			const float Wid = FMath::Pow(1.f - T, 1.35f) * 260.f + 12.f;
+			const float YOff = BaseY + T * 30.f;
+			const float XOff = BaseX + T * 8.f;
+			H->DrawRect(FLinearColor(MockGold.R, MockGold.G, MockGold.B, 0.10f + A * 0.85f),
+				XOff, YOff, Wid, 4.f);
+			H->DrawRect(FLinearColor(MockGoldLit.R, MockGoldLit.G, MockGoldLit.B, A * 0.80f),
+				XOff, YOff - 2.f, Wid * 0.94f, 2.f);
+		}
+		// The crest: a chevron on the top edge, and the corner wedge beneath it.
+		H->DrawLine(BaseX + 214.f, BaseY + 2.f, BaseX + 232.f, BaseY + 16.f, MockGoldLit, 3.f);
+		H->DrawLine(BaseX + 232.f, BaseY + 16.f, BaseX + 250.f, BaseY + 2.f, MockGoldLit, 3.f);
 		for (int32 i = 0; i < 46; ++i)
 		{
-			const float T = (float)i / 45.f;
-			const float A = 1.f - T;
-			const float Wid = (1.f - T) * (1.f - T) * 190.f + 6.f;
-			const float YOff = BaseY + T * 22.f;
-			const float XOff = BaseX + T * 6.f;
-			H->DrawRect(FLinearColor(MockGold.R, MockGold.G, MockGold.B, A * 0.55f),
-				XOff, YOff, Wid, 1.f);
-			H->DrawRect(FLinearColor(MockGoldLit.R, MockGoldLit.G, MockGoldLit.B, A * 0.30f),
-				XOff + 2.f, YOff - 1.f, Wid * 0.82f, 1.f);
+			const float A = 1.f - (float)i / 45.f;
+			H->DrawRect(FLinearColor(MockGold.R, MockGold.G, MockGold.B, 0.18f * A),
+				BaseX, BaseY + 4.f + (float)i, 34.f + (float)i * 0.6f, 1.f);
 		}
-		// The crest: a small chevron sitting on the top edge.
-		H->DrawLine(BaseX + 210.f, BaseY + 2.f, BaseX + 226.f, BaseY + 14.f, MockGoldLit, 2.f);
-		H->DrawLine(BaseX + 226.f, BaseY + 14.f, BaseX + 242.f, BaseY + 2.f, MockGoldLit, 2.f);
 	}
 
 	// ---- QUEST BANNER (bottom-left) --------------------------------------
@@ -146,10 +174,11 @@ void VEILHudMockup::Draw(AHUD* H, UCanvas* C)
 		const float CY = Ht - 52.f;
 		const float Step = 60.f;
 
-		// Centre slot: the phi core, larger and lit.
+		// Centre slot: the phi core, larger, filled with gold and lit.
+		FillDiamond(H, CX, CY, 24.f, FLinearColor(MockGold.R, MockGold.G, MockGold.B, 0.95f));
 		Diamond(H, CX, CY, 24.f, MockGoldLit, 2.4f);
-		Diamond(H, CX, CY, 18.f, FLinearColor(MockNavy.R, MockNavy.G, MockNavy.B, 0.9f), 1.f);
-		Txt(H, TEXT("\u03C6"), MockGoldLit, CX - 7.f, CY - 11.f, Big, 1.0f);
+		Diamond(H, CX, CY, 17.f, FLinearColor(MockNavy.R, MockNavy.G, MockNavy.B, 0.35f), 1.f);
+		Txt(H, TEXT("\u03C6"), MockNavy, CX - 7.f, CY - 11.f, Big, 1.0f);
 
 		struct FSlot { const TCHAR* Key; const TCHAR* Label; FLinearColor Tint; };
 		static const FSlot Slots[3] =
@@ -164,8 +193,11 @@ void VEILHudMockup::Draw(AHUD* H, UCanvas* C)
 			const float Side = (i == 0) ? -Step : ((i == 1) ? Step : -2.f * Step);
 			const float SX = CX + Side;
 			const float SY = CY + ((i == 2) ? -14.f : 0.f);
+			// A filled gem under a gold rim, which is what the mockup's slots are.
+			FillDiamond(H, SX, SY, 19.f, FLinearColor(Slots[i].Tint.R * 0.72f,
+				Slots[i].Tint.G * 0.72f, Slots[i].Tint.B * 0.72f, 0.95f));
 			Diamond(H, SX, SY, 20.f, MockGold, 1.8f);
-			Diamond(H, SX, SY, 15.f, FLinearColor(Slots[i].Tint.R * 0.35f, Slots[i].Tint.G * 0.35f, Slots[i].Tint.B * 0.35f, 0.92f), 1.f);
+			Diamond(H, SX, SY, 13.f, FLinearColor(MockNavy.R, MockNavy.G, MockNavy.B, 0.55f), 1.f);
 			Txt(H, FString::Printf(TEXT("%.0f"), RungOf(Slots[i].Key)), MockWhite, SX - 10.f, SY - 7.f, Med, 0.68f);
 			Txt(H, FString::Printf(TEXT("%s"), Slots[i].Key), MockDim, SX - 14.f, SY + 22.f, Med, 0.56f);
 		}

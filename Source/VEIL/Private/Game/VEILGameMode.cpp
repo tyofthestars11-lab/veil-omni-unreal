@@ -1693,6 +1693,7 @@ void AVEILPlayerController::BeginPlay()
 		|| FParse::Param(FCommandLine::Get(), TEXT("phienter"))
 		|| FParse::Param(FCommandLine::Get(), TEXT("phivoice"))
 		|| FParse::Param(FCommandLine::Get(), TEXT("phishot"))
+		|| FParse::Param(FCommandLine::Get(), TEXT("phiair"))
 		|| FParse::Param(FCommandLine::Get(), TEXT("phimemory"))
 		|| FParse::Param(FCommandLine::Get(), TEXT("phiquanta"));
 	{
@@ -2097,6 +2098,58 @@ void AVEILPlayerController::BeginPlay()
 		// asked to judge. The proof is the frame the player actually sees, so both
 		// beats stand on the runner's own camera and the same spawn.
 		GetWorldTimerManager().SetTimer(GS3, FTimerDelegate::CreateWeakLambda(this, [Shoot]() { Shoot(); }), 15.f, false);
+	}
+
+	// -phiair: THE GROUND, PHOTOGRAPHED FROM ABOVE.
+	//
+	// -phishot deliberately stands on the runner's own eyes, because that is the frame a
+	// player judges. It cannot answer the other question - whether the HUB has courses
+	// cut into the hill, whether the west cliff is falling, whether the Spire stands on
+	// the skyline - because from a market every one of those is behind a stall. So this
+	// beat lifts the same pawn over the town, twice, and says where the eyes are in the
+	// log beside the frame.
+	if (FParse::Param(FCommandLine::Get(), TEXT("phiair")))
+	{
+		// Say it out loud at the moment the flag is read: a silent block and a block
+		// that never ran look identical in a log, and that ambiguity has cost this
+		// project whole afternoons before.
+		UE_LOG(LogVEIL, Warning, TEXT("VEIL AIR: armed - two frames over the hub, 7s and 16s after the world."));
+		static FTimerHandle GA1, GA2, GA3, GA4;
+		auto Air = [this](const FVector& At, const FVector& LookAt, const TCHAR* Label)
+		{
+			APlayerController* PC = GetWorld() ? GetWorld()->GetFirstPlayerController() : nullptr;
+			APawn* Body = PC ? PC->GetPawn() : nullptr;
+			if (!PC || !Body) { return; }
+			Body->SetActorLocation(At, false, nullptr, ETeleportType::TeleportPhysics);
+			const FRotator Toward = (LookAt - At).Rotation();
+			PC->SetControlRotation(FRotator(-14.f, Toward.Yaw, 0.f));
+			UE_LOG(LogVEIL, Warning,
+				TEXT("VEIL AIR: %s - eyes at V(X=%.0f, Y=%.0f, Z=%.0f) looking at V(X=%.0f, Y=%.0f, Z=%.0f)."),
+				Label, At.X, At.Y, At.Z, LookAt.X, LookAt.Y, LookAt.Z);
+		};
+		auto ShootAir = [this]()
+		{
+			if (APlayerController* PC = GetWorld() ? GetWorld()->GetFirstPlayerController() : nullptr)
+			{
+				PC->ConsoleCommand(TEXT("HighResShot 1920x1080"), true);
+				UE_LOG(LogVEIL, Warning, TEXT("VEIL AIR: frame written from the air."));
+			}
+		};
+
+		// North of the plaza, high enough to clear the roofs: the terraced courses and
+		// the market they surround.
+		GetWorldTimerManager().SetTimer(GA1, FTimerDelegate::CreateWeakLambda(this,
+			[Air]() { Air(FVector(0.f, -7600.f, 3400.f), FVector(0.f, 0.f, 300.f), TEXT("the hub from the north")); }),
+			7.f, false);
+		GetWorldTimerManager().SetTimer(GA2, FTimerDelegate::CreateWeakLambda(this,
+			[ShootAir]() { ShootAir(); }), 9.f, false);
+
+		// West of the cliff, looking east across the falls to the plaza and the Spire.
+		GetWorldTimerManager().SetTimer(GA3, FTimerDelegate::CreateWeakLambda(this,
+			[Air]() { Air(FVector(-8200.f, -3600.f, 3000.f), FVector(600.f, 0.f, 700.f), TEXT("the west cliff and the Spire")); }),
+			16.f, false);
+		GetWorldTimerManager().SetTimer(GA4, FTimerDelegate::CreateWeakLambda(this,
+			[ShootAir]() { ShootAir(); }), 18.f, false);
 	}
 
 	// -phivoice: the whole natural-talk contract, in one live frame, through the
