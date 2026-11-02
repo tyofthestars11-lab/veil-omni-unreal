@@ -1134,10 +1134,36 @@ UInstancedStaticMeshComponent* AVEILWorldBuilder::MakeSet(UStaticMesh* Mesh,
 	Set->SetCastShadow(true);
 	if (UMaterialInterface* Base = Mesh->GetMaterial(0))
 	{
+		// THIS IS WHERE THE GOLD CUBES ACTUALLY CAME FROM. The plaza blocks are instanced sets
+		// that take a COLOUR, not a material, so swapping the gold material in Place() never
+		// touched them - which is why the gold masses survived that fix. A saturated gold tint
+		// on a non-glowing surface is now warm stone; only glowing trim keeps its gold.
+		const bool bGoldTint = (Tint.R - Tint.B) > 0.25f && Tint.R > 0.55f && Tint.B < 0.55f;
+		const FLinearColor Use = (bGoldTint && Emissive <= 0.f)
+			? FLinearColor(0.42f, 0.36f, 0.28f)
+			: Tint;
+		// A COLOUR CANNOT OVERRIDE A GOLD MATERIAL. Two passes proved it: setting a stone
+		// BaseColor on a mesh whose material IS M_PHI_Gold still renders gold, because the
+		// base colour is only one input to that material. Unlit instanced surfaces therefore
+		// get the cut stone material ASSIGNED, the same way Place() does it.
+		UMaterialInterface* BodyMat = (Emissive <= 0.f)
+			? LoadObject<UMaterialInterface>(nullptr,
+				TEXT("/Game/StarterContent/Materials/M_Brick_Cut_Stone.M_Brick_Cut_Stone"))
+			: nullptr;
+		if (UMaterialInstanceDynamic* StoneMID = BodyMat ? UMaterialInstanceDynamic::Create(BodyMat, Set) : nullptr)
+		{
+			StoneMID->SetVectorParameterValue(TEXT("Color"), Use);
+			StoneMID->SetVectorParameterValue(TEXT("BaseColor"), Use);
+			Set->SetMaterial(0, StoneMID);
+			Set->RegisterComponent();
+			Set->AttachToComponent(GetRootComponent(), FAttachmentTransformRules::KeepRelativeTransform);
+			InstanceSets.Add(Set);
+			return Set;
+		}
 		if (UMaterialInstanceDynamic* MID = UMaterialInstanceDynamic::Create(Base, Set))
 		{
-			MID->SetVectorParameterValue(TEXT("Color"), Tint);
-			MID->SetVectorParameterValue(TEXT("BaseColor"), Tint);
+			MID->SetVectorParameterValue(TEXT("Color"), Use);
+			MID->SetVectorParameterValue(TEXT("BaseColor"), Use);
 			if (Emissive > 0.f)
 			{
 				MID->SetVectorParameterValue(TEXT("EmissiveColor"), Tint * Emissive);
