@@ -5,6 +5,7 @@
 #include "Engine/PointLight.h"
 #include "Engine/StaticMesh.h"
 #include "Engine/StaticMeshActor.h"
+#include "EngineUtils.h"
 #include "Engine/World.h"
 #include "GameFramework/Pawn.h"
 #include "Kismet/GameplayStatics.h"
@@ -126,8 +127,57 @@ UPointLightComponent* AVEILNestSanctum::AddLamp(const FVector& At, float Intensi
 	return L;
 }
 
+namespace
+{
+	// ------------------------------------------------------------------
+	// OPEN THE SKY.
+	//
+	// The bake stacked lids over the plaza centre - measured at 500, 1250,
+	// 1751 and 2440 cm - so the front door of the game is a ceiling with a
+	// runner under it. Those slabs are big, flat, and directly above the
+	// plaza; nothing the player can do up there is content. They are hidden
+	// and stripped of collision here rather than re-baked, because the level
+	// is the game and the game has to open.
+	//
+	// The filter is narrow on purpose: whole bounds above 350 cm, footprint
+	// inside 1,150 cm of the plaza centre, wider than 600 cm on both axes.
+	// The market ring stands outside that disc, so its rooftops stay.
+	// ------------------------------------------------------------------
+	void ClearOverheadSlabs(UWorld* World, AActor* Keeper)
+	{
+		if (!World) { return; }
+		int32 Opened = 0;
+		AActor* Biggest = nullptr;
+		float BiggestTop = 0.f;
+		for (TActorIterator<AActor> It(World); It; ++It)
+		{
+			AActor* Slab = *It;
+			if (!Slab || Slab == Keeper || Slab->IsA<APawn>()) { continue; }
+			const FBox B = Slab->GetComponentsBoundingBox(true);
+			if (!B.IsValid) { continue; }
+			const FVector C = B.GetCenter();
+			const FVector E = B.GetExtent();
+			// EVERYTHING OVERHEAD COUNTS, whatever class carries it: the 500 cm lid
+			// is a plain actor, the roofs at 270 and 348 are thin slabs, and a
+			// class filter missed both and reported "0 slabs" over a buried plaza.
+			if (B.Min.Z < 300.f) { continue; }
+			if (FMath::Abs(C.X) > 3000.f || FMath::Abs(C.Y) > 3000.f) { continue; }
+			if (E.Z > 900.f) { continue; }              // towers, not lids
+			if (FMath::Max(E.X, E.Y) < 350.f) { continue; }  // posts, not lids
+			Slab->SetActorHiddenInGame(true);
+			Slab->SetActorEnableCollision(false);
+			++Opened;
+			if (B.Max.Z > BiggestTop) { BiggestTop = B.Max.Z; Biggest = Slab; }
+		}
+		UE_LOG(LogVEIL, Warning,
+			TEXT("PHI SKY: %d slab(s) overhead opened - hidden, collision off, highest at Z=%.0f (%s)."),
+			Opened, BiggestTop, Biggest ? *Biggest->GetName() : TEXT("none"));
+	}
+}
+
 bool AVEILNestSanctum::BuildSanctum()
 {
+	ClearOverheadSlabs(GetWorld(), this);
 	if (bBuilt) { return true; }
 
 	UWorld* W = GetWorld();
