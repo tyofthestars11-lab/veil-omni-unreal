@@ -2011,12 +2011,21 @@ void AVEILWorldBuilder::DressRegions()
 		const double Ang = FMath::DegreesToRadians(i * GoldenDeg);
 		const double Rad = 1500.0 * FMath::Sqrt(1.0 + i * 0.18);
 		const FVector At(FMath::Cos(Ang) * Rad, FMath::Sin(Ang) * Rad, 0.f);
-		Place(At + FVector(0.f, 0.f, 230.f), FVector(2.0f, 2.0f, 0.16f), Roof, Gold, GoldC, 0.20f,
-			FRotator(0.f, (float)(i * GoldenDeg), 0.f));
+		// A STALL IS A COUNTER YOU CAN SEE, a canopy over it, and four posts that are
+		// posts - not a 2 cm stick, which is what the unmeasured scale produced.
+		Solid(At, FVector(600.f, 600.f, 110.f), Slab, nullptr, FLinearColor(0.45f, 0.40f, 0.34f),
+			0.f, (float)(i * GoldenDeg));
 		++Market;
-		Place(At + FVector(0.f, 0.f, 110.f), FVector(0.14f, 0.14f, 1.9f), Pillar, Gold, GoldC, 0.45f,
-			FRotator::ZeroRotator);
+		Solid(At + FVector(0.f, 0.f, 230.f), FVector(800.f, 800.f, 40.f), Roof, Gold, GoldC, 0.20f,
+			(float)(i * GoldenDeg));
 		++Market;
+		for (int32 Post = 0; Post < 4; ++Post)
+		{
+			const float PX = (Post & 1) ? 260.f : -260.f;
+			const float PY = (Post & 2) ? 260.f : -260.f;
+			Solid(At + FVector(PX, PY, 0.f), FVector(40.f, 40.f, 230.f), Pillar, Gold, GoldC, 0.45f, 0.f);
+			++Market;
+		}
 	}
 
 	// 2. THE NEST, on the cliffs to the west: rock shelves stepped up on the golden
@@ -2027,15 +2036,16 @@ void AVEILWorldBuilder::DressRegions()
 		const double Rad = 3200.0 + i * 260.0;
 		const FVector At(FMath::Cos(Ang) * Rad, FMath::Sin(Ang) * Rad, 0.f);
 		const float Height = 700.f + i * 210.f;
-		Place(At + FVector(0.f, 0.f, Height * 0.5f), FVector(3.4f, 3.4f, Height / 100.f), Rock,
-			Blue, BlueC, 0.12f, FRotator(0.f, (float)(i * GoldenDeg), 0.f));
+		// The shelf, measured: 34 m of rock, exactly Height tall.
+		Solid(At, FVector(3400.f, 3400.f, Height), Rock, Blue, BlueC, 0.12f,
+			(float)(i * GoldenDeg));
 		++Nest;
 		if (i % 3 == 0)
 		{
-			// A waterfall is water standing in air: one thin slab from the shelf top to
-			// the ground, lit from inside so it reads at distance.
-			Place(At + FVector(340.f, 0.f, Height * 0.5f), FVector(0.10f, 1.1f, Height / 100.f), Slab,
-				Glow, IceC, 0.9f, FRotator::ZeroRotator);
+			// A waterfall is water standing in air: one sheet from the shelf top to the
+			// ground, lit from inside so it reads at distance.
+			Solid(At + FVector(340.f, 0.f, 0.f), FVector(10.f, 1100.f, Height), Slab, Glow,
+				IceC, 0.9f, 0.f);
 			++Nest;
 		}
 	}
@@ -2048,9 +2058,9 @@ void AVEILWorldBuilder::DressRegions()
 		const double Rad = 2600.0 + (i % 4) * 420.0;
 		const FVector At(2600.0 + FMath::Cos(Ang) * Rad * 0.35, FMath::Sin(Ang) * Rad, 0.f);
 		const float TowerH = 1400.f + (6 - (i % 6)) * 520.f;
-		Place(At + FVector(0.f, 0.f, TowerH * 0.5f),
-			FVector(0.9f + (i % 3) * 0.25f, 0.9f + (i % 3) * 0.25f, TowerH / 100.f), Pillar, Gold,
-			GoldC, 0.35f, FRotator(0.f, (float)(i * GoldenDeg), 0.f));
+		const float TowerW = 900.f + (float)(i % 3) * 250.f;
+		Solid(At, FVector(TowerW, TowerW, TowerH), Pillar, Gold, GoldC, 0.35f,
+			(float)(i * GoldenDeg));
 		++Omni;
 	}
 
@@ -2061,9 +2071,10 @@ void AVEILWorldBuilder::DressRegions()
 		const double Ang = FMath::DegreesToRadians(i * GoldenDeg);
 		const double Rad = 5600.0 + (i % 5) * 480.0;
 		const float PeakH = 2600.f + (i % 4) * 700.f;
-		Place(FVector(FMath::Cos(Ang) * Rad, FMath::Sin(Ang) * Rad, PeakH * 0.5f),
-			FVector(9.f, 9.f, PeakH / 100.f), Rock, Blue, IceC, 0.10f,
-			FRotator(0.f, (float)(i * GoldenDeg), 0.f));
+		// A mountain is 90 m across and PeakH tall - not a plate standing on edge.
+		Solid(FVector(FMath::Cos(Ang) * Rad, FMath::Sin(Ang) * Rad, 0.f),
+			FVector(9000.f, 9000.f, PeakH), Rock, Blue, IceC, 0.10f,
+			(float)(i * GoldenDeg));
 		++Peaks;
 	}
 
@@ -2073,10 +2084,9 @@ void AVEILWorldBuilder::DressRegions()
 	{
 		const double Ang = FMath::DegreesToRadians(45.0 + i * 90.0);
 		const FVector At(FMath::Cos(Ang) * 4200.0, FMath::Sin(Ang) * 4200.0, 0.f);
-		Place(At + FVector(0.f, 0.f, 900.f), FVector(0.5f, 0.5f, 18.f), Pillar, Gold, GoldC, 1.6f,
-			FRotator::ZeroRotator);
-		Place(At + FVector(0.f, 0.f, 1850.f), FVector(0.35f, 0.35f, 2.2f), Pillar, Glow, GoldC, 3.2f,
-			FRotator::ZeroRotator);
+		Solid(At, FVector(500.f, 500.f, 1800.f), Pillar, Gold, GoldC, 1.6f, 0.f);
+		Solid(At + FVector(0.f, 0.f, 1800.f), FVector(350.f, 350.f, 220.f), Pillar, Glow, GoldC,
+			3.2f, 0.f);
 		Beacons += 2;
 	}
 
