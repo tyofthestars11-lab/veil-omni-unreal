@@ -8,11 +8,19 @@ class AVEILEnemy;
 class UPointLightComponent;
 class USphereComponent;
 class UStaticMeshComponent;
+class USceneComponent;
 
 /**
- * A MINE. Ore standing on the hill as a lit cluster, with a trigger you can walk
- * into. Harvesting pays gold and experience into the one quest book, puts the node
- * out for two minutes and brings it back.
+ * A MINE IS A PLACE WITH A NAME, NOT A CONE ON A HILL.
+ *
+ * Every mine in the wilds is authored: it has a name, an owner, an ore, a depth
+ * and a reserve, and it is built as a headframe - four posts, two beams, a
+ * shaft, and the seam itself piled at the mouth. Nothing here is a placeholder
+ * standing in for a mine, and nothing is rolled at random: the twenty-four
+ * names below are the world's mines, and a run always finds the same ones.
+ *
+ * Owning matters. The owner is whose ground it is, so stripping a seam is a
+ * claim on someone's property, and the reply names them.
  */
 UCLASS()
 class VEIL_API AVEILMineNode : public AActor
@@ -23,21 +31,37 @@ public:
 	AVEILMineNode();
 	virtual void Tick(float DeltaSeconds) override;
 
-	void Init(int32 InIndex, int32 InGold);
+	/** Give the mine the identity of its entry in the mine book. */
+	void Init(int32 InIndex);
 
 	UFUNCTION()
 	void OnEnter(UPrimitiveComponent* OverlappedComp, AActor* Other,
 		UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep,
 		const FHitResult& Sweep);
 
-	UPROPERTY() UStaticMeshComponent* Ore = nullptr;
+	UPROPERTY() USceneComponent* Root = nullptr;
 	UPROPERTY() UPointLightComponent* Lamp = nullptr;
 	UPROPERTY() USphereComponent* Trigger = nullptr;
 
+	const FString& MineName() const { return Name; }
+	const FString& MineOwner() const { return Owner; }
+	const FString& MineOre() const { return Ore; }
+	float MineDepth() const { return DepthM; }
+	int32 MineReserve() const { return Reserve; }
+
 private:
-	float RespawnAt = 0.f;
+	/** Posts, beams, shaft and seam - the headframe, built once. */
+	void BuildHead();
+
+	FString Name;
+	FString Owner;
+	FString Ore;
+	FLinearColor OreTint = FLinearColor(0.35f, 0.62f, 1.f);
+	float DepthM = 0.f;
+	int32 Reserve = 0;
 	int32 Gold = 40;
 	int32 Index = 0;
+	float RespawnAt = 0.f;
 	bool bSpent = false;
 };
 

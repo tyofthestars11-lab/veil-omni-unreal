@@ -2,6 +2,7 @@
 
 #include "AIController.h"
 #include "Components/PointLightComponent.h"
+#include "Components/SceneComponent.h"
 #include "Components/SphereComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Engine/StaticMesh.h"
@@ -61,6 +62,50 @@ namespace
 	};
 	constexpr int32 GSpeciesCount = UE_ARRAY_COUNT(GSpecies);
 
+	/**
+	 * THE MINE BOOK. Twenty-four authored seams, each with an owner and an ore.
+	 * A run always finds the same mines in the same places: these are the claims
+	 * of the world, not a scatter of geometry that happens to be mineable.
+	 */
+	struct FWileSpec
+	{
+		const TCHAR* Name;
+		const TCHAR* Owner;
+		const TCHAR* Ore;
+		float DepthM;
+		int32 Reserve;
+		FLinearColor Tint;
+	};
+
+	const FWileSpec GMineBook[] =
+	{
+		{ TEXT("IRONWIDOW"),   TEXT("Keeper's Compact"),    TEXT("iron"),      180.f,  620, FLinearColor(0.62f, 0.64f, 0.70f) },
+		{ TEXT("COPPERMAW"),   TEXT("Keeper's Compact"),    TEXT("copper"),    240.f,  540, FLinearColor(0.85f, 0.48f, 0.22f) },
+		{ TEXT("GREYSPINE"),   TEXT("Keeper's Compact"),    TEXT("iron"),      310.f,  700, FLinearColor(0.55f, 0.57f, 0.63f) },
+		{ TEXT("LAMPLESS"),    TEXT("Keeper's Compact"),   TEXT("coal"),      420.f,  900, FLinearColor(0.22f, 0.22f, 0.26f) },
+		{ TEXT("SALTGRACE"),   TEXT("Seer's Nest"),         TEXT("salt"),      120.f,  380, FLinearColor(0.92f, 0.93f, 0.95f) },
+		{ TEXT("TIDEVANE"),    TEXT("Seer's Nest"),         TEXT("tide-glass"),210.f,  460, FLinearColor(0.30f, 0.78f, 0.86f) },
+		{ TEXT("CLIFFSONG"),   TEXT("Seer's Nest"),         TEXT("salt"),      260.f,  420, FLinearColor(0.88f, 0.92f, 0.98f) },
+		{ TEXT("RAINHOLLOW"),  TEXT("Seer's Nest"),         TEXT("tide-glass"),150.f,  390, FLinearColor(0.26f, 0.70f, 0.80f) },
+		{ TEXT("BLACKGLASS"),  TEXT("Cartographer's Guild"),TEXT("obsidian"),  340.f,  520, FLinearColor(0.16f, 0.14f, 0.22f) },
+		{ TEXT("MERIDIAN"),    TEXT("Cartographer's Guild"),TEXT("iron"),      280.f,  610, FLinearColor(0.58f, 0.60f, 0.66f) },
+		{ TEXT("THEODOLITE"),  TEXT("Cartographer's Guild"),TEXT("obsidian"),  390.f,  480, FLinearColor(0.18f, 0.16f, 0.26f) },
+		{ TEXT("FARSHORE"),    TEXT("Cartographer's Guild"),TEXT("salt"),      470.f,  560, FLinearColor(0.90f, 0.91f, 0.93f) },
+		{ TEXT("EMBERVENT"),   TEXT("Countess"),            TEXT("ember"),     520.f,  760, FLinearColor(0.95f, 0.36f, 0.18f) },
+		{ TEXT("MARROWLIGHT"), TEXT("Countess"),            TEXT("ember"),     610.f,  680, FLinearColor(0.92f, 0.30f, 0.14f) },
+		{ TEXT("CINDERCLAIM"), TEXT("Countess"),            TEXT("coal"),      430.f,  820, FLinearColor(0.20f, 0.19f, 0.23f) },
+		{ TEXT("REDHAND"),     TEXT("Countess"),            TEXT("copper"),    350.f,  600, FLinearColor(0.88f, 0.42f, 0.20f) },
+		{ TEXT("HOLLOWDEEP"),  TEXT("the Warden"),          TEXT("void"),      980.f,  980, FLinearColor(0.42f, 0.20f, 0.68f) },
+		{ TEXT("SILENTSEAM"),  TEXT("the Warden"),          TEXT("void"),      720.f,  840, FLinearColor(0.38f, 0.18f, 0.62f) },
+		{ TEXT("LASTLIGHT"),   TEXT("the Warden"),          TEXT("obsidian"),  660.f,  700, FLinearColor(0.20f, 0.18f, 0.28f) },
+		{ TEXT("THE ONE DOOR"),TEXT("the Warden"),          TEXT("void"),     1200.f, 1400, FLinearColor(0.50f, 0.24f, 0.76f) },
+		{ TEXT("PALEACT"),     TEXT("the Hollow"),          TEXT("salt"),      300.f,  300, FLinearColor(0.86f, 0.88f, 0.90f) },
+		{ TEXT("LISTENER'S REST"), TEXT("the Hollow"),      TEXT("obsidian"),  380.f,  340, FLinearColor(0.17f, 0.16f, 0.24f) },
+		{ TEXT("BONECHOIR"),   TEXT("the Hollow"),          TEXT("void"),      540.f,  400, FLinearColor(0.36f, 0.22f, 0.58f) },
+		{ TEXT("THE LONG QUIET"), TEXT("the Hollow"),       TEXT("coal"),      460.f,  380, FLinearColor(0.19f, 0.19f, 0.22f) },
+	};
+	constexpr int32 GMineBookCount = UE_ARRAY_COUNT(GMineBook);
+
 	/** Rung of a quantity: ln(x) / ln(phi). Logged so the body can be read as a place. */
 	float RungOf(float Value)
 	{
@@ -76,46 +121,124 @@ AVEILMineNode::AVEILMineNode()
 	PrimaryActorTick.bCanEverTick = true;
 	PrimaryActorTick.bStartWithTickEnabled = true;
 
-	Ore = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Ore"));
-	RootComponent = Ore;
-	if (UStaticMesh* Cone = LoadObject<UStaticMesh>(nullptr, TEXT("/Engine/BasicShapes/Cone.Cone")))
-	{
-		Ore->SetStaticMesh(Cone);
-	}
-	Ore->SetWorldScale3D(FVector(2.2f, 2.2f, 3.4f));
-	Ore->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	Root = CreateDefaultSubobject<USceneComponent>(TEXT("MineRoot"));
+	SetRootComponent(Root);
 
 	Lamp = CreateDefaultSubobject<UPointLightComponent>(TEXT("Lamp"));
-	Lamp->SetupAttachment(RootComponent);
-	Lamp->SetLightColor(FLinearColor(0.35f, 0.62f, 1.f));
+	Lamp->SetupAttachment(Root);
+	Lamp->SetLightColor(OreTint);
 	Lamp->SetIntensity(3200.f);
 	Lamp->SetAttenuationRadius(1600.f);
 	Lamp->SetCastShadows(false);
 	Lamp->SetAffectGlobalIllumination(false);
 
 	Trigger = CreateDefaultSubobject<USphereComponent>(TEXT("Trigger"));
-	Trigger->SetupAttachment(RootComponent);
-	Trigger->InitSphereRadius(340.f);
+	Trigger->SetupAttachment(Root);
+	Trigger->InitSphereRadius(360.f);
 	Trigger->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 	Trigger->SetCollisionResponseToAllChannels(ECR_Ignore);
 	Trigger->SetCollisionResponseToChannel(ECC_Pawn, ECR_Overlap);
 	Trigger->SetGenerateOverlapEvents(true);
 }
 
-void AVEILMineNode::Init(int32 InIndex, int32 InGold)
+void AVEILMineNode::Init(int32 InIndex)
 {
 	Index = InIndex;
-	Gold = InGold;
+	const FWileSpec& Spec = GMineBook[FMath::Abs(Index) % GMineBookCount];
+
+	// The identity IS the mine. Name, owner, ore, depth and reserve come from the
+	// book, so the same seam is the same seam on every run.
+	Name = Spec.Name;
+	Owner = Spec.Owner;
+	Ore = Spec.Ore;
+	DepthM = Spec.DepthM;
+	Reserve = Spec.Reserve;
+	OreTint = Spec.Tint;
+	Gold = FMath::Max(15, Reserve / 10);
+
 	if (Trigger && !Trigger->OnComponentBeginOverlap.IsAlreadyBound(this, &AVEILMineNode::OnEnter))
 	{
 		Trigger->OnComponentBeginOverlap.AddDynamic(this, &AVEILMineNode::OnEnter);
 	}
-	if (UMaterialInterface* Crystal = LoadObject<UMaterialInterface>(nullptr, WildsCrystalPath))
+	if (Lamp)
 	{
-		Ore->SetMaterial(0, Crystal);
+		Lamp->SetLightColor(OreTint);
 	}
-	UE_LOG(LogVEIL, Log, TEXT("PHI MINE: node %d at %s worth %d gold (rung %.2f)."),
-		Index, *GetActorLocation().ToCompactString(), Gold, RungOf((float)Gold));
+	BuildHead();
+
+	UE_LOG(LogVEIL, Warning,
+		TEXT("PHI MINE %02d %s - %s, %s seam, %0.f m down, reserve %d, worth %d gold (rung %.2f) at %s."),
+		Index, *Name, *Owner, *Ore, DepthM, Reserve, Gold, RungOf((float)Gold),
+		*GetActorLocation().ToCompactString());
+}
+
+void AVEILMineNode::BuildHead()
+{
+	UStaticMesh* Cube = LoadObject<UStaticMesh>(nullptr, TEXT("/Engine/BasicShapes/Cube.Cube"));
+	UStaticMesh* Cylinder = LoadObject<UStaticMesh>(nullptr, TEXT("/Engine/BasicShapes/Cylinder.Cylinder"));
+	USceneComponent* Attach = GetRootComponent();
+	if (!Cube || !Attach) { return; }
+
+	auto Part = [this, Attach](UStaticMesh* Mesh, const FVector& Loc, const FVector& Scale,
+		const FRotator& Rot, bool bSolid)
+	{
+		UStaticMeshComponent* C = NewObject<UStaticMeshComponent>(this);
+		if (!C) { return (UStaticMeshComponent*)nullptr; }
+		C->SetupAttachment(Attach);
+		C->SetStaticMesh(Mesh);
+		C->SetRelativeLocation(Loc);
+		C->SetRelativeRotation(Rot);
+		C->SetRelativeScale3D(Scale);
+		C->SetCollisionEnabled(bSolid ? ECollisionEnabled::QueryAndPhysics : ECollisionEnabled::NoCollision);
+		C->RegisterComponent();
+		return C;
+	};
+
+	// FOUR POSTS AND TWO BEAMS: a headframe, not a rock. The posts are solid, so
+	// the mouth of the mine is something the runner can walk around.
+	const float PostH = 4.2f;
+	for (int32 i = 0; i < 4; ++i)
+	{
+		const float SX = (i & 1) ? 1.f : -1.f;
+		const float SY = (i & 2) ? 1.f : -1.f;
+		Part(Cube, FVector(SX * 130.f, SY * 110.f, PostH * 50.f), FVector(0.34f, 0.34f, PostH), FRotator::ZeroRotator, true);
+	}
+	Part(Cube, FVector(0.f, 115.f, 400.f), FVector(3.4f, 0.30f, 0.30f), FRotator::ZeroRotator, true);
+	Part(Cube, FVector(0.f, -115.f, 400.f), FVector(3.4f, 0.30f, 0.30f), FRotator::ZeroRotator, true);
+	Part(Cube, FVector(0.f, 0.f, 430.f), FVector(0.30f, 2.6f, 0.30f), FRotator::ZeroRotator, false);
+
+	// THE SHAFT: a dark mouth in the ground, not a hole the runner falls through.
+	if (Cylinder)
+	{
+		UStaticMeshComponent* Mouth = Part(Cylinder, FVector(0.f, 0.f, 12.f), FVector(2.2f, 2.2f, 0.10f), FRotator::ZeroRotator, false);
+		if (Mouth)
+		{
+			if (UMaterialInterface* Deep = LoadObject<UMaterialInterface>(nullptr, WildsCrystalPath))
+			{
+				Mouth->SetMaterial(0, Deep);
+			}
+		}
+	}
+
+	// THE SEAM: three boulders of the ore it actually yields, tinted by the book.
+	for (int32 i = 0; i < 3; ++i)
+	{
+		const float A = FMath::DegreesToRadians(i * WildsGoldenDeg);
+		UStaticMeshComponent* Rock = Part(Cube,
+			FVector(FMath::Cos(A) * 210.f, FMath::Sin(A) * 190.f, 55.f + 12.f * i),
+			FVector(1.5f - 0.2f * i, 1.3f + 0.15f * i, 1.1f - 0.1f * i),
+			FRotator(0.f, i * 37.f, 0.f), false);
+		if (Rock)
+		{
+			if (UMaterialInterface* OreMat = LoadObject<UMaterialInterface>(nullptr, WildsCrystalPath))
+			{
+				Rock->SetMaterial(0, OreMat);
+			}
+			Rock->SetCustomPrimitiveDataFloat(0, OreTint.R);
+			Rock->SetCustomPrimitiveDataFloat(1, OreTint.G);
+			Rock->SetCustomPrimitiveDataFloat(2, OreTint.B);
+		}
+	}
 }
 
 void AVEILMineNode::OnEnter(UPrimitiveComponent* OverlappedComp, AActor* Other,
@@ -130,8 +253,11 @@ void AVEILMineNode::OnEnter(UPrimitiveComponent* OverlappedComp, AActor* Other,
 		Q->Gold += Gold;
 		Q->AwardXP(45, TEXT("an ore seam stripped"));
 	}
-	SetActorHiddenInGame(true);
-	UE_LOG(LogVEIL, Warning, TEXT("PHI MINE: node %d stripped, +%d gold."), Index, Gold);
+	SetActorHiddenInGame(false);
+	// The seam does not disappear: it is someone's mine. It goes dark and comes
+	// back, and the line names whose ground was worked.
+	UE_LOG(LogVEIL, Warning, TEXT("PHI MINE: %02d %s stripped - %s %s on %s ground, +%d gold."),
+		Index, *Name, *Ore, *Ore, *Owner, Gold);
 }
 
 void AVEILMineNode::Tick(float DeltaSeconds)
@@ -140,8 +266,7 @@ void AVEILMineNode::Tick(float DeltaSeconds)
 	if (!bSpent || !GetWorld()) { return; }
 	if (GetWorld()->GetTimeSeconds() < RespawnAt) { return; }
 	bSpent = false;
-	SetActorHiddenInGame(false);
-	UE_LOG(LogVEIL, Log, TEXT("PHI MINE: node %d has re-formed."), Index);
+	UE_LOG(LogVEIL, Log, TEXT("PHI MINE: %02d %s re-formed."), Index, *Name);
 }
 
 // ---------------------------------------------------------------------------
@@ -246,7 +371,8 @@ void AVEILWildsPopulation::Populate(int32 Camps_, int32 Mines_)
 		Camps.Add(Camp);
 	}
 
-	// MINES: ore seams on the same spiral, closer in, between the camps.
+	// MINES: the world's own claims, on the golden spiral between the camps.
+	// The angle and radius are the address; the identity comes from the book.
 	for (int32 m = 0; m < Mines_; ++m)
 	{
 		const float Angle = FMath::DegreesToRadians(m * WildsGoldenDeg + 200.f);
@@ -261,7 +387,7 @@ void AVEILWildsPopulation::Populate(int32 Camps_, int32 Mines_)
 		AVEILMineNode* Node = W->SpawnActor<AVEILMineNode>(AVEILMineNode::StaticClass(),
 			FVector(X, Y, Z + 160.f), FRotator::ZeroRotator, Params);
 		if (!Node) { continue; }
-		Node->Init(m, 30 + 10 * (m % 4));
+		Node->Init(m);
 		++SpawnedMines;
 	}
 

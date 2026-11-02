@@ -19,6 +19,7 @@ Bible's own bar. The list of what closes it is at the bottom.
 | P3 | No fatal crash | Packaged run: **0** `Fatal error` / `Unhandled Exception` / `Signal 11` |
 | P4 | World generates | `PHI TERRAIN: 10201 instanced tiles`; `PHI WILDS: 230 groves, 169 ruins, 107 boulders, 105 shards, 12 wayposts`; `PHI CONCEPT: 236 pieces`; `PHI CROWD` bound |
 | P5 | φ AI decides, live | `PHI BRAIN` 2,683 lines + `PHI NPC BRAIN` 3,224 with phinary intent (e.g. `intent HUNT = 0.100001 phi`, rung 7.6020); `PHI ECOLOGY` 14 camps with per-camp digits |
+| P8 | Mines are authored, not scattered | 24 named seams in `GMineBook`, each with an owner, an ore, a depth and a reserve; built as headframes (4 posts, 2 beams, shaft, seam), not cones |
 | P7 | Log discipline is measured, not claimed | After the fix: `STAND DOWN` 6,198 -> 111, `ECOLOGY` 2,664 -> 153 in a comparable run, with orders still cycling |
 | P6 | The 50-activity loop closes | `proof/simulate_run.py`: **50/50** activities, 110.8 min, 9,158 m walked, `beacons 3/3 and warden down -> COMPLETE`, `phi^2 - phi - 1 = 0.000e+00` |
 
