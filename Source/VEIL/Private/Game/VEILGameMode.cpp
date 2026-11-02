@@ -1695,6 +1695,7 @@ void AVEILPlayerController::BeginPlay()
 		|| FParse::Param(FCommandLine::Get(), TEXT("phishot"))
 		|| FParse::Param(FCommandLine::Get(), TEXT("phiair"))
 		|| FParse::Param(FCommandLine::Get(), TEXT("phitour"))
+		|| FParse::Param(FCommandLine::Get(), TEXT("phiseat"))
 		|| FParse::Param(FCommandLine::Get(), TEXT("phimemory"))
 		|| FParse::Param(FCommandLine::Get(), TEXT("phiquanta"));
 	{
@@ -2151,6 +2152,51 @@ void AVEILPlayerController::BeginPlay()
 			16.f, false);
 		GetWorldTimerManager().SetTimer(GA4, FTimerDelegate::CreateWeakLambda(this,
 			[ShootAir]() { ShootAir(); }), 18.f, false);
+	}
+
+	// -phiseat: WHAT IS THE RUNNER STANDING IN?
+	//
+	// The Play frame at the seat showed the runner pressed into a gold mass with the
+	// camera inside it. An editor-side probe found NOTHING within six metres, because
+	// the offender is spawned at Play, not saved in the level - so the question has to
+	// be asked of the running world, and answered with distances rather than a guess.
+	if (FParse::Param(FCommandLine::Get(), TEXT("phiseat")))
+	{
+		FTimerHandle SeatTimer;
+		GetWorldTimerManager().SetTimer(SeatTimer, FTimerDelegate::CreateWeakLambda(this, [this]()
+		{
+			UWorld* W = GetWorld();
+			const APawn* Body = GetPawn();
+			if (!W || !Body) { return; }
+			const FVector At = Body->GetActorLocation();
+			int32 Found = 0;
+			float Nearest = 1.0e9f;
+			FString NearestName;
+			for (TActorIterator<AActor> It(W); It; ++It)
+			{
+				AActor* A = *It;
+				if (!A || A == Body) { continue; }
+				const float D = (float)FVector::Dist(A->GetActorLocation(), At);
+				if (D > 900.f) { continue; }
+				++Found;
+				FString MeshName = TEXT("-");
+				if (const AStaticMeshActor* SM = Cast<AStaticMeshActor>(A))
+				{
+					if (const UStaticMeshComponent* C = SM->GetStaticMeshComponent())
+					{
+						if (const UStaticMesh* M = C->GetStaticMesh()) { MeshName = M->GetName(); }
+					}
+				}
+				UE_LOG(LogVEIL, Warning,
+					TEXT("VEIL SEAT: %.0f cm %s (%s) at V(%.0f,%.0f,%.0f) mesh=%s"),
+					D, *A->GetName(), *A->GetClass()->GetName(), A->GetActorLocation().X,
+					A->GetActorLocation().Y, A->GetActorLocation().Z, *MeshName);
+				if (D < Nearest) { Nearest = D; NearestName = A->GetName(); }
+			}
+			UE_LOG(LogVEIL, Warning,
+				TEXT("VEIL SEAT: %d actor(s) within 900 cm of V(%.0f,%.0f,%.0f); nearest %s at %.0f cm."),
+				Found, At.X, At.Y, At.Z, *NearestName, Nearest);
+		}), 5.0f, false);
 	}
 
 	// -phitour: FIVE REGIONS, ONE SESSION.
