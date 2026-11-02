@@ -803,6 +803,20 @@ void AVEILGameMode::BeginPlay()
 			{
 				if (GEngine)
 				{
+					// LEVEL THE PROOF CAMERA BEFORE IT FIRES.
+					//
+					// The seat is aimed down (-17.0324 deg, the golden pitch) at the Keeper's
+					// column, and from the plaza centre that put three metres of paving in the
+					// frame and the world along its top edge. A proof photo of the floor is not
+					// a proof of the world. The shot is taken level, so the buildings, the
+					// columns and the skyline are what the camera actually looks at.
+					if (APlayerController* ShotPC = UGameplayStatics::GetPlayerController(GetWorld(), 0))
+					{
+						const FRotator Level(0.f, ShotPC->GetControlRotation().Yaw, 0.f);
+						ShotPC->SetControlRotation(Level);
+						UE_LOG(LogVEIL, Warning, TEXT("VEIL SHOT LEVEL: frame taken at yaw %.0f, pitch 0 - horizon, not paving."),
+							Level.Yaw);
+					}
 					GEngine->Exec(GetWorld(), TEXT("HighResShot 1280x720"));
 					UE_LOG(LogVEIL, Warning, TEXT("VEIL SHOT: photographed from inside the game, no keystroke involved."));
 				}
@@ -1071,7 +1085,15 @@ void AVEILGameMode::BeginPlay()
 				// tall, until he has air around him. If nothing is clear, he keeps the
 				// seat and the log says so instead of pretending.
 				{
-					FCollisionQueryParams FreeParams(SCENE_QUERY_STAT(VeilSeatFree), false);
+					// WHAT WAS NOT A FLOOR IS NOT A WALL EITHER.
+					//
+					// This check used to start a fresh query that ignored only the pawn, so the
+					// slab (top 500), the landmark proxies (top 4220) and the terraces the seat
+					// search had already dismissed were blocking again with full authority. Every
+					// candidate inside 34 golden steps read as blocked, the runner was clamped
+					// back to 0,0, and the camera sat inside the mass: "floor Actor_0 at 0 cm".
+					// It now inherits the ignored set it is continuing, and adds the body.
+					FCollisionQueryParams FreeParams = Params;
 					FreeParams.AddIgnoredActor(Pawn);
 					auto BlockedAt = [&](const FVector& At)
 					{
@@ -1112,7 +1134,12 @@ void AVEILGameMode::BeginPlay()
 				// the game. The Nest is cleared now, so the spawn is the plaza centre and the
 				// world is fixed to it, not the other way round. A seat that lands outside
 				// 8 m of the address is replaced by the address itself, on its own floor.
-				if (FVector::Dist2D(Seat, FVector::ZeroVector) > 800.f)
+				// THE CLAMP IS A LEASH, NOT A CAGE. Eight metres was tight enough that the
+				// probe's own answer - floor, room, clear view - was discarded and the runner
+				// put back inside the hub's base. The plaza ring is the boundary of the
+				// address; past it the address wins, inside it the proved seat does.
+				const float AddressLeash = 2600.f;
+				if (FVector::Dist2D(Seat, FVector::ZeroVector) > AddressLeash)
 				{
 					// DO NOT TRACE FROM INSIDE THE ROOF. This clamp traced down from z=+4000 and
 					// its very first hit was the meshless slab whose top is at 500 - so "the
@@ -1170,14 +1197,48 @@ void AVEILGameMode::BeginPlay()
 		for (int32 i = 0; i < 3; ++i)
 		{
 			const float Angle = (2.f * PI / 3.f) * i;
-			const FVector Loc(FMath::Cos(Angle) * 950.f,
+			FVector Loc(FMath::Cos(Angle) * 950.f,
 				FMath::Sin(Angle) * 950.f, 240.f);
+
+			// THE RING IS NOT EMPTY ANY MORE.
+			//
+			// On a bare map the 950 cm ring is open ground and a blind seat is fine. In the
+			// baked district that ring runs THROUGH the market walls, and a spawn that lands
+			// inside geometry is not adjusted - it is refused, silently, and the agent is
+			// never born (two of the three were lost that way on VEILDistrictWP). A seat is
+			// therefore PROBED for the floor it stands on, and the spawn never refuses.
+			{
+				FHitResult FloorHit;
+				FCollisionQueryParams SeatParams(SCENE_QUERY_STAT(PHIRingSeat), false);
+				if (APawn* Runner = UGameplayStatics::GetPlayerPawn(GetWorld(), 0))
+				{
+					SeatParams.AddIgnoredActor(Runner);
+				}
+				if (GetWorld()->LineTraceSingleByChannel(FloorHit,
+					FVector(Loc.X, Loc.Y, 3000.f), FVector(Loc.X, Loc.Y, -1000.f),
+					ECC_Visibility, SeatParams))
+				{
+					Loc.Z = FloorHit.ImpactPoint.Z + 98.f;
+				}
+			}
+
+			FActorSpawnParameters RingParams;
+			RingParams.SpawnCollisionHandlingOverride =
+				ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+
 			if (AVEILFactionAgent* Agent =
 				GetWorld()->SpawnActor<AVEILFactionAgent>(
 					AVEILFactionAgent::StaticClass(), Loc,
-					FRotator(0.f, -Angle * 180.f / PI, 0.f)))
+					FRotator(0.f, -Angle * 180.f / PI, 0.f), RingParams))
 			{
 				Agent->SpawnDefaultController();
+				UE_LOG(LogVEIL, Display, TEXT("PHI RING SEAT: agent %d at %s (floor probed, never refused)."),
+					i, *Loc.ToCompactString());
+			}
+			else
+			{
+				UE_LOG(LogVEIL, Warning, TEXT("PHI RING SEAT: agent %d was refused at %s even with AlwaysSpawn."),
+					i, *Loc.ToCompactString());
 			}
 		}
 	}
@@ -2384,10 +2445,15 @@ void AVEILPlayerController::BeginPlay()
 					{
 						const FVector Fwd = ShotPC->GetControlRotation().Vector();
 						FHitResult Down, Ahead;
+						// NOT THE RUNNER'S OWN CAPSULE. The eye sits at the body's origin, so an
+						// unignored trace answered "floor Actor_0 at 0 cm; ahead Actor_0 at 0 cm"
+						// every single frame - a probe reporting itself instead of the room.
+						FCollisionQueryParams EyeParams(SCENE_QUERY_STAT(VeilShotEyes), false);
+						if (Body) { EyeParams.AddIgnoredActor(Body); }
 						ShotWorld->LineTraceSingleByChannel(Down, Eye,
-							Eye - FVector(0.f, 0.f, 20000.f), ECC_Visibility);
+							Eye - FVector(0.f, 0.f, 20000.f), ECC_Visibility, EyeParams);
 						ShotWorld->LineTraceSingleByChannel(Ahead, Eye,
-							Eye + Fwd * 3000.f, ECC_Visibility);
+							Eye + Fwd * 3000.f, ECC_Visibility, EyeParams);
 						UE_LOG(LogVEIL, Warning,
 							TEXT("VEIL SHOT EYES: body V(X=%.0f, Y=%.0f, Z=%.0f) fwd V(X=%.2f, Y=%.2f, Z=%.2f); floor %s at %.0f cm; ahead %s at %.0f cm."),
 							Eye.X, Eye.Y, Eye.Z, Fwd.X, Fwd.Y, Fwd.Z,
