@@ -60,6 +60,8 @@ struct FVEILCamp
 	GENERATED_BODY()
 
 	UPROPERTY() TArray<TWeakObjectPtr<AVEILEnemy>> Members;
+	/** Desired heading per member, refreshed on the decide clock and applied every frame. */
+	TArray<FVector> Dir;
 	float Phase = 0.f;
 	/** The phinary decide digit, 0..1. */
 	float Intent = 0.f;
