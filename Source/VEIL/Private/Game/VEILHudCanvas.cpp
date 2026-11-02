@@ -1409,7 +1409,9 @@ void AVEILHudCanvas::DrawHUD()
 			// Plate + faction spine + a name band that carries the colour. The body
 			// is glass under a gold trim, and the speaker's own colour runs down the
 			// left edge, so a conversation looks like a held document, not a console.
-			FVeilUI::Glass(this, FLinearColor(0.026f, 0.032f, 0.050f, 0.78f), BX, BY, BW, BH, 12.f);
+			// The dialogue box is a panel too, and it was the last one off the Bible's
+			// number at 78%. One fill for every panel: 85%.
+			FVeilUI::Glass(this, FLinearColor(0.026f, 0.032f, 0.050f, 0.85f), BX, BY, BW, BH, 12.f);
 			FVeilUI::RoundRect(this, FLinearColor(Who.R, Who.G, Who.B, 0.95f), BX + 1.f, BY + 12.f, 3.2f * UPHIMITO_PHI_SAFE, BH - 24.f, 1.6f * UPHIMITO_PHI_SAFE);
 			FVeilUI::RoundRect(this, FLinearColor(Who.R, Who.G, Who.B, 0.22f), BX + 12.f, BY, BW - 24.f, 1.4f, 0.7f);
 
