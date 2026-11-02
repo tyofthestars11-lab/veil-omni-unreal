@@ -18,6 +18,7 @@
 #include "VEIL.h"
 #include "Systems/OMNIQuestSystem.h"
 #include "Systems/PHIMito.h"
+#include "Systems/PHI_NPCProcessor.h"
 #include "Systems/VEILProgression.h"
 #include "Animation/VEILLocomotionAnimInstance.h"
 #include "Systems/VEILLootPickup.h"
@@ -106,6 +107,12 @@ AVEILFactionAgent::AVEILFactionAgent()
 		PHITintComponent(Eye, FLinearColor(0.85f, 0.2f, 1.f), 3.f);
 	}
 
+	// EVERY MACHINE GETS ITS OWN PHI BRAIN. Identity, mood and situation are rungs and
+	// the intent is the nearest rung anchor, so no two agents decide the same way and
+	// none of them is running a 0/1 flag. The enemy class already had this; the plaza
+	// guards did not, which is why the district's people acted like switches.
+	Brain = CreateDefaultSubobject<UPHI_NPCProcessor>(TEXT("PhiBrain"));
+
 	Health = MaxHealth;
 }
 
@@ -124,6 +131,16 @@ void AVEILFactionAgent::BeginPlay()
 			TEXT("/Game/Polyart/SharedResources/Characters/AnimationStuff/Animations/Locomotion/Shared/MM_Run.MM_Run"));
 		Loco->JogSpeed = 380.f;
 	}
+	// SEED THE BRAIN FROM THE SEAT, NOT FROM A COUNTER. Two machines seated differently
+	// are different creatures from the same law, and the same seat rebuilds the same one.
+	if (Brain)
+	{
+		const int32 Ordinal = (int32)(FMath::Abs(HomeLocation.X + HomeLocation.Y * 1.618034f)) % 64;
+		Brain->Seed(GetFName(), Ordinal);
+		UE_LOG(LogVEIL, Log, TEXT("PHI BRAIN SEEDED: %s | %s"),
+			*GetActorNameOrLabel(), *Brain->StatusLine());
+	}
+
 	// Each machine takes its seat's own yaw as its orbit phase, so six guards
 	// on one ring never walk the same arc at the same time.
 	OrbitOffsetDeg = GetActorRotation().Yaw;
@@ -259,6 +276,37 @@ void AVEILFactionAgent::Tick(float DeltaSeconds)
 		return;
 	}
 
+	// THE BRAIN DECIDES, THE STATE MACHINE ACTS.
+	// Threat and health go in as 0..1; the intent comes back at the nearest rung anchor.
+	// Nothing here compares a flag - a machine's decision moves continuously with its
+	// clock, its mood and how close the runner is.
+	if (Brain && State != EVEILAgentState::Dead)
+	{
+		const float Dist = TargetActor.IsValid()
+			? (float)FVector::Dist(TargetActor->GetActorLocation(), GetActorLocation()) : 1.e9f;
+		const float Threat01 = FMath::Clamp(1.f - Dist / FMath::Max(1.f, SightRange), 0.f, 1.f);
+		const float Health01 = FMath::Clamp(Health / FMath::Max(1.f, MaxHealth), 0.f, 1.f);
+		const EPhiIntent Intent = Brain->ChooseIntent(Threat01, Health01, TargetActor.IsValid());
+		if (Intent != LastPhiIntent)
+		{
+			LastPhiIntent = Intent;
+			UE_LOG(LogVEIL, Log, TEXT("PHI BRAIN: %s -> %s | threat %.2f health %.2f | %s"),
+				*GetActorNameOrLabel(), *UPHI_NPCProcessor::IntentName(Intent), Threat01, Health01,
+				*Brain->StatusLine());
+		}
+		// With nothing in hand, the brain chooses between standing the post and walking
+		// its ground. A restful machine stands still; a restless one patrols.
+		if (!TargetActor.IsValid())
+		{
+			if (Intent == EPhiIntent::Rest) { HoldPost(); return; }
+			if (Intent == EPhiIntent::Patrol && State == EVEILAgentState::Patrol)
+			{
+				ActPatrol();
+				return;
+			}
+		}
+	}
+
 	switch (State)
 	{
 	case EVEILAgentState::Patrol:  ActPatrol(); break;
@@ -268,6 +316,13 @@ void AVEILFactionAgent::Tick(float DeltaSeconds)
 	case EVEILAgentState::Retreat: ActDefendOrRetreat(true); break;
 	default: break;
 	}
+}
+
+FString AVEILFactionAgent::PhiStatus() const
+{
+	if (!Brain) { return TEXT("no brain"); }
+	return FString::Printf(TEXT("%s | %s"),
+		*UPHI_NPCProcessor::IntentName(Brain->GetIntent()), *Brain->StatusLine());
 }
 
 void AVEILFactionAgent::StandDown(float Seconds)

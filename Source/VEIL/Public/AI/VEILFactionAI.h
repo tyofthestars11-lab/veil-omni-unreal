@@ -8,9 +8,11 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "Subsystems/WorldSubsystem.h"
+#include "Systems/PHI_NPCProcessor.h"
 #include "VEILFactionAI.generated.h"
 
 class AVEILFactionAgent;
+class UPHI_NPCProcessor;
 
 /** One machine down - the district camp counts them, and the Vault listens. */
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FVEILAgentDown, AVEILFactionAgent*, Agent);
@@ -95,6 +97,17 @@ public:
 	/** One-shot guard: the post is logged once per agent, not every frame. */
 	bool bLoggedPost = false;
 
+	/** THE PHI BRAIN. Every machine in the plaza decides with UPHI_NPCProcessor: identity,
+	 *  mood and situation are rungs, and the intent is the nearest rung anchor - not a
+	 *  threshold, not a 0/1 flag. It was only ever attached to the wave enemies, so the
+	 *  plaza guards ran a plain C++ state switch instead of the framework's brain. */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "VEIL|Phi")
+	TObjectPtr<UPHI_NPCProcessor> Brain;
+
+	/** The intent this machine chose on its own clock, for the log and the HUD. */
+	UFUNCTION(BlueprintPure, Category = "VEIL|Phi")
+	FString PhiStatus() const;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "VEIL|Faction")
 	EVEILFaction Faction = EVEILFaction::Void;
 
@@ -166,6 +179,8 @@ private:
 	float LastFireTime = -100.f;
 	/** World time until which this machine refuses to engage. */
 	float StandDownUntil = -1.f;
+	/** Last intent the brain chose, so a change is one log line, not a flood. */
+	EPhiIntent LastPhiIntent = EPhiIntent::Rest;
 	/** Orbit phase in laps, advanced by dt / phi^4 (one lap per 6.8541 s). */
 	float OrbitPhase = 0.f;
 	/** Its seat's own yaw, so no two machines walk the same arc. */
