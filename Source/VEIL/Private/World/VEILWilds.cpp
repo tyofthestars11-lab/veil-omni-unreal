@@ -400,6 +400,7 @@ void AVEILWildsPopulation::Populate(int32 Camps_, int32 Mines_)
 
 	// MINES: the world's own claims, on the golden spiral between the camps.
 	// The angle and radius are the address; the identity comes from the book.
+	int32 OffOwnGround = 0;
 	for (int32 m = 0; m < Mines_; ++m)
 	{
 		const FWileSpec& Spec = GMineBook[m % GMineBookCount];
@@ -413,10 +414,79 @@ void AVEILWildsPopulation::Populate(int32 Camps_, int32 Mines_)
 		}
 		if (!Home) { continue; }
 
+		const int32 HomeIndex = (int32)(Home - GMineHomes);
 		const float Angle = FMath::DegreesToRadians(m * WildsGoldenDeg);
-		const float Ring = Home->RadiusCm * (0.55f + 0.45f * FMath::Frac(m * 0.6180339887f));
-		const float X = Home->Center.X + FMath::Cos(Angle) * Ring;
-		const float Y = Home->Center.Y + FMath::Sin(Angle) * Ring;
+		const float RingFull = Home->RadiusCm * (0.55f + 0.45f * FMath::Frac(m * 0.6180339887f));
+		const FVector2D Dir(FMath::Cos(Angle), FMath::Sin(Angle));
+
+		// STANDING ON THE RIGHT GROUND.
+		// A reach is wider than the distance between two anchors, so a point inside
+		// "the Nest's reach" can still stand in the Hub - the first run put TIDEVANE
+		// 60 cm from the Keeper. And two owners can share an anchor: the Warden holds
+		// the Deep's inner disc while the Hollow works the rim, both centred on 0,0.
+		// So the rule is a claim, not a nearest neighbour: every home owns everything
+		// inside its reach, and the SMALLEST reach that covers a point owns it. The
+		// Warden's 620 keeps the disc; the Hollow's 1,250 takes the rim outside it.
+		auto ClaimOf = [](const FVector2D& Pt) -> int32
+		{
+			int32 Owner = INDEX_NONE;
+			float Smallest = TNumericLimits<float>::Max();
+			float Nearest = TNumericLimits<float>::Max();
+			for (int32 h = 0; h < GMineHomeCount; ++h)
+			{
+				const float D = FVector2D::Distance(Pt, GMineHomes[h].Center);
+				if (D > GMineHomes[h].RadiusCm) { continue; }
+				// Reaches are equal in most cases, so reach alone cannot decide: on a tie
+				// the nearer anchor owns it, which is exactly how the region system picks.
+				const bool bSmaller = GMineHomes[h].RadiusCm < Smallest - 1.f;
+				const bool bTie = FMath::Abs(GMineHomes[h].RadiusCm - Smallest) <= 1.f && D < Nearest;
+				if (bSmaller || bTie)
+				{
+					Smallest = bSmaller ? GMineHomes[h].RadiusCm : Smallest;
+					Nearest = D;
+					Owner = h;
+				}
+			}
+			return Owner;
+		};
+
+		FVector2D Site = Home->Center;
+		float Ring = 0.f;
+		bool bOnOwnGround = false;
+
+		// Turning matters as much as shrinking. The Hollow's rim ring is centred on the
+		// Deep and reaches 1,250 cm, which swallows the heart of the Hub: a seam walking
+		// one fixed ray out of 900,0 can never stand on Keeper ground, however close in
+		// it comes. So the search is a sweep - hold the distance, turn the ray through
+		// the golden angles, and take the first thing that is genuinely the owner's.
+		for (int32 Step = 100; Step >= 15 && !bOnOwnGround; Step -= 5)
+		{
+			const float Scale = Step / 100.f;
+			for (int32 Turn = 0; Turn < 36; ++Turn)
+			{
+				const float A = FMath::DegreesToRadians((m + Turn) * WildsGoldenDeg);
+				const FVector2D Try = Home->Center
+					+ FVector2D(FMath::Cos(A), FMath::Sin(A)) * (RingFull * Scale);
+				if (ClaimOf(Try) == HomeIndex)
+				{
+					Site = Try;
+					Ring = RingFull * Scale;
+					bOnOwnGround = true;
+					break;
+				}
+			}
+		}
+		if (!bOnOwnGround)
+		{
+			Ring = 0.f;
+			Site = Home->Center;
+			++OffOwnGround;
+			UE_LOG(LogVEIL, Warning,
+				TEXT("PHI MINE %02d %s finds no clear point of %s ground; set at the anchor."),
+				m, Spec.Name, Spec.Owner);
+		}
+		const float X = Site.X;
+		const float Y = Site.Y;
 		float Z = 0.f;
 		if (!GroundAt(X, Y, Z)) { continue; }
 
@@ -432,8 +502,10 @@ void AVEILWildsPopulation::Populate(int32 Camps_, int32 Mines_)
 	}
 
 	UE_LOG(LogVEIL, Warning,
-		TEXT("PHI WILDS: %d species bodies in %d camps, %d named mines on their owners' ground, all on phi clocks."),
+		TEXT("PHI WILDS: %d species bodies in %d camps, %d named mines, all on phi clocks."),
 		SpawnedEnemies, Camps.Num(), SpawnedMines);
+	UE_LOG(LogVEIL, Warning, TEXT("PHI MINE CLAIMS: %d of %d stand on their owner's ground, %d do not."),
+		SpawnedMines - OffOwnGround, SpawnedMines, OffOwnGround);
 }
 
 void AVEILWildsPopulation::Tick(float DeltaSeconds)
