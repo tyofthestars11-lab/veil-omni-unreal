@@ -408,6 +408,26 @@ UStaticMeshComponent* AVEILWorldBuilder::SpawnBlockRot(const FVector& Location,
 	const FVector PivotShift = Mesh->GetBounds().Origin * (Scale * Norm);
 	Block->SetActorLocation(Location - Rotation.RotateVector(PivotShift));
 
+	// NO GREY CHECKER, IN ANY MAP. WorldGridMaterial is the engine's "no material"
+	// surface, and it survives into a saved level on any mesh whose material slot is
+	// empty - the all-map audit found MID_WorldGridMaterial_0 among the twelve materials
+	// in all four maps, which is the grey grid a placeholder is made of. It is replaced
+	// with the kit's own stone here, the same rule the placeholder shells already follow:
+	// nothing in this project renders as an engine default.
+	if (FloorMesh)
+	{
+		if (UMaterialInterface* BaseMat = Comp->GetMaterial(0))
+		{
+			if (BaseMat->GetName().Contains(TEXT("WorldGridMaterial")))
+			{
+				if (UMaterialInterface* StoneMat = FloorMesh->GetMaterial(0))
+				{
+					Comp->SetMaterial(0, StoneMat);
+				}
+			}
+		}
+	}
+
 	// ONE PALETTE NEAR THE NEST. The audit counted eight materials in the starting
 	// area - brick, gold, roofs, light, and four kit prop families - which reads as
 	// four different builders' leftovers. The two prop families are re-dressed in the
