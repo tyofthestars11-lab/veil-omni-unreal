@@ -2175,7 +2175,10 @@ void AVEILWorldBuilder::DressPhiPalette()
 					break;
 				}
 				const float HitZ = Ground.ImpactPoint.Z;
-				if (HitZ < 600.f) { PaveZ = HitZ; break; }
+				// 120, NOT 600: the plaza floor is at ~0 and its paving at 0.5, while the
+				// meshless slab that covers the district has its top at 500. A 600 cm test
+				// would happily lay the paving on the roof.
+				if (HitZ < 120.f) { PaveZ = HitZ; break; }
 				From = FVector(0.f, 0.f, HitZ - 25.f);
 			}
 		}

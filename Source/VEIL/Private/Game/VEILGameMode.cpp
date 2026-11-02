@@ -1108,15 +1108,38 @@ void AVEILGameMode::BeginPlay()
 				// 8 m of the address is replaced by the address itself, on its own floor.
 				if (FVector::Dist2D(Seat, FVector::ZeroVector) > 800.f)
 				{
-					FHitResult Centre;
+					// DO NOT TRACE FROM INSIDE THE ROOF. This clamp traced down from z=+4000 and
+					// its very first hit was the meshless slab whose top is at 500 - so "the
+					// authority spawn" put the runner at z=598.15, five metres up on a landmark,
+					// and the camera probe said so: runner V(Z=598.15). Start above everything,
+					// skip every hit that is not street level, and take the first one that is.
 					FCollisionQueryParams CentreParams = Params;
-					if (W->LineTraceSingleByChannel(Centre, FVector(0.f, 0.f, 4000.f),
-						FVector(0.f, 0.f, -4000.f), ECC_Visibility, CentreParams))
+					FVector From(0.f, 0.f, 60000.f);
+					bool bLanded = false;
+					for (int32 Step = 0; Step < 12; ++Step)
 					{
-						Seat = FVector(0.f, 0.f, Centre.ImpactPoint.Z + 98.f);
-						UE_LOG(LogVEIL, Warning, TEXT("VEIL SEAT: held to the authority spawn - runner wakes at %s, %.0f cm from 0,0."),
-							*Seat.ToCompactString(), FVector::Dist2D(Seat, FVector::ZeroVector));
+						FHitResult Centre;
+						if (!W->LineTraceSingleByChannel(Centre, From, FVector(0.f, 0.f, -4000.f),
+							ECC_Visibility, CentreParams))
+						{
+							break;
+						}
+						const float HitZ = Centre.ImpactPoint.Z;
+						// STREET LEVEL IS ~0-20 CM, NOT "ANYTHING UNDER 600". The slab's top is at
+						// 500, which passed a 600 cm test and put the runner at 598.15 - the same
+						// roof, one threshold lower. 120 cm is the plaza floor and its paving, and
+						// nothing above it counts as ground.
+						if (HitZ < 120.f)
+						{
+							Seat = FVector(0.f, 0.f, HitZ + 98.f);
+							bLanded = true;
+							break;
+						}
+						From = FVector(0.f, 0.f, HitZ - 25.f);
 					}
+					if (!bLanded) { Seat = FVector(0.f, 0.f, 98.f); }
+					UE_LOG(LogVEIL, Warning, TEXT("VEIL SEAT: held to the authority spawn - runner wakes at %s, %.0f cm from 0,0 (street level, not the slab)."),
+						*Seat.ToCompactString(), FVector::Dist2D(Seat, FVector::ZeroVector));
 				}
 
 				Pawn->SetActorLocation(Seat, false, nullptr, ETeleportType::TeleportPhysics);
