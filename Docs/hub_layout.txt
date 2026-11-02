@@ -1,0 +1,87 @@
+VEIL OMNI - HUB LAYOUT PLAN
+Date: 2026-11-02
+Map: /Game/Maps/VEILDistrict
+Basis: the vision image (phi-winged runner over the Hub; three gold phi pillars in a market
+plaza; stone buildings; blue/gold tents; bridges; waterfalls at the Nest edge).
+All distances in Unreal units (cm). Golden angle 137.507764 deg. phi = 1.618033988749895.
+
+--------------------------------------------------------------------------
+THE PLAN IN ONE LINE
+--------------------------------------------------------------------------
+One central market plaza at 0,0 with three gold phi pillars standing in it, five streets
+leaving it on golden-angle headings, stone buildings in rows down both sides of every
+street, tents and stalls inside the plaza, and the Nest cliffs and waterfalls to the west
+where the vision puts them. Nothing is placed by dice: every entry below is a named X,Y.
+
+--------------------------------------------------------------------------
+1. PLAZA
+--------------------------------------------------------------------------
+Centre:            0, 0        (the runner's spawn stands here, RUNNER 0,0,100)
+Radius:            1100        walkable dressed ground
+Floor:             kit stone tiles on a 320 module grid, top face at z = 4
+Three gold phi pillars (the vision's market columns), 1200 tall, on an equilateral ring:
+  P1   -700,   900
+  P2    900,   700
+  P3   -100, -1100
+  Each: kit column mesh, gold material, phi glyph band at 700 and 1000, collision ON.
+Market tents:      6, blue and gold, on a 400 ring at the plaza edge, headings 0, 60, 120,
+                   180, 240, 300 deg, each 300 x 300, 240 tall.
+Stalls:            12 small stone counters between the tents, 180 x 90, top at z = 110.
+
+--------------------------------------------------------------------------
+2. STREETS - five, on golden-angle headings
+--------------------------------------------------------------------------
+Each street: 900 wide, walkable, no prop inside 600 of its centre line, buildings set back
+900 from the centre line so the street reads as a street and not a corridor of walls.
+
+  S1 heading   0.0 deg   runs to  +Y   (north, toward the Spire sightline)
+  S2 heading 137.5 deg   runs to  -X,+Y
+  S3 heading 275.0 deg   runs to  -X,-Y
+  S4 heading  52.5 deg   runs to  +X,+Y
+  S5 heading 190.0 deg   runs to  -X    (toward the Nest cliffs and waterfalls)
+
+Street ends: S1 ends at a beacon plinth (beacon 2800,500 sits beside it). S5 ends at the
+Nest rim and a bridge over the first waterfall.
+
+--------------------------------------------------------------------------
+3. BUILDINGS - rows, one clean mesh each, never stacked cubes
+--------------------------------------------------------------------------
+Along each street, first building front face at 2400 from the plaza centre, then one every
+1600, alternating sides. Each building is ONE kit mesh (wall/floor kit assembled as a room,
+not a pile of blocks), 1600 x 1200 footprint, 700 tall, door facing the street.
+
+  S1  B01  +900, 2400   B02 -900, 4000   B03 +900, 5600   B04 -900, 7200
+  S2  B05  -1900, 2600  B06 -3100, 4200  B07 -4300, 5800
+  S3  B08  -2100,-2400  B09 -3300,-3900  B10 -4500,-5400
+  S4  B11  +2300, 2900  B12 +3700, 4600  B13 +5100, 6300
+  S5  B14  -2600,  400  B15 -4000,  300  B16 -5400,  200
+
+Named by role, so the Hub reads as a place:
+  B01 The Keeper's Hall (Keeper 900,0 stays where it is, in the plaza in front of it)
+  B02 The Assay (fragments and gold counted here)
+  B03 The Forge (ForgeLevel shown on the HUD)
+  B05 The Cartographer's loft (Cartographer -4150,-780 is its own site, west)
+  B08 The Granary   B11 The Infirmary   B14 The Signal House (facing the Nest)
+
+--------------------------------------------------------------------------
+4. NEST SIDE (west) - cliffs and waterfalls
+--------------------------------------------------------------------------
+Nest rim begins at -6200. Waterfall sheets on the first three shelves, headings
+137.5, 210, 282.5 deg, each 900 wide, from shelf top to the ground below.
+Wooden bridges: two, from the S5 street end (-5400, 200) across the first fall to the
+second shelf. Cliffs are the kit rock mesh, warm stone, no blue tint.
+
+--------------------------------------------------------------------------
+5. WHAT IS NOT IN THIS PLAN
+--------------------------------------------------------------------------
+Spire, Omni District, Megastructure Deep and the blue crystal range are separate regions of
+the same world in the vision. They are not placed in this file, because their coordinates
+have to be set once the Hub and Nest ground are one continuous surface. This file is the
+Hub and Nest plan only, so the part being built is unambiguous.
+
+--------------------------------------------------------------------------
+6. AUTHORITY ACTORS - never moved by this plan
+--------------------------------------------------------------------------
+RUNNER 0,0,100 | Keeper 900,0 | Seer -450,780 | Cartographer -4150,-780
+Countess 809,-309,64.7 | Vault 0,0,-80.9 | Cache 0,-6200
+Beacons 2800,500 / -2000,-900 / 600,-2100

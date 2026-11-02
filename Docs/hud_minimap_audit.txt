@@ -1,0 +1,68 @@
+VEIL OMNI - HUD AND MINIMAP AUDIT
+Date: 2026-11-02
+File under audit: Source/VEIL/Private/Game/VEILHudCanvas.cpp (function DrawHUD, the plate
+block and the minimap block)
+
+--------------------------------------------------------------------------
+1. OBJECTIVE PANEL
+--------------------------------------------------------------------------
+Spec:    max 420 x 110, top left, objective line + VIT / STM / XP + level only
+Now:     420 x 110 exactly (PW = 420, PH = 110), margin 14,14
+Content: objective line, VIT bar, STM bar, XP bar with "LV n  XP a / b", then three compact
+         rows: FRAG / GOLD / SHARDS, FORGE / BEACONS / REGION, LEAD / PARTY
+Fill:    85% navy glass (the Bible's 85%; the newer 55% sheet loses to the Bible)
+Open defect: the objective line loses its first characters - it renders as
+         "...k to the KEEPER and let her count you." Removing the ribbon behind it did not
+         change the render, so the line is being clipped by something not yet identified.
+
+--------------------------------------------------------------------------
+2. MINIMAP
+--------------------------------------------------------------------------
+Spec:    180 x 180, top right, 70% opacity, circular gold ring, real colours,
+         player = phi diamond, NPCs = icons, quest sites = gold diamonds
+Now:     180 x 180 (MS = 180), top right at ClipX - MS - 26, 30
+         circular: drawn as a disc row by row from UVEILMapCapture (a live capture)
+         markers: gold diamonds for beacons and sites, player diamond at centre
+Opacity: the panel is not yet reduced to 70%; the disc draws at full alpha
+Open:    NPC markers are drawn from the faction agent list only; MetaHuman NPCs have no
+         icon yet because there are no MetaHuman NPCs.
+
+--------------------------------------------------------------------------
+3. FIELD MANUAL CARD
+--------------------------------------------------------------------------
+Spec:    max 320 x 90, bottom right, fade after 6 s, not shown again once the player has
+         moved
+Now:     252 x 104
+Open:    height is 14 over spec and the 6 s fade / moved-once rule is not implemented.
+
+--------------------------------------------------------------------------
+4. QUEST BANNER
+--------------------------------------------------------------------------
+Spec:    one line, max 480 wide, under the objective panel
+Now:     one line, ribbon bottom left ("QUEST: THE GOLDEN MIDST"), width follows the text
+
+--------------------------------------------------------------------------
+5. LOG / TICKER
+--------------------------------------------------------------------------
+Spec:    hidden by default, toggle L
+Now:     bottom strip, toggled by L (bShowDebug gates the debug strips on F10)
+
+--------------------------------------------------------------------------
+6. CENTRE CLEAR
+--------------------------------------------------------------------------
+Spec:    centre 60% of the frame clear of UI during normal play
+Now:     the plate (420 wide, top left), the minimap (180, top right) and the manual card
+         (bottom right) all sit outside the centre 60% box at 1920x1080. The combat pill and
+         the ability diamonds sit on the bottom edge, below the 80% line.
+
+--------------------------------------------------------------------------
+7. WHAT "AMAZING HUD" STILL NEEDS, IN ORDER
+--------------------------------------------------------------------------
+1. Fix the clipped first characters on the objective line.
+2. Field manual to 320 x 90 with the 6 s fade and the moved-once rule.
+3. Minimap to 70% opacity and add NPC markers once real NPCs exist.
+4. Gold ribbon treatment on the plate edges (the vision's curved, glowing ribbon) - the
+   current plate is a rounded rectangle with a straight gold trim.
+5. Diamond ability icons with cooldown sweeps, and the glare/glow pass the vision shows.
+
+Nothing in this file is claimed as done unless the frame proves it.
