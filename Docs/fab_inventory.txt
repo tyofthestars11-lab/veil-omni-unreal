@@ -1,0 +1,82 @@
+VEIL OMNI - FAB LIBRARY AND ON-DISK ASSET INVENTORY
+Date: 2026-11-02
+Scope: what is registered in the Fab library on this PC, what is imported into Content, what
+each pack can actually do for the vision, and what is genuinely missing.
+Every number below was counted on disk with find | wc -l. Nothing here is estimated.
+
+WHERE THE FAB RECORDS LIVE
+  Content/FabLibrary/<Listing-Name>-<hash>/unreal-engine/manifest  (one per owned listing)
+  Content/FabLibrary/listings_v1.db                               (the library index)
+
+TEN LISTINGS ARE REGISTERED AND IMPORTED
+  1. Paragon: Countess
+  2. Paragon: Greystone
+  3. Paragon: Minions
+  4. Paragon: Murdock
+  5. Paragon: Revenant
+  6. SICKA Free Environment Pack        -> Content/Sicka_EnvPack2
+  7. Lava Material                     -> Content/LavaMat
+  8. Stylized Characters - Modular Stylized Character Creator - Adventurer -> Content/Polyart
+  9. Underwater test (OBJ)             -> Content/Underwater
+ 10. FREE Mountain Tops for UE 5.3-5.7 -> Content/Iceland_Environment
+
+ASSET COUNTS PER PACK (assets | static meshes | skeletal | materials | maps)
+  Sicka_EnvPack2            567 | 215 SM |  0 SK | 153 mat | 13 maps
+  Polyart                   574 |  20 SM | 77 SK |  94 mat |  4 maps
+  ModularS30eeb54ea3e4V1    885 |  39 SM | 77 SK | 160 mat |  7 maps
+  Iceland_Environment        78 |  14 SM |  0 SK |  12 mat |  2 maps
+  LavaMat                    44 |   0 SM |  0 SK |  10 mat |  1 map
+  Underwater                  3 |   1 SM |  0 SK |   0 mat |  0 maps
+  ParagonCountess          2725 |  27 SM |  0 SK | 122 mat |  3 maps
+  ParagonGreystone         1733 |  57 SM |  0 SK | 161 mat |  2 maps
+  ParagonMinions           2105 | 152 SM |  1 SK | 485 mat |  2 maps
+  ParagonMurdock           1896 |  30 SM |  0 SK | 171 mat |  3 maps
+  ParagonRevenant          1621 |  30 SM |  0 SK | 126 mat |  3 maps
+  MetaHumans                185 |   3 SM |  6 SK |  30 mat |  0 maps
+  Mannequins                127 |   0 SM |  3 SK |   5 mat |  0 maps
+  StarterContent            264 |  19 SM |  0 SK |  66 mat |  3 maps
+  SFX                        18, Voice 38, PHI 9, Branding 1, Data 2, Character 1
+
+WHAT THE LIBRARY CAN ALREADY BUILD (vision element -> the pack that owns it)
+  Hub market architecture     Sicka SM_Wall1..6 (+Big/Small), SM_WallRamp, SM_WallLight,
+                              SM_WallDecor, SM_AncientColumn_Big, SM_AncientArchColumn,
+                              SM_ArchD, SM_AncientDecorArch, SM_StairSmall, SM_HolderRoof
+  Hub altars / landmarks      Sicka SM_LittleShrine, SM_AncientMonolith, SM_StandLight,
+                              SM_StandBox, SM_SquareMesh
+  Nest cliffs and ledges      Sicka SM_CliffBig, SM_CliffMed, SM_CliffMed2,
+                              SM_CliffSlate1..3 (MI_Cliff1..4 + T_Cliff_* textures)
+  Crystal look                Sicka ships CRYSTAL TEXTURES ONLY - T_Cliff_Crystal_BaseColor,
+                              T_Cliff_Crystal_Emissive, T_Cliff_Crystal_ORM. No crystal MESH.
+  Spire / far mountains       Iceland SM_Mountain_01..09, SM_Mountain_Plateu_01,
+                              SM_Iceland_Crest, SM_Iceland_Eroded_Mountain,
+                              SM_Iceland_Plateus_01 + M_AutoLandscape and MF_* layer blends
+  Deep / interior machinery   Sicka_Scifi_Interior and _Interior2 (+ Hologram masks)
+  Characters (NPCs, player)   Polyart 77 skeletal meshes, SK_Garret_FullBody and
+                              SK_Quinn_Simple complete, ABP_MaleCharacter / FemaleCharacter,
+                              MM_Idle, MM_Run; BP_MaleMergedCharacter / BP_FemaleMergedCharacter
+  One MetaHuman               MetaHumans/MH_Runner_Built -> SKM_MH_Runner_BodyMesh,
+                              SKM_MH_Runner_FaceMesh, BP_MH_Runner
+  Lava / magma materials      LavaMat MI_LavaMat_Inst1..10 (+ one demo map)
+  One water/submerged mesh    Underwater SM_SubAkvo + sub_akvo / Solid materials
+  Audio                       SFX 18 cues (bolt_fire, fall_loop, footstep_a/b,
+                              fragment_chime, glide_loop, cache_claim, foe_down...), Voice 38
+
+WHAT IS NOT IN THE LIBRARY (Fab is for exactly these)
+  - Crystal meshes. The vision's blue crystal mountains need a crystal asset; this project
+    owns the TEXTURES for crystal, not the geometry.
+  - Water. There is no water system, no river, no waterfall, no flow material. SM_SubAkvo is
+    a single submerged mesh, not a body of water.
+  - Vegetation. No tree, bush or grass mesh. Iceland ships landscape grass TYPES (LG_A..E),
+    which drive a landscape material, not placeable trees.
+  - Market dressing. No tent, stall, awning, barrel, crate or banner mesh. The vision's blue
+    and gold market tents are not in any pack here.
+  - The phi wing. No wing mesh, no cloak mesh, no flight rig. That character does not exist
+    in this library.
+  - Bridges. No bridge mesh in Sicka or Iceland.
+
+HONEST SUMMARY
+  The library is strong exactly where the vision is architectural: warm stone modular walls,
+  ancient columns and arches, cliffs, roofs, shrines, mountains, interior machinery, plus two
+  complete character families with locomotion graphs and one built MetaHuman.
+  It is empty exactly where the vision is natural or heroic: crystals, water, vegetation,
+  market props, wings, bridges. Those six are Fab purchases or authored meshes, not code.
