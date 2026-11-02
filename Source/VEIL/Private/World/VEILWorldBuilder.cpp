@@ -1049,6 +1049,35 @@ float AVEILWorldBuilder::MeshNorm(const UStaticMesh* Mesh)
 	return Extent > 1.f ? 100.f / (2.f * Extent) : 1.f;
 }
 
+// GOLD COLUMNS GET A REAL BODY, ONE PER INSTANCE.
+//
+// The probe traced horizontally at z=+700 straight into the nearest SM_AncientColumn_Big and
+// reported CLEAR - and kept reporting CLEAR with BlockAll and bUseDefaultCollision set on
+// the instanced set. The kit's column mesh carries no collision geometry, so an instance has
+// nothing to collide with however the component is configured. Each one therefore gets an
+// invisible box the size of its own bounds, tagged VEIL_BAKE so the next bake clears it.
+void AVEILWorldBuilder::AddColumnBody(const FVector& Location, const FVector& Scale, UStaticMesh* Mesh)
+{
+	UWorld* World = GetWorld();
+	if (!World || !Mesh) { return; }
+
+	AActor* Body = World->SpawnActor<AActor>(AActor::StaticClass(), Location, FRotator::ZeroRotator);
+	if (!Body) { return; }
+	Body->Tags.Add(FName(TEXT("VEIL_BAKE")));
+
+	const FVector Extent = Mesh->GetBounds().BoxExtent * Scale;
+	UBoxComponent* Box = NewObject<UBoxComponent>(Body);
+	Box->SetMobility(EComponentMobility::Movable);
+	Box->SetBoxExtent(Extent, false);
+	Box->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	Box->SetCollisionProfileName(TEXT("BlockAll"));
+	Box->SetCanEverAffectNavigation(false);
+	Body->SetRootComponent(Box);
+	Box->RegisterComponent();
+	// The instance pivot is the mesh's base, so the box sits half its height up.
+	Box->SetWorldLocation(Location + FVector(0.f, 0.f, Mesh->GetBounds().BoxExtent.Z * Scale.Z));
+}
+
 void AVEILWorldBuilder::AddBlock(UInstancedStaticMeshComponent* Set, const FVector& Location,
 	const FVector& Scale)
 {
@@ -1060,6 +1089,10 @@ void AVEILWorldBuilder::AddBlock(UInstancedStaticMeshComponent* Set, const FVect
 		// ground tiles that displacement is kilometres.
 		const FVector Shift = Set->GetStaticMesh()->GetBounds().Origin * (Scale * Norm);
 		Set->AddInstance(FTransform(FRotator::ZeroRotator, Location - Shift, Scale * Norm), true);
+		if (Set->GetStaticMesh() && Set->GetStaticMesh()->GetName().Contains(TEXT("AncientColumn")))
+		{
+			AddColumnBody(Location, Scale * Norm, Set->GetStaticMesh());
+		}
 	}
 }
 
@@ -1072,6 +1105,10 @@ void AVEILWorldBuilder::AddBlockYaw(UInstancedStaticMeshComponent* Set, const FV
 		const FRotator R(0.f, YawDegrees, 0.f);
 		const FVector Shift = R.RotateVector(Set->GetStaticMesh()->GetBounds().Origin * (Scale * Norm));
 		Set->AddInstance(FTransform(R, Location - Shift, Scale * Norm), true);
+		if (Set->GetStaticMesh() && Set->GetStaticMesh()->GetName().Contains(TEXT("AncientColumn")))
+		{
+			AddColumnBody(Location, Scale * Norm, Set->GetStaticMesh());
+		}
 	}
 }
 

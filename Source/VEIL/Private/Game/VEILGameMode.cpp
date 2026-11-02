@@ -1546,14 +1546,32 @@ void AVEILGameMode::BeginPlay()
 						{
 							FHitResult ColHit;
 							FCollisionQueryParams ColParams(SCENE_QUERY_STAT(PhiColumnProbe), false, Runner);
+							// IGNORE THE MESHLESS PROXIES. Actor_1 is a district-wide invisible body whose
+							// top is at z=500; any horizontal trace near the ground starts INSIDE it and
+							// returns a 0 cm hit, which masks every column behind it. Every actor with no
+							// static mesh is ignored, so the trace can only report a real column body.
+							for (TActorIterator<AActor> IgnoreIt(GetWorld()); IgnoreIt; ++IgnoreIt)
+							{
+								AActor* Candidate = *IgnoreIt;
+								if (!Candidate || Candidate == NearestColumn || Candidate == Runner) { continue; }
+								if (!Candidate->FindComponentByClass<UStaticMeshComponent>())
+								{
+									ColParams.AddIgnoredActor(Candidate);
+								}
+							}
 							// TRACE ABOVE THE SLAB. The first version aimed from the lens at the column's
 							// base and hit Actor_1 at 579 cm - the meshless collision proxy whose top is
 							// at z=500 - so it measured the proxy, not the column. This traces
 							// horizontally at z = +700, which is above that proxy and inside the column's
 							// own body, from 800 cm out straight at its centre.
-							const FVector ColCentre = NearestColumn->GetActorLocation();
-							const FVector Target = ColCentre + FVector(0.f, 0.f, 700.f);
-							const FVector Out = (Runner->GetActorLocation() - ColCentre).GetSafeNormal2D();
+							// AIM AT THE COLUMN'S REAL BODY, NOT A GUESSED HEIGHT. Aiming at origin + 700
+							// cleared every time because that is above the top of a 400-600 cm column:
+							// the trace sailed over the thing it was meant to test. The bounds centre is
+							// where the geometry actually is.
+							const FBox ColBox = NearestColumn->GetComponentsBoundingBox(true);
+							const FVector Target = ColBox.IsValid ? ColBox.GetCenter() : NearestColumn->GetActorLocation();
+							FVector Out = (Runner->GetActorLocation() - ColBox.GetCenter()).GetSafeNormal2D();
+							if (Out.IsNearlyZero()) { Out = FVector(1.f, 0.f, 0.f); }
 							const FVector Start = Target + Out * 800.f;
 							const bool bColHit = GetWorld()->LineTraceSingleByChannel(ColHit,
 								Start, Target, ECC_Visibility, ColParams);
@@ -1563,8 +1581,9 @@ void AVEILGameMode::BeginPlay()
 								Detail = FString::Printf(TEXT("HIT %s at %.0f cm"),
 									*ColHit.GetActor()->GetName(), ColHit.Distance);
 							}
-							UE_LOG(LogVEIL, Log, TEXT("PHI COLUMN PROBE: nearest column %s is %.0f cm from the runner; horizontal trace at z=+700 %s"),
-								*NearestColumn->GetName(), BestDist, *Detail);
+							UE_LOG(LogVEIL, Log, TEXT("PHI COLUMN PROBE: nearest column %s is %.0f cm away; trace into its bounds centre %s (box z %.0f..%.0f)"),
+								*NearestColumn->GetName(), BestDist, *Detail,
+								ColBox.IsValid ? ColBox.Min.Z : 0.f, ColBox.IsValid ? ColBox.Max.Z : 0.f);
 						}
 					}
 				}), 4.f, false);
