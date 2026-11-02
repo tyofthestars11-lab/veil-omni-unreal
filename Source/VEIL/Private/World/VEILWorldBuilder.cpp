@@ -245,6 +245,22 @@ AVEILWorldBuilder::AVEILWorldBuilder()
 // the starting area, where every piece sits in the player's first frame. This one test
 // is the boundary: inside 50 m of spawn nothing loose is placed. Authority landmarks
 // (Keeper, beacons, Vault, the Spire) are not dressing and are never refused.
+// WHICH PLACE IS THIS? One builder, four places.
+//
+// Every map was being generated as the same district, which made the map name a label
+// and nothing more. The flavour is read from the map that is actually open - not passed
+// in, not guessed from config - so VEILWorld is the wilds, OMNIWorld is the gold city,
+// CountessRegion is the arena, and VEILDistrict stays the district.
+static FString VeilMapFlavour(const UWorld* World)
+{
+	if (!World) { return TEXT("District"); }
+	const FString Map = World->GetMapName();
+	if (Map.Contains(TEXT("VEILWorld"))) { return TEXT("Wilds"); }
+	if (Map.Contains(TEXT("OMNIWorld"))) { return TEXT("Omni"); }
+	if (Map.Contains(TEXT("CountessRegion"))) { return TEXT("Arena"); }
+	return TEXT("District");
+}
+
 static bool VeilInNest(const FVector& At)
 {
 	static const float NestClearCm = 5000.f;
@@ -2031,7 +2047,14 @@ void AVEILWorldBuilder::DressPhiPalette()
 	// THE PHI RING: twelve gold pillars at 950 x phi, one golden angle apart.
 	int32 Pillars = 0;
 	int32 Clusters = 0;
-	const int32 N = 12;
+	const FString Flavour = VeilMapFlavour(GetWorld());
+	// THE RING IS THE MAP'S SILHOUETTE. Gold city: eighteen pillars, no crystal. Wilds:
+	// eight pillars and crystal on every step. Arena: no colonnade at all - it gets a
+	// closed wall ring instead, below. District: the original twelve.
+	const int32 N = Flavour == TEXT("Omni") ? 18
+		: Flavour == TEXT("Wilds") ? 8
+		: Flavour == TEXT("Arena") ? 0
+		: 12;
 	for (int32 i = 0; i < N; ++i)
 	{
 		const double Ang = (2.0 * PI * i) / (double)N;
@@ -2047,7 +2070,9 @@ void AVEILWorldBuilder::DressPhiPalette()
 				Pillar, Gold, GoldTint, 0.55f, FRotator(0.f, (float)(i * GoldenDeg), 0.f));
 			++Pillars;
 		}
-		if (Crystal && (i % 2) == 0)
+		const bool bCrystalHere = Flavour == TEXT("Wilds")
+			? true : (Flavour != TEXT("Omni") && Flavour != TEXT("Arena") && (i % 2) == 0);
+		if (Crystal && bCrystalHere)
 		{
 			const double CAng = Ang + 0.26;
 			const double CRad = Rad * PhiLocal * 0.86;
@@ -2061,6 +2086,28 @@ void AVEILWorldBuilder::DressPhiPalette()
 				ScaleForCm(Crystal, FVector(700.f, 700.f, 1500.f)), Crystal, Blue, CrystalTint, 0.45f,
 				FRotator(0.f, (float)(i * 61.f), 7.f));
 			++Clusters;
+		}
+	}
+
+	// THE ARENA IS A RING, NOT A STREET. CountessRegion is the duel map: a closed
+	// colosseum wall around the spawn and no gold colonnade inside it, so the two places
+	// read as different from the first frame instead of the same plaza under a new name.
+	if (Flavour == TEXT("Arena"))
+	{
+		if (UStaticMesh* Course = WallMesh ? WallMesh.Get() : nullptr)
+		{
+			const float RingCm = 3000.f;
+			for (int32 i = 0; i < 28; ++i)
+			{
+				const double Ang = (2.0 * PI * i) / 28.0;
+				const FVector At(FMath::Cos(Ang) * RingCm, FMath::Sin(Ang) * RingCm, 0.f);
+				const float YawDeg = (float)FMath::RadiansToDegrees(Ang) + 90.f;
+				Place(At + FVector(0.f, 0.f, 450.f),
+					ScaleForCm(Course, FVector(700.f, 900.f, 900.f)),
+					Course, Gold, GoldTint, 0.12f, FRotator(0.f, YawDeg, 0.f));
+			}
+			UE_LOG(LogVEIL, Warning,
+				TEXT("VEIL ARENA: CountessRegion built as a closed ring of 28 wall segments at %.0f cm."), RingCm);
 		}
 	}
 

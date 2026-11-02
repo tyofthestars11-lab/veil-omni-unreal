@@ -708,8 +708,14 @@ void AVEILGameMode::BeginPlay()
 	// Placed worlds (the district / generated-world levels) already hold
 	// the city as real actors - the runtime builder stands down there, so
 	// one world is never built twice. On bare maps it still raises it.
-	const bool bPlacedWorld = GetWorld()->GetName().Contains(TEXT("District"))
-		|| GetWorld()->GetName().Contains(TEXT("World"));
+	const FString OpenMap = GetWorld()->GetName();
+	// EVERY GENERATED MAP IS A PLACED WORLD. The test was "District" or "World", which
+	// quietly excluded CountessRegion - so starting the arena travelled straight back to
+	// VEILDistrict and the arena could never be seen. The list is now the project's four
+	// maps, by name, and a map outside it is the only thing that gets redirected.
+	const bool bPlacedWorld = OpenMap.Contains(TEXT("District"))
+		|| OpenMap.Contains(TEXT("World"))
+		|| OpenMap.Contains(TEXT("CountessRegion"));
 
 	// PLAY ALWAYS OPENS THE REAL MAP. This is why the game "goes back to blocks":
 	// pressing Play on any map that is not the district took the primitive build
