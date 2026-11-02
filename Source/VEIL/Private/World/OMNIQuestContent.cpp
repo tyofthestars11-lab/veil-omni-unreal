@@ -118,7 +118,7 @@ AOMNIQuestGiver::AOMNIQuestGiver()
 	static ConstructorHelpers::FObjectFinder<UStaticMesh> CylinderMesh(
 		TEXT("/Engine/BasicShapes/Cylinder.Cylinder"));
 	static ConstructorHelpers::FObjectFinder<UStaticMesh> SphereMesh(
-		TEXT("/Engine/BasicShapes/Sphere.Sphere"));
+		TEXT("/Game/Sicka_EnvPack2/Sicka_Ancient_Kit/Mesh/Props/SM_AncientColumn_Big.SM_AncientColumn_Big"));
 	static ConstructorHelpers::FObjectFinder<UStaticMesh> CubeMesh(
 		TEXT("/Engine/BasicShapes/Cube.Cube"));
 
@@ -220,7 +220,7 @@ AOMNILoreNote::AOMNILoreNote()
  USceneComponent* Root = CreateDefaultSubobject<USceneComponent>(TEXT("Root"));
  SetRootComponent(Root);
  static ConstructorHelpers::FObjectFinder<UStaticMesh> SphereMesh(
- TEXT("/Engine/BasicShapes/Sphere.Sphere"));
+ TEXT("/Game/Sicka_EnvPack2/Sicka_Ancient_Kit/Mesh/Props/SM_AncientColumn_Big.SM_AncientColumn_Big"));
  Leaf = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("NoteLeaf"));
  Leaf->SetupAttachment(Root);
  Leaf->SetRelativeScale3D(FVector(0.35f, 0.35f, 0.5f));
@@ -255,7 +255,7 @@ AOMNIFragment::AOMNIFragment()
 	static ConstructorHelpers::FObjectFinder<UMaterialInterface> GoldMat(TEXT("/Game/PHI/Palette/M_PHI_Gold.M_PHI_Gold"));
 	static ConstructorHelpers::FObjectFinder<UMaterialInterface> GlowMat(TEXT("/Game/PHI/Palette/M_PHI_WhiteEmissive.M_PHI_WhiteEmissive"));
 	static ConstructorHelpers::FObjectFinder<UStaticMesh> SphereMesh(
-		TEXT("/Engine/BasicShapes/Sphere.Sphere"));
+		TEXT("/Game/Sicka_EnvPack2/Sicka_Ancient_Kit/Mesh/Props/SM_AncientColumn_Big.SM_AncientColumn_Big"));
 
 	USceneComponent* Root = CreateDefaultSubobject<USceneComponent>(TEXT("Root"));
 	SetRootComponent(Root);

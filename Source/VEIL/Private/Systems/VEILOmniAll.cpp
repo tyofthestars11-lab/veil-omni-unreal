@@ -683,7 +683,7 @@ void UVEILOmniAll::BuildNestRegion()
 				TEXT("/Game/ParagonGreystone/Characters/Heroes/Greystone/Skins/Default/Meshes/SM_Greystone_Statue_Chunks_shard1.SM_Greystone_Statue_Chunks_shard1"));
 			if (!Shard)
 			{
-				Shard = LoadObject<UStaticMesh>(nullptr, TEXT("/Engine/BasicShapes/Sphere.Sphere"));
+				Shard = LoadObject<UStaticMesh>(nullptr, TEXT("/Game/Sicka_EnvPack2/Sicka_Ancient_Kit/Mesh/Props/SM_AncientColumn_Big.SM_AncientColumn_Big"));
 			}
 			Mesh->SetStaticMesh(Shard);
 			Mesh->SetWorldScale3D(FVector(1.4f));
@@ -800,7 +800,7 @@ void UVEILOmniAll::BuildRegionChain(int32 RegionIndex)
 				TEXT("/Game/ParagonGreystone/Characters/Heroes/Greystone/Skins/Default/Meshes/SM_Greystone_Statue_Chunks_shard1.SM_Greystone_Statue_Chunks_shard1"));
 			if (!ShardMesh)
 			{
-				ShardMesh = LoadObject<UStaticMesh>(nullptr, TEXT("/Engine/BasicShapes/Sphere.Sphere"));
+				ShardMesh = LoadObject<UStaticMesh>(nullptr, TEXT("/Game/Sicka_EnvPack2/Sicka_Ancient_Kit/Mesh/Props/SM_AncientColumn_Big.SM_AncientColumn_Big"));
 			}
 			Mesh->SetStaticMesh(ShardMesh);
 			Mesh->SetWorldScale3D(FVector(1.4f));
