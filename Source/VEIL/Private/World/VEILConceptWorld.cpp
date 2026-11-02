@@ -90,14 +90,7 @@ bool AVEILConceptWorld::Build()
 	UMaterialInterface* Glow = LoadObject<UMaterialInterface>(nullptr, ConceptGlowPath);
 	UMaterialInterface* Water = LoadObject<UMaterialInterface>(nullptr, ConceptWaterPath);
 
-	// THE FLOOR OF THE WORLD: the baked level only carries the hundred-metre hub,
-	// so the country gets a plate to stand on - one stone slab twelve kilometres
-	// across, top at the plaza's own ground, so every distant marker has floor.
-	{
-		const FVector FloorAt(0.f, 0.f, -14.f);
-		SpawnPiece(Cube, FloorAt, FVector(1200000.f, 1200000.f, 208.f), Stone,
-			FRotator::ZeroRotator, true);
-	}
+	BuildTerrain(Cube, Stone);
 
 	BuildPhiPillars(Cube, Cylinder, Sphere, Gold, Stone, Glow);
 	BuildMarket(Cube, Cone, Cylinder, Gold, Stone);
@@ -350,6 +343,69 @@ void AVEILConceptWorld::BuildCrystalRange(UStaticMesh* Cone, UStaticMesh* Cylind
 			FVector(Height * 0.6f, Height * 0.6f, Height), Water,
 			FRotator(0.f, i * 31.f, 0.f), false);
 	}
+}
+
+// ---------------------------------------------------------------------------
+// THE GROUND HAS HEIGHT.
+//
+// One flat plate is a table, not a country. The terrain is a height field built
+// from sines on golden frequencies - one axis at phi, the cross term at phi
+// squared - sampled on a 120 m grid and drawn as instanced tiles. Within 80 m of
+// the plaza the height is clamped flat, because the Bible's addresses are law
+// and a Keeper standing on a slope is a moved coordinate. Past that it rises to
+// about forty metres, which is enough to put the terraces and the crystal range
+// on ground rather than on a plane.
+// ---------------------------------------------------------------------------
+void AVEILConceptWorld::BuildTerrain(UStaticMesh* Cube, UMaterialInterface* Stone)
+{
+	UWorld* W = GetWorld();
+	if (!W || !Cube) { return; }
+
+	UInstancedStaticMeshComponent* Ground = NewObject<UInstancedStaticMeshComponent>(this);
+	Ground->SetStaticMesh(Cube);
+	if (Stone) { Ground->SetMaterial(0, Stone); }
+	Ground->SetMobility(EComponentMobility::Movable);
+	Ground->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	Ground->SetCollisionResponseToAllChannels(ECR_Block);
+	Ground->SetCullDistances(0, 600000);
+	Ground->SetupAttachment(RootComponent);
+	Ground->RegisterComponent();
+
+	const float Spacing = 12000.f;     // 120 m per tile
+	const int32 Steps = 50;           // 101 x 101 tiles, six kilometres each way
+	const float Thick = 800.f;
+	int32 Placed = 0;
+
+	for (int32 ix = -Steps; ix <= Steps; ++ix)
+	{
+		for (int32 iy = -Steps; iy <= Steps; ++iy)
+		{
+			const float X = ix * Spacing;
+			const float Y = iy * Spacing;
+			const float R = FMath::Sqrt(X * X + Y * Y);
+
+			// Flat over the hub, then a smooth ramp into the country.
+			const float Blend = FMath::Clamp((R - 8000.f) / 30000.f, 0.f, 1.f);
+
+			// Golden frequencies: k, k*phi, k*(phi+1) - three waves that never
+			// repeat together, which is why the hills do not look tiled.
+			const float Hills = 4600.f * (
+				FMath::Sin(X * 0.00021f + ConceptPhi) * FMath::Cos(Y * 0.00021f * ConceptPhi)
+				+ 0.5f * FMath::Sin((X + Y) * 0.00013f * (ConceptPhi + 1.f)))
+				+ 1100.f;
+
+			const float H = FMath::Lerp(90.f, Hills, Blend);
+
+			Ground->AddInstance(FTransform(FRotator::ZeroRotator,
+				FVector(X, Y, H - Thick * 0.5f),
+				FVector(Spacing / 100.f, Spacing / 100.f, Thick / 100.f)));
+			++Placed;
+		}
+	}
+
+	UE_LOG(LogVEIL, Warning,
+		TEXT("PHI TERRAIN: %d instanced tiles, flat over the hub, rising to phi-sine hills beyond 80 m."),
+		Placed);
 }
 
 // ---------------------------------------------------------------------------
