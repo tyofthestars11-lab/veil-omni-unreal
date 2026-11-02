@@ -2476,10 +2476,31 @@ void AVEILPlayerController::BeginPlay()
 						// every single frame - a probe reporting itself instead of the room.
 						FCollisionQueryParams EyeParams(SCENE_QUERY_STAT(VeilShotEyes), false);
 						if (Body) { EyeParams.AddIgnoredActor(Body); }
-						ShotWorld->LineTraceSingleByChannel(Down, Eye,
-							Eye - FVector(0.f, 0.f, 20000.f), ECC_Visibility, EyeParams);
-						ShotWorld->LineTraceSingleByChannel(Ahead, Eye,
-							Eye + Fwd * 3000.f, ECC_Visibility, EyeParams);
+						// A MESHLESS PROXY IS NOT WHAT THE CAMERA SEES.
+						//
+						// The hub's landmarks are collision boxes carrying no geometry, and the first
+						// trace out of the runner's eyes stopped on one every frame: "floor Actor_0 at
+						// 0 cm; ahead Actor_0 at 0 cm" was the probe reporting a box the player cannot
+						// see, while the wall in front of the lens went unnamed. Each hit is checked for
+						// a real mesh; a proxy is ignored and the trace is asked again.
+						auto TraceForMesh = [&ShotWorld, &Eye, &EyeParams](FHitResult& Out, const FVector& To)
+						{
+							for (int32 Try = 0; Try < 6; ++Try)
+							{
+								if (!ShotWorld->LineTraceSingleByChannel(Out, Eye, To, ECC_Visibility, EyeParams))
+								{
+									return;
+								}
+								AActor* HitActor = Out.GetActor();
+								if (!HitActor) { return; }
+								const UStaticMeshComponent* HitMesh =
+									HitActor->FindComponentByClass<UStaticMeshComponent>();
+								if (HitMesh && HitMesh->GetStaticMesh()) { return; }
+								EyeParams.AddIgnoredActor(HitActor);
+							}
+						};
+						TraceForMesh(Down, Eye - FVector(0.f, 0.f, 20000.f));
+						TraceForMesh(Ahead, Eye + Fwd * 3000.f);
 						UE_LOG(LogVEIL, Warning,
 							TEXT("VEIL SHOT EYES: body V(X=%.0f, Y=%.0f, Z=%.0f) fwd V(X=%.2f, Y=%.2f, Z=%.2f); floor %s at %.0f cm; ahead %s at %.0f cm."),
 							Eye.X, Eye.Y, Eye.Z, Fwd.X, Fwd.Y, Fwd.Z,

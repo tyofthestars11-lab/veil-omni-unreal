@@ -25,7 +25,44 @@ namespace
 
 AVEILNestSanctum::AVEILNestSanctum()
 {
-	PrimaryActorTick.bCanEverTick = false;
+	PrimaryActorTick.bCanEverTick = true;
+	PrimaryActorTick.bStartWithTickEnabled = true;
+}
+
+// ---------------------------------------------------------------------------
+// THE SANCTUM MOVES.
+//
+// Two motions, both from the framework rather than from a taste: the halo turns at the golden
+// angle per step, and each beacon shaft breathes on the pitch's own phase, offset by the golden
+// angle in radians so the three never pulse together. It is one actor's tick over a handful of
+// components - no particle system, no per-frame allocation, and nothing that needs an asset.
+// ---------------------------------------------------------------------------
+void AVEILNestSanctum::Tick(float DeltaSeconds)
+{
+	Super::Tick(DeltaSeconds);
+	if (!bBuilt) { return; }
+
+	HaloPhase += DeltaSeconds * 0.35f;
+
+	const float Radius = 520.f;
+	for (int32 i = 0; i < Halo.Num(); ++i)
+	{
+		AActor* Shard = Halo[i].Get();
+		if (!Shard) { continue; }
+		const float Angle = HaloPhase + FMath::DegreesToRadians(i * GoldenDeg);
+		const float Rise = FMath::Sin(HaloPhase * 2.f + i * 0.6180339887f) * 40.f;
+		Shard->SetActorLocation(FVector(FMath::Cos(Angle) * Radius, FMath::Sin(Angle) * Radius,
+			DeckZ + 240.f + Rise));
+		Shard->SetActorRotation(FRotator(0.f, FMath::RadiansToDegrees(Angle), 25.f));
+	}
+
+	for (int32 i = 0; i < BeaconLamps.Num(); ++i)
+	{
+		UPointLightComponent* Lamp = BeaconLamps[i].Get();
+		if (!Lamp || !BeaconBase.IsValidIndex(i)) { continue; }
+		const float Phase = HaloPhase * 1.6180339887f + i * 2.39996323f;   // golden angle, radians
+		Lamp->SetIntensity(BeaconBase[i] * (1.f + 0.18f * FMath::Sin(Phase)));
+	}
 }
 
 UStaticMeshComponent* AVEILNestSanctum::SpawnPiece(UStaticMesh* Mesh, const FVector& Centre,
@@ -65,26 +102,28 @@ UStaticMeshComponent* AVEILNestSanctum::SpawnPiece(UStaticMesh* Mesh, const FVec
 	return Comp;
 }
 
-void AVEILNestSanctum::AddLamp(const FVector& At, float Intensity, float Radius,
+UPointLightComponent* AVEILNestSanctum::AddLamp(const FVector& At, float Intensity, float Radius,
 	const FLinearColor& Colour)
 {
 	UWorld* W = GetWorld();
-	if (!W) { return; }
-	if (APointLight* Lamp = W->SpawnActor<APointLight>(APointLight::StaticClass(), At,
-		FRotator::ZeroRotator))
-	{
-		Lamp->Tags.Add(FName(TEXT("VEIL_BAKE")));
-		if (UPointLightComponent* L = Cast<UPointLightComponent>(Lamp->GetLightComponent()))
-		{
-			L->SetMobility(EComponentMobility::Movable);
-			L->SetIntensity(Intensity);
-			L->SetAttenuationRadius(Radius);
-			L->SetLightColor(Colour);
-			// The sun already casts. One shadowed light per beacon is a shadow pass per beacon.
-			L->SetCastShadows(false);
-			L->SetAffectGlobalIllumination(false);
-		}
-	}
+	if (!W) { return nullptr; }
+
+	APointLight* Lamp = W->SpawnActor<APointLight>(APointLight::StaticClass(), At,
+		FRotator::ZeroRotator);
+	if (!Lamp) { return nullptr; }
+
+	Lamp->Tags.Add(FName(TEXT("VEIL_BAKE")));
+	UPointLightComponent* L = Cast<UPointLightComponent>(Lamp->GetLightComponent());
+	if (!L) { return nullptr; }
+
+	L->SetMobility(EComponentMobility::Movable);
+	L->SetIntensity(Intensity);
+	L->SetAttenuationRadius(Radius);
+	L->SetLightColor(Colour);
+	// The sun already casts. One shadowed light per beacon is a shadow pass per beacon.
+	L->SetCastShadows(false);
+	L->SetAffectGlobalIllumination(false);
+	return L;
 }
 
 bool AVEILNestSanctum::BuildSanctum()
@@ -111,19 +150,13 @@ bool AVEILNestSanctum::BuildSanctum()
 
 	// THE DECK SITS ON THE SURFACE THE HUB ACTUALLY HAS.
 	//
-	// At the plaza centre the first surface under the sky is the stacked mass at 500 cm, not the
-	// street at 0. A deck at street level would be inside it, which is the state the runner was
-	// already waking in. So the surface is measured, and the deck is raised on it - and the log
-	// says which height it found, so nobody has to guess where the floor went.
+	// A single trace from 60 km struck the landmark proxy at 4,302 cm and raised the deck in
+	// orbit; a single trace after streaming hit the street at 0 and put the deck under the hub.
+	// So the trace walks down, skips anything above the roofline, and takes the first floor below
+	// it - then the log states the height, so nobody has to guess where the floor went.
 	{
 		FHitResult Floor;
 		FCollisionQueryParams Query(SCENE_QUERY_STAT(VeilSanctumFloor), false);
-		// NOT THE FIRST THING UNDER THE SKY.
-		//
-		// A single trace from 60 km struck the landmark proxy at 4,302 cm and raised the deck in
-		// orbit, thirty-four pieces of platform floating above a district nobody could see. The
-		// surface that matters is the one a body can stand on under the hub's roofline, so the
-		// trace steps past anything above 1,200 cm and takes the first floor below it.
 		FVector From(0.f, 0.f, 60000.f);
 		float Found = 98.f;
 		for (int32 Step = 0; Step < 32; ++Step)
@@ -133,7 +166,12 @@ bool AVEILNestSanctum::BuildSanctum()
 			{
 				break;
 			}
-			if (Floor.ImpactPoint.Z <= 1200.f)
+			// A MESHLESS PROXY IS NOT A FLOOR. The hub's landmarks are collision boxes with no
+			// geometry; a deck raised on one floats in the air above a world nobody can see.
+			const UStaticMeshComponent* HitMesh = Floor.GetActor()
+				? Floor.GetActor()->FindComponentByClass<UStaticMeshComponent>() : nullptr;
+			const bool bRealSurface = HitMesh && HitMesh->GetStaticMesh();
+			if (bRealSurface && Floor.ImpactPoint.Z <= 1200.f)
 			{
 				Found = FMath::Max(98.f, Floor.ImpactPoint.Z + 2.f);
 				break;
@@ -170,7 +208,6 @@ bool AVEILNestSanctum::BuildSanctum()
 	}
 
 	// ---- THREE PILLARS, STONE BODY AND GOLD CROWN -----------------------------
-	// On 120 degrees with the pitch folded in, so the trio is not axis-aligned.
 	for (int32 i = 0; i < 3; ++i)
 	{
 		const float Angle = FMath::DegreesToRadians(i * 120.f + 17.0324f);
@@ -179,7 +216,7 @@ bool AVEILNestSanctum::BuildSanctum()
 		SpawnPiece(Cyl, Base + FVector(0.f, 0.f, 1160.f), FVector(190.f, 190.f, 120.f), Gold, false);
 	}
 
-	// ---- THE SPIRE: THE ONE THING VISIBLE FROM EVERYWHERE --------------------
+	// ---- THE SPIRE ------------------------------------------------------------
 	SpawnPiece(Cyl, FVector(0.f, 0.f, DeckZ + 900.f), FVector(180.f, 180.f, 1800.f), Gold, true);
 	if (Ball)
 	{
@@ -187,9 +224,19 @@ bool AVEILNestSanctum::BuildSanctum()
 	}
 	AddLamp(FVector(0.f, 0.f, DeckZ + 1700.f), 6000.f, 2200.f, FLinearColor(1.f, 0.86f, 0.55f));
 
+	// ---- THE HALO: EIGHT SHARDS TURNING ON THE GOLDEN ANGLE -------------------
+	for (int32 i = 0; i < 8; ++i)
+	{
+		const float Angle = FMath::DegreesToRadians(i * GoldenDeg);
+		if (UStaticMeshComponent* Shard = SpawnPiece(Cube,
+			FVector(FMath::Cos(Angle) * 520.f, FMath::Sin(Angle) * 520.f, DeckZ + 240.f),
+			FVector(60.f, 60.f, 180.f), Gold, false))
+		{
+			if (AActor* ShardActor = Shard->GetOwner()) { Halo.Add(ShardActor); }
+		}
+	}
+
 	// ---- THREE BEACON SHAFTS --------------------------------------------------
-	// The Bible's three beacon addresses, lifted onto the deck's height: a shaft of light the
-	// runner can see from the platform even when the ground beneath it is buried.
 	const FVector BeaconPlan[3] = {
 		FVector(2400.f, 430.f, 0.f),
 		FVector(-1710.f, -770.f, 0.f),
@@ -200,13 +247,15 @@ bool AVEILNestSanctum::BuildSanctum()
 		const FVector Foot = BeaconPlan[i] + FVector(0.f, 0.f, DeckZ);
 		SpawnPiece(Cyl, Foot + FVector(0.f, 0.f, 150.f), FVector(240.f, 240.f, 300.f), Stone, true);
 		SpawnPiece(Cyl, Foot + FVector(0.f, 0.f, 1500.f), FVector(90.f, 90.f, 2400.f), Glow, false);
-		AddLamp(Foot + FVector(0.f, 0.f, 700.f), 9000.f, 1600.f, FLinearColor(1.f, 0.78f, 0.32f));
+		if (UPointLightComponent* Beacon = AddLamp(Foot + FVector(0.f, 0.f, 700.f), 9000.f, 1600.f,
+			FLinearColor(1.f, 0.78f, 0.32f)))
+		{
+			BeaconLamps.Add(Beacon);
+			BeaconBase.Add(9000.f);
+		}
 	}
 
 	// ---- THE FALL OF WATER ----------------------------------------------------
-	// A sheet at the deck's edge, falling past it. Deep blue, emissive through the palette, no
-	// particle system and no shader authoring: the district's water reads as water by colour and
-	// motion, and this is the half that can be built in code tonight.
 	if (Water)
 	{
 		SpawnPiece(Cube, FVector(0.f, 1500.f, DeckZ - 620.f), FVector(620.f, 24.f, 1240.f), Water, false);
@@ -216,10 +265,6 @@ bool AVEILNestSanctum::BuildSanctum()
 	bBuilt = true;
 
 	// THE RUNNER STANDS ON THE DECK, NOT INSIDE THE HUB.
-	//
-	// The seat probe resolved him onto the slab at 598, inside the mass, because that is where
-	// the collision was at the time. He is placed on the deck one golden-angle step from the
-	// Spire instead: on the surface that was just built, with the ring and the shafts in view.
 	if (APawn* Runner = UGameplayStatics::GetPlayerPawn(W, 0))
 	{
 		const float Step = FMath::DegreesToRadians(GoldenDeg);
@@ -231,13 +276,13 @@ bool AVEILNestSanctum::BuildSanctum()
 			C->SetControlRotation(FRotator(-6.f, ToSpire.Yaw, 0.f));
 		}
 		UE_LOG(LogVEIL, Warning,
-			TEXT("PHI SANCTUM: the runner stands on the deck at %s, %.0f cm above it, facing the Spire."),
-			*Stand.ToCompactString(), 100.f);
+			TEXT("PHI SANCTUM: the runner stands on the deck at %s, 100 cm above it, facing the Spire."),
+			*Stand.ToCompactString());
 	}
 
 	UE_LOG(LogVEIL, Warning,
-		TEXT("PHI SANCTUM: deck raised at Z=%.0f on the surface the hub actually has - %d pieces "
-			"(ring of 13, three pillars, the Spire, three beacon shafts, the fall of water)."),
+		TEXT("PHI SANCTUM: deck raised at Z=%.0f on the surface the hub actually has - %d pieces, "
+			"8 halo shards turning, 3 beacon shafts breathing."),
 		DeckZ, Pieces);
 	return true;
 }
