@@ -155,8 +155,11 @@ AVEILCharacter::AVEILCharacter()
 	// the primitive runner above stays visible and the log says so -
 	// an invisible pawn is not a character.
 	{
+		// THE RUNNER IS OURS. He wore the Paragon Countess because the MetaHuman body shipped
+		// here without a locomotion graph - but a placeholder body is still a placeholder, and
+		// the Polyart character is complete in Content: mesh, skeleton and its own graph.
 		static ConstructorHelpers::FObjectFinder<USkeletalMesh> MannyMesh(
-			TEXT("/Game/ParagonCountess/Characters/Heroes/Countess/Meshes/SM_Countess.SM_Countess"));
+			TEXT("/Game/Polyart/ModularStylizedChars/Meshes/SkeletalMeshes/Characters/SK_Garret_FullBody.SK_Garret_FullBody"));
 		// NO AnimBlueprint lookup here. This Countess tree ships 210 sequences and
 		// no AnimBlueprint at all, so a ConstructorHelpers::FClassFinder on that
 		// path could only ever fail - and a failing constructor finder is a
@@ -174,7 +177,7 @@ AVEILCharacter::AVEILCharacter()
 			GetMesh()->SetRelativeRotation(FRotator(0.f, -90.f, 0.f));
 			if (RunnerBody) RunnerBody->SetVisibility(false);
 			if (RunnerVisor) RunnerVisor->SetVisibility(false);
-			UE_LOG(LogVEIL, Log, TEXT("PHI BODY: Countess skeletal mesh is the runner's body."));
+			UE_LOG(LogVEIL, Log, TEXT("PHI BODY: SK_Garret_FullBody - a Polyart character this project owns - is the runner's body."));
 		}
 		else
 		{
@@ -186,12 +189,13 @@ AVEILCharacter::AVEILCharacter()
 	// tree carries 210 animations but no AnimBlueprint, which is why the runner
 	// stood frozen while the world around him moved.
 	{
+		// Sequences from the same pack as the body, so the skeleton matches the clips.
 		static ConstructorHelpers::FObjectFinder<UAnimSequence> IdleFinder(
-			TEXT("/Game/ParagonCountess/Characters/Heroes/Countess/Animations/Idle_Relaxed.Idle_Relaxed"));
+			TEXT("/Game/Polyart/SharedResources/Characters/AnimationStuff/Animations/Locomotion/Male/MM_Idle.MM_Idle"));
 		static ConstructorHelpers::FObjectFinder<UAnimSequence> JogFinder(
-			TEXT("/Game/ParagonCountess/Characters/Heroes/Countess/Animations/Jog_Fwd.Jog_Fwd"));
+			TEXT("/Game/Polyart/SharedResources/Characters/AnimationStuff/Animations/Locomotion/Shared/MM_Run.MM_Run"));
 		static ConstructorHelpers::FObjectFinder<UAnimSequence> AirFinder(
-			TEXT("/Game/ParagonCountess/Characters/Heroes/Countess/Animations/Jump_Apex.Jump_Apex"));
+			TEXT("/Game/Polyart/SharedResources/Characters/AnimationStuff/Animations/Locomotion/Shared/MM_Run.MM_Run"));
 		if (IdleFinder.Succeeded()) IdleSequence = IdleFinder.Object;
 		if (JogFinder.Succeeded()) JogSequence = JogFinder.Object;
 		if (AirFinder.Succeeded()) AirSequence = AirFinder.Object;
@@ -244,13 +248,10 @@ void AVEILCharacter::BeginPlay()
 	// component's initialization overwrote the constructor's
 	// assignment, this one - after registration - is the one
 	// that lives. The Tick one-shots report which state won.
-	{
-		if (UClass* AnimClass = StaticLoadClass(UAnimInstance::StaticClass(), nullptr,
-			TEXT("/Game/ParagonCountess/Characters/Heroes/Countess/Countess_AnimBlueprint.Countess_AnimBlueprint_C")))
-		{
-			GetMesh()->SetAnimInstanceClass(AnimClass);
-		}
-	}
+	// NO PARAGON GRAPH. This used to load the Countess AnimBlueprint, which does not exist in
+	// Content and logged a failed object every single boot. The Polyart graph belongs to the
+	// Polyart skeleton the runner now wears, and AssignMetaHumanBody() sets it below.
+
 	// MetaHuman body, if one was assigned in BP_PlayerCharacter.
 	// This runs AFTER the Countess assignment above, so an assigned
 	// MetaHuman body wins, an empty assignment changes nothing, and

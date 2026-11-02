@@ -679,8 +679,10 @@ void UVEILOmniAll::BuildNestRegion()
 		{
 			// A real authored shard from the Fab kit. The engine sphere only stands
 			// in when the pack path is absent, and the log says which one was used.
+			// This path never existed in Content: it logged "Failed to find object" on every boot
+			// and fell through to the kit anyway. It loads the kit directly now.
 			UStaticMesh* Shard = LoadObject<UStaticMesh>(nullptr,
-				TEXT("/Game/ParagonGreystone/Characters/Heroes/Greystone/Skins/Default/Meshes/SM_Greystone_Statue_Chunks_shard1.SM_Greystone_Statue_Chunks_shard1"));
+				TEXT("/Game/Sicka_EnvPack2/Sicka_Ancient_Kit/Mesh/Props/SM_AncientColumn_Big.SM_AncientColumn_Big"));
 			if (!Shard)
 			{
 				Shard = LoadObject<UStaticMesh>(nullptr, TEXT("/Game/Sicka_EnvPack2/Sicka_Ancient_Kit/Mesh/Props/SM_AncientColumn_Big.SM_AncientColumn_Big"));
@@ -797,7 +799,7 @@ void UVEILOmniAll::BuildRegionChain(int32 RegionIndex)
 		if (UStaticMeshComponent* Mesh = Shard->FindComponentByClass<UStaticMeshComponent>())
 		{
 			UStaticMesh* ShardMesh = LoadObject<UStaticMesh>(nullptr,
-				TEXT("/Game/ParagonGreystone/Characters/Heroes/Greystone/Skins/Default/Meshes/SM_Greystone_Statue_Chunks_shard1.SM_Greystone_Statue_Chunks_shard1"));
+				TEXT("/Game/Sicka_EnvPack2/Sicka_Ancient_Kit/Mesh/Props/SM_AncientColumn_Big.SM_AncientColumn_Big"));
 			if (!ShardMesh)
 			{
 				ShardMesh = LoadObject<UStaticMesh>(nullptr, TEXT("/Game/Sicka_EnvPack2/Sicka_Ancient_Kit/Mesh/Props/SM_AncientColumn_Big.SM_AncientColumn_Big"));

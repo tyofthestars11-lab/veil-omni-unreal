@@ -32,16 +32,18 @@ AVEILEnemy::AVEILEnemy(const FObjectInitializer& ObjectInitializer)
 	GetCapsuleComponent()->InitCapsuleSize(34.f, 88.f);
 	GetMesh()->SetRelativeLocation(FVector(0.f, 0.f, -88.f));
 	GetMesh()->SetRelativeRotation(FRotator(0.f, -90.f, 0.f));
-	static ConstructorHelpers::FObjectFinder<USkeletalMesh> MinionMesh(TEXT("/Game/ParagonMinions/Characters/Minions/Down_Minions/Meshes/Minion_Lane_Melee_Dawn.Minion_Lane_Melee_Dawn"));
+	// THE SAME BODY THE PLAZA WEARS. Enemies were Paragon minions - a placeholder pack - while
+	// the project owns a complete Polyart character with its own skeleton and animations.
+	static ConstructorHelpers::FObjectFinder<USkeletalMesh> MinionMesh(TEXT("/Game/Polyart/ModularStylizedChars/Meshes/SkeletalMeshes/Characters/SK_Garret_FullBody.SK_Garret_FullBody"));
 	if (MinionMesh.Succeeded() && GetMesh())
 	{
 		GetMesh()->SetSkeletalMeshAsset(MinionMesh.Object);
 		// Bone-driven body: keep it out of FMorphVertexBufferPool (assert :336).
 		GetMesh()->bDisableMorphTarget = true;
 	}
-	static ConstructorHelpers::FObjectFinder<UAnimSequence> MinionIdle(TEXT("/Game/ParagonMinions/Characters/Minions/Down_Minions/Animations/Melee/NonCombat_Idle.NonCombat_Idle"));
+	static ConstructorHelpers::FObjectFinder<UAnimSequence> MinionIdle(TEXT("/Game/Polyart/SharedResources/Characters/AnimationStuff/Animations/Locomotion/Male/MM_Idle.MM_Idle"));
 	IdleSeq = MinionIdle.Succeeded() ? MinionIdle.Object : nullptr;
-	static ConstructorHelpers::FObjectFinder<UAnimSequence> MinionJog(TEXT("/Game/ParagonMinions/Characters/Minions/Down_Minions/Animations/Melee/NonCombat_JogFwd.NonCombat_JogFwd"));
+	static ConstructorHelpers::FObjectFinder<UAnimSequence> MinionJog(TEXT("/Game/Polyart/SharedResources/Characters/AnimationStuff/Animations/Locomotion/Shared/MM_Run.MM_Run"));
 	JogSeq = MinionJog.Succeeded() ? MinionJog.Object : nullptr;
 	Sight = CreateDefaultSubobject<UAIPerceptionComponent>(TEXT("PhiSight"));
 	Brain = CreateDefaultSubobject<UPHI_NPCProcessor>(TEXT("PhiBrain"));

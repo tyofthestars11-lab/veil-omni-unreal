@@ -434,10 +434,14 @@ void AVEILFactionAgent::BindStoneBody()
 	// "SK_Greystone". Two loads on the wrong paths were failing every run and
 	// printing "Failed to find object 'SkeletalMesh'" into the log, which is the
 	// sort of warning that gets ignored until it hides a real one.
+	// PARAGON IS A PLACEHOLDER. The agents wore a Paragon hero's statue mesh because the
+	// Greystone skeletal mesh was never in Content at all - both loads failed every boot and
+	// the fallback carried the plaza. The body is now the Polyart character this project
+	// OWNS, first choice rather than fallback, driven by its own locomotion graph.
 	USkeletalMesh* Stone = LoadObject<USkeletalMesh>(nullptr,
-		TEXT("/Game/ParagonGreystone/Characters/Heroes/Greystone/Meshes/Greystone.Greystone"));
+		TEXT("/Game/Polyart/ModularStylizedChars/Meshes/SkeletalMeshes/Characters/SK_Garret_FullBody.SK_Garret_FullBody"));
 	UClass* StoneAnim = LoadClass<UAnimInstance>(nullptr,
-		TEXT("/Game/ParagonGreystone/Characters/Heroes/Greystone/Greystone_AnimBlueprint.Greystone_AnimBlueprint_C"));
+		TEXT("/Game/Polyart/SharedResources/Characters/AnimationStuff/AnimationBlueprints/ABP_MaleCharacter.ABP_MaleCharacter_C"));
 	// Greystone is NOT whole in this project: Content/ParagonGreystone holds
 	// its animations, textures and AnimBlueprint but never its skeletal mesh,
 	// so both loads above come back empty. The machines then wear a real
@@ -449,8 +453,9 @@ void AVEILFactionAgent::BindStoneBody()
 			TEXT("/Game/Polyart/SharedResources/Characters/Meshes/SkeletalMeshes/SK_Quinn_Simple.SK_Quinn_Simple"));
 		if (!Stone)
 		{
+			// Last stand: the MetaHuman body, which is also ours and also in Content.
 			Stone = LoadObject<USkeletalMesh>(nullptr,
-				TEXT("/Game/Polyart/ModularStylizedChars/Meshes/SkeletalMeshes/Characters/SK_Garret_FullBody.SK_Garret_FullBody"));
+				TEXT("/Game/MetaHumans/MH_Runner_Built/MH_Runner/Body/SKM_MH_Runner_BodyMesh.SKM_MH_Runner_BodyMesh"));
 		}
 		if (Stone)
 		{

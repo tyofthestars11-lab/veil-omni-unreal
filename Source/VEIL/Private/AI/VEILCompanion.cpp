@@ -25,7 +25,8 @@ AVEILCompanion::AVEILCompanion(const FObjectInitializer& ObjectInitializer)
 	GetCharacterMovement()->bOrientRotationToMovement = true;
 
 	// Proven foe pattern: runtime load, silent on miss, never a dialog.
-	if (USkeletalMesh* M = LoadObject<USkeletalMesh>(nullptr, TEXT("/Game/ParagonMinions/Characters/Minions/Down_Minions/Meshes/Minion_Lane_Melee_Dawn.Minion_Lane_Melee_Dawn")))
+	// Paragon minion was a placeholder; the Polyart character is ours and complete.
+	if (USkeletalMesh* M = LoadObject<USkeletalMesh>(nullptr, TEXT("/Game/Polyart/ModularStylizedChars/Meshes/SkeletalMeshes/Characters/SK_Garret_FullBody.SK_Garret_FullBody")))
 	{
 		GetMesh()->SetSkeletalMesh(M);
 		// Bone-driven body: keep it out of FMorphVertexBufferPool (assert :336).
@@ -33,8 +34,8 @@ AVEILCompanion::AVEILCompanion(const FObjectInitializer& ObjectInitializer)
 		GetMesh()->SetRelativeLocation(FVector(0.f, 0.f, -90.f));
 		GetMesh()->SetRelativeRotation(FRotator(0.f, -90.f, 0.f));
 	}
-	IdleSeq = LoadObject<UAnimSequence>(nullptr, TEXT("/Game/ParagonMinions/Characters/Minions/Down_Minions/Animations/Melee/NonCombat_Idle.NonCombat_Idle"));
-	JogSeq = LoadObject<UAnimSequence>(nullptr, TEXT("/Game/ParagonMinions/Characters/Minions/Down_Minions/Animations/Melee/NonCombat_JogFwd.NonCombat_JogFwd"));
+	IdleSeq = LoadObject<UAnimSequence>(nullptr, TEXT("/Game/Polyart/SharedResources/Characters/AnimationStuff/Animations/Locomotion/Male/MM_Idle.MM_Idle"));
+	JogSeq = LoadObject<UAnimSequence>(nullptr, TEXT("/Game/Polyart/SharedResources/Characters/AnimationStuff/Animations/Locomotion/Shared/MM_Run.MM_Run"));
 	GetMesh()->SetAnimationMode(EAnimationMode::AnimationSingleNode);
 	if (IdleSeq) { GetMesh()->SetAnimation(IdleSeq); GetMesh()->PlayAnimation(IdleSeq, true); }
 }

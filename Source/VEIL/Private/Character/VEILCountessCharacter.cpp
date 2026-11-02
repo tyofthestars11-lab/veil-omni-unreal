@@ -26,7 +26,9 @@ AVEILCountessCharacter::AVEILCountessCharacter()
 	GetMesh()->SetRelativeLocation(FVector(0.f, 0.f, -88.f));
 	GetMesh()->SetRelativeRotation(FRotator(0.f, -90.f, 0.f));
 	{ // PHI COUNTESS: her own body, crown, core, lance, cape
-		if (USkeletalMesh* Body = LoadObject<USkeletalMesh>(nullptr, TEXT("/Game/ParagonCountess/Characters/Heroes/Countess/Meshes/SM_Countess.SM_Countess")))
+		// HER BODY IS OURS. It was the Paragon Countess because that tree was the only complete
+		// humanoid on disk at the time; the Polyart set is complete now and is not a placeholder.
+		if (USkeletalMesh* Body = LoadObject<USkeletalMesh>(nullptr, TEXT("/Game/Polyart/SharedResources/Characters/Meshes/SkeletalMeshes/SK_Quinn_Simple.SK_Quinn_Simple")))
 		{
 			GetMesh()->SetSkeletalMesh(Body);
 			// Bone-driven body: keep it out of FMorphVertexBufferPool (assert :336).
