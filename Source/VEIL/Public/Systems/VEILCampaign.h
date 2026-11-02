@@ -44,6 +44,8 @@ struct FVEILActivity
 	int32 Gold = 0;
 	int32 XP = 0;
 	bool bDone = false;
+	/** The runner has stood at this activity's marker. */
+	bool bVisited = false;
 };
 
 UCLASS()
@@ -67,6 +69,8 @@ public:
 	void NoteCache();
 	void NoteWave();
 	void NoteVoice();
+	/** The runner reached an activity marker. */
+	void NoteVisited(int32 Index);
 
 	/** The HUD's two lines. Never empty. */
 	FString ObjectiveLine() const;
@@ -83,11 +87,16 @@ public:
 private:
 	int32 CountOf(EVEILCounter Kind) const;
 	void BuildActivities();
+	void SpawnMarkers();
+	/** Region anchor plus a golden step: where one of the fifty stands. */
+	FVector AnchorFor(int32 Region, int32 Slot) const;
 	void Scan();
 	void Announce(const FString& Line) const;
 	void CloseTheStory();
 
 	TArray<FVEILActivity> Activities;
+	/** One marker per activity, so the fifty exist as places. */
+	TArray<TWeakObjectPtr<AActor>> Markers;
 
 	int32 Kills = 0;
 	int32 Fragments = 0;
