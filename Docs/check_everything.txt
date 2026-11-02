@@ -121,8 +121,7 @@ PART 2 - THE SAVED LEVEL
   static mesh actors: 747
   duplicated (same mesh, same point): 1
       SM_Floor1_Big and SM_Floor1_Big at (-100000,-55556,-51)
-  floating (no ground within 80 cm): 65
-      SM_AncientColumn_Big       at (3000,0,9050) gap=8950
+  floating (no ground within 80 cm): 64
       SM_HolderRoof              at (-1520,-8568,1465) gap=1365
       SM_HolderRoof              at (6908,5291,1465) gap=1365
       SM_HolderRoof              at (-8668,765,1465) gap=1365
@@ -147,6 +146,7 @@ PART 2 - THE SAVED LEVEL
       SM_CliffSlate3             at (5886,-6050,664) gap=564
       SM_CliffMed                at (-1220,-5295,651) gap=551
       SM_CliffMed2               at (-1820,-8568,616) gap=516
+      SM_CliffMed2               at (-1520,-8868,616) gap=516
   overlapping pairs (bounds, >100 cm each axis): 215
       SM_CliffBig x SM_CliffBig  1069306.7 m3 at (16184,21110,0)
       SM_CliffBig x SM_CliffBig  656305.7 m3 at (2133,-24307,0)
