@@ -2405,14 +2405,26 @@ void AVEILWorldBuilder::DressRegions()
 		TEXT("/Game/StarterContent/Materials/M_Brick_Cut_Stone.M_Brick_Cut_Stone"));
 	if (!Gold || !Blue) { return; }
 
-	auto Place = [this](const FVector& At, const FVector& S, UStaticMesh* M,
+	// THE SECOND GOLD PATH. DressPhiPalette was fixed and the plaza still measured 88 gold
+	// components: this function has its OWN Place lambda, and it painted 46 columns and 11
+	// roofs with M_PHI_Gold. A dump named the meshes, so this is the same rule applied at the
+	// second site: gold metal is for light, stone is for mass.
+	auto Place = [this, Gold, StoneMat](const FVector& At, const FVector& S, UStaticMesh* M,
 		UMaterialInterface* Mat, const FLinearColor& C, float E, const FRotator& R)
 	{
 		if (!M || !Mat) { return; }
+		UMaterialInterface* Use = Mat;
+		if (StoneMat && Gold && Mat == Gold)
+		{
+			Use = StoneMat;
+		}
 		UStaticMeshComponent* Comp = SpawnBlockRot(At, S, M, C, E, R);
 		if (!Comp) { return; }
-		Comp->SetMaterial(0, Mat);
-		if (UMaterialInstanceDynamic* MID = UMaterialInstanceDynamic::Create(Mat, Comp))
+		Comp->SetMaterial(0, Use);
+		// THE MID WAS BUILT FROM THE GOLD MATERIAL, SO IT PUT THE GOLD BACK. Setting the stone
+		// material and then creating a dynamic instance of Mat - and applying that - silently
+		// undid the swap on every single piece. The instance is built from Use now.
+		if (UMaterialInstanceDynamic* MID = UMaterialInstanceDynamic::Create(Use, Comp))
 		{
 			MID->SetVectorParameterValue(TEXT("Color"), C);
 			MID->SetVectorParameterValue(TEXT("BaseColor"), C);
@@ -2432,7 +2444,9 @@ void AVEILWorldBuilder::DressRegions()
 	 * A null material means "keep the kit's own stone", which is what masonry wants:
 	 * the palette materials are for gold, crystal and light, not for walls.
 	 */
-	auto Solid = [this](const FVector& Bottom, const FVector& WantCm, UStaticMesh* M,
+	// SAME LAW FOR MASSES AS FOR PROPS. Solid() is what raises the big walls and roofs, and it
+	// had the identical fault: assign the material, then rebuild it as a gold MID on top.
+	auto Solid = [this, Gold, StoneMat](const FVector& Bottom, const FVector& WantCm, UStaticMesh* M,
 		UMaterialInterface* Mat, const FLinearColor& C, float E, float YawDeg) -> bool
 	{
 		if (!M) { return false; }
@@ -2443,10 +2457,15 @@ void AVEILWorldBuilder::DressRegions()
 		UStaticMeshComponent* Comp = SpawnBlockRot(Bottom + FVector(0.f, 0.f, WantCm.Z * 0.5f),
 			S, M, C, E, FRotator(0.f, YawDeg, 0.f));
 		if (!Comp) { return false; }
-		if (Mat)
+		UMaterialInterface* Use = Mat;
+		if (StoneMat && Gold && Mat == Gold)
 		{
-			Comp->SetMaterial(0, Mat);
-			if (UMaterialInstanceDynamic* MID = UMaterialInstanceDynamic::Create(Mat, Comp))
+			Use = StoneMat;
+		}
+		if (Use)
+		{
+			Comp->SetMaterial(0, Use);
+			if (UMaterialInstanceDynamic* MID = UMaterialInstanceDynamic::Create(Use, Comp))
 			{
 				MID->SetVectorParameterValue(TEXT("Color"), C);
 				MID->SetVectorParameterValue(TEXT("BaseColor"), C);
