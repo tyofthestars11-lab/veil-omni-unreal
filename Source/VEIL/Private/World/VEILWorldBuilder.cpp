@@ -2315,6 +2315,45 @@ void AVEILWorldBuilder::DressPhiPalette()
 	UE_LOG(LogVEIL, Warning,
 		TEXT("VEIL PALETTE: %d gold pillars on the phi ring, %d crystal clusters, the Spire raised, gold spiral in the plaza - kit geometry, PHI palette."),
 		Pillars, Clusters);
+
+	// THE MARKET RING. The plaza had a floor, pillars and a skyline, but no buildings you
+	// could walk into: the vision's Hub is a market, and a market is a ring of open doors.
+	// BuildRoom already composes a correct building out of the kit - 2.6 m doorway, jambs,
+	// lintel, roof, hearth light - so the ring is that function used properly at last.
+	BuildMarketRing();
+}
+
+void AVEILWorldBuilder::BuildMarketRing()
+{
+	UStaticMesh* Wall = WallMesh ? WallMesh.Get() : CubeMesh.Get();
+	UStaticMesh* Floor = FloorMesh ? FloorMesh.Get() : CubeMesh.Get();
+	if (!Wall || !Floor) { return; }
+
+	// Warm stone, not gold: the bodies of the world are masonry and gold is the light on it.
+	const FLinearColor StoneTint(0.42f, 0.36f, 0.29f);
+	int32 Built = 0;
+	int32 Skipped = 0;
+	for (int32 K = 0; K < 13; ++K)
+	{
+		// Golden angle, as the Bible requires of every ring in this world.
+		const float Ang = FMath::DegreesToRadians(K * 137.50776405f);
+		const float Rad = 1150.f + 90.f * (float)(K % 3);
+		const FVector At(FMath::Cos(Ang) * Rad, FMath::Sin(Ang) * Rad, 0.f);
+
+		// Keep the square open in the middle and the streets open at the edge: a building
+		// dropped on the spawn approach or on a road is a wall you cannot walk around.
+		if (At.Size2D() < 950.f) { ++Skipped; continue; }
+		const FVector DoorDir = (-At).GetSafeNormal2D();
+		if (DoorDir.IsNearlyZero()) { ++Skipped; continue; }
+
+		// HalfW 320 / HalfD 260 is a 6.4 m by 5.2 m hall on a 5.2 m wall: a shop floor with
+		// room to stand inside, not another giant block with a door drawn on it.
+		BuildRoom(At, 320.f, 260.f, 520.f, DoorDir, Wall, Floor, StoneTint, false);
+		++Built;
+	}
+	UE_LOG(LogVEIL, Warning,
+		TEXT("VEIL MARKET RING: %d enterable kit buildings around the plaza, %d skipped for streets and spawn - doors face the square."),
+		Built, Skipped);
 }
 
 void AVEILWorldBuilder::DressRegions()

@@ -185,6 +185,9 @@ private:
 	/** One invisible collision box per column instance. The kit's column mesh ships no
 	 *  collision geometry, so an instanced set of them looked solid and traced clear. */
 	void AddColumnBody(const FVector& Location, const FVector& Scale, UStaticMesh* Mesh);
+
+	/** Enterable buildings from the modular kit, ringed around the plaza on the golden angle. */
+	void BuildMarketRing();
 	void AddBlock(UInstancedStaticMeshComponent* Set, const FVector& Location, const FVector& Scale);
 	void AddBlockYaw(UInstancedStaticMeshComponent* Set, const FVector& Location,
 		const FVector& Scale, float YawDegrees);
