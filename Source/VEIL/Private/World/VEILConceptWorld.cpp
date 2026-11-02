@@ -17,10 +17,10 @@ namespace
 	constexpr float ConceptGoldenDeg = 137.50776405f;
 
 	// The project's palette. Stone is the kit's cut stone; gold is trim and light.
-	const TCHAR* StonePath = TEXT("/Game/StarterContent/Materials/M_Brick_Cut_Stone.M_Brick_Cut_Stone");
-	const TCHAR* GoldPath = TEXT("/Game/PHI/Palette/M_PHI_GoldMetallic.M_PHI_GoldMetallic");
-	const TCHAR* GlowPath = TEXT("/Game/PHI/Palette/M_PHI_WhiteEmissive.M_PHI_WhiteEmissive");
-	const TCHAR* WaterPath = TEXT("/Game/PHI/Palette/M_PHI_DeepBlue.M_PHI_DeepBlue");
+	const TCHAR* ConceptStonePath = TEXT("/Game/StarterContent/Materials/M_Brick_Cut_Stone.M_Brick_Cut_Stone");
+	const TCHAR* ConceptGoldPath = TEXT("/Game/PHI/Palette/M_PHI_GoldMetallic.M_PHI_GoldMetallic");
+	const TCHAR* ConceptGlowPath = TEXT("/Game/PHI/Palette/M_PHI_WhiteEmissive.M_PHI_WhiteEmissive");
+	const TCHAR* ConceptWaterPath = TEXT("/Game/PHI/Palette/M_PHI_DeepBlue.M_PHI_DeepBlue");
 
 	// The world's addresses, as the Bible fixes them.
 	const FVector Plaza(0.f, 0.f, 0.f);
@@ -80,10 +80,10 @@ bool AVEILConceptWorld::Build()
 	UStaticMesh* Cone = LoadObject<UStaticMesh>(nullptr, TEXT("/Engine/BasicShapes/Cone.Cone"));
 	if (!Cube || !Cylinder) { return false; }
 
-	UMaterialInterface* Stone = LoadObject<UMaterialInterface>(nullptr, StonePath);
-	UMaterialInterface* Gold = LoadObject<UMaterialInterface>(nullptr, GoldPath);
-	UMaterialInterface* Glow = LoadObject<UMaterialInterface>(nullptr, GlowPath);
-	UMaterialInterface* Water = LoadObject<UMaterialInterface>(nullptr, WaterPath);
+	UMaterialInterface* Stone = LoadObject<UMaterialInterface>(nullptr, ConceptStonePath);
+	UMaterialInterface* Gold = LoadObject<UMaterialInterface>(nullptr, ConceptGoldPath);
+	UMaterialInterface* Glow = LoadObject<UMaterialInterface>(nullptr, ConceptGlowPath);
+	UMaterialInterface* Water = LoadObject<UMaterialInterface>(nullptr, ConceptWaterPath);
 
 	BuildPhiPillars(Cube, Cylinder, Sphere, Gold, Stone, Glow);
 	BuildMarket(Cube, Cone, Cylinder, Gold, Stone);

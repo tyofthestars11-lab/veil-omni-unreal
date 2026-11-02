@@ -2,6 +2,7 @@
 #include "Game/VEILGameMode.h"
 #include "World/VEILNestSanctum.h"
 #include "World/VEILConceptWorld.h"
+#include "World/VEILCrowd.h"
 
 #include "Systems/VEILOS.h"
 #include "Game/VEILHudCanvas.h"
@@ -820,6 +821,12 @@ void AVEILGameMode::BeginPlay()
 						FVector::ZeroVector, FRotator::ZeroRotator))
 					{
 						Concept->Build();
+					// THE MARKET HAS PEOPLE IN IT: two instanced meshes, one tick.
+					if (AVEILCrowd* Crowd = GetWorld()->SpawnActor<AVEILCrowd>(
+						FVector::ZeroVector, FRotator::ZeroRotator))
+					{
+						Crowd->Populate(48);
+					}
 					}
 					}
 				}), 2.0f, false);
