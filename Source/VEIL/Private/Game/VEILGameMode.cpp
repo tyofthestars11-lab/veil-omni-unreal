@@ -1694,6 +1694,7 @@ void AVEILPlayerController::BeginPlay()
 		|| FParse::Param(FCommandLine::Get(), TEXT("phivoice"))
 		|| FParse::Param(FCommandLine::Get(), TEXT("phishot"))
 		|| FParse::Param(FCommandLine::Get(), TEXT("phiair"))
+		|| FParse::Param(FCommandLine::Get(), TEXT("phitour"))
 		|| FParse::Param(FCommandLine::Get(), TEXT("phimemory"))
 		|| FParse::Param(FCommandLine::Get(), TEXT("phiquanta"));
 	{
@@ -2150,6 +2151,42 @@ void AVEILPlayerController::BeginPlay()
 			16.f, false);
 		GetWorldTimerManager().SetTimer(GA4, FTimerDelegate::CreateWeakLambda(this,
 			[ShootAir]() { ShootAir(); }), 18.f, false);
+	}
+
+	// -phitour: FIVE REGIONS, ONE SESSION.
+	//
+	// -phiregion proves one arrival. A world is playable when ALL of it can be reached
+	// and stood on, so this beat walks the five region pads three seconds apart through
+	// the same GoToRegion the phi.goto command calls, and under each arrival it traces
+	// DOWN for a floor. A region whose pad has no floor is the failure that dropped the
+	// runner to Z = -5000 once already, and a skyline photograph cannot show it.
+	if (FParse::Param(FCommandLine::Get(), TEXT("phitour")))
+	{
+		UE_LOG(LogVEIL, Warning, TEXT("VEIL TOUR: armed - five regions, three seconds apart, floor traced at each."));
+		static FTimerHandle GTour[5];
+		static const TCHAR* TourName[5] =
+		{
+			TEXT("Hub"), TEXT("Nest"), TEXT("Spire"), TEXT("Omni District"), TEXT("Deep")
+		};
+		for (int32 R = 0; R < 5; ++R)
+		{
+			GetWorldTimerManager().SetTimer(GTour[R], FTimerDelegate::CreateWeakLambda(this, [this, R]()
+			{
+				UWorld* W = GetWorld();
+				if (!W) { return; }
+				const bool bMoved = AVEILWorldBuilder::GoToRegion(W, R);
+				const APawn* Body = GetPawn();
+				const FVector At = Body ? Body->GetActorLocation() : FVector::ZeroVector;
+				FHitResult Down;
+				W->LineTraceSingleByChannel(Down, At + FVector(0.f, 0.f, 300.f),
+					At - FVector(0.f, 0.f, 20000.f), ECC_Visibility);
+				UE_LOG(LogVEIL, Warning,
+					TEXT("VEIL TOUR %d/5 %s: %s at V(X=%.0f, Y=%.0f, Z=%.0f); floor %s at %.0f cm."),
+					R + 1, TourName[R], bMoved ? TEXT("moved") : TEXT("refused"), At.X, At.Y, At.Z,
+					Down.bBlockingHit ? *Down.GetActor()->GetName() : TEXT("NONE"),
+					Down.bBlockingHit ? Down.Distance : -1.f);
+			}), 5.5f + 3.f * (float)R, false);
+		}
 	}
 
 	// -phivoice: the whole natural-talk contract, in one live frame, through the

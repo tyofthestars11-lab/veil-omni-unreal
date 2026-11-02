@@ -523,16 +523,19 @@ void AVEILWorldBuilder::BuildLighting()
 	UWorld* World = GetWorld();
 	if (!World) return;
 
-	// Low golden sun.
+	// GOLDEN HOUR, NOT NOON. A -32 degree key is late morning: it floods the sand,
+	// flattens every roof and leaves no long shadow for the stone to sit in. -13
+	// degrees is the painting's light - the sun is under the roofline, the ground is
+	// lit sideways, and the crystal gets its cold shadow side.
 	if (ADirectionalLight* Sun = World->SpawnActor<ADirectionalLight>(
 		ADirectionalLight::StaticClass(), FVector(0.f, 0.f, 4000.f),
-		FRotator(-32.f, -38.f, 0.f)))
+		FRotator(-13.f, -38.f, 0.f)))
 	{
 		if (UDirectionalLightComponent* Light =
 			Sun->FindComponentByClass<UDirectionalLightComponent>())
 		{
-			Light->SetIntensity(3.2f);
-			Light->SetLightColor(FLinearColor(1.f, 0.80f, 0.56f));
+			Light->SetIntensity(9.5f);
+			Light->SetLightColor(FLinearColor(1.f, 0.68f, 0.38f));
 		}
 	}
 	// Sky dome: the atmosphere as a component on the builder itself -
@@ -551,7 +554,9 @@ void AVEILWorldBuilder::BuildLighting()
 		if (USkyLightComponent* Comp =
 			Sky->FindComponentByClass<USkyLightComponent>())
 		{
-			Comp->SetIntensity(0.5f);
+			// Sky fill is the shadow colour. Cold and low, so the gold stays the only
+			// warm thing in the frame and the blue crystal is not washed to grey.
+			Comp->SetIntensity(0.32f);
 		}
 	}
 	// Violet dusk fog for depth.
@@ -1676,7 +1681,11 @@ void AVEILWorldBuilder::BuildDistrictLayer()
 			S.bOverride_AutoExposureMethod = true;
 			S.AutoExposureMethod = EAutoExposureMethod::AEM_Manual;
 			S.bOverride_AutoExposureBias = true;
-			S.AutoExposureBias = 11.0f;
+			// EV100 11 was measured against a dusk world and is a stop and a half too
+			// hot for a low sun on pale stone: the sand clipped to paper and the whole
+			// frame read white. 8.5 holds the highlights on the sand and lets the
+			// crystal keep its colour.
+			S.AutoExposureBias = 8.5f;
 			// Warm gain, more saturation, a little contrast: gold reads gold instead
 			// of the whole frame sitting in the sky's blue.
 			S.bOverride_ColorSaturation = true;
@@ -1684,7 +1693,7 @@ void AVEILWorldBuilder::BuildDistrictLayer()
 			S.bOverride_ColorContrast = true;
 			S.ColorContrast = FVector4(1.06f, 1.05f, 1.04f, 1.0f);
 			S.bOverride_ColorGain = true;
-			S.ColorGain = FVector4(1.12f, 1.03f, 0.92f, 1.0f);
+			S.ColorGain = FVector4(1.10f, 1.00f, 0.86f, 1.0f);
 			S.bOverride_BloomIntensity = true;
 			S.BloomIntensity = 1.1f;
 			UE_LOG(LogVEIL, Warning, TEXT("VEIL GRADE: unbound post-process volume - manual EV100 11, warm gain, saturation 1.28/1.18/1.06."));
@@ -1696,8 +1705,8 @@ void AVEILWorldBuilder::BuildDistrictLayer()
 		{
 			if (UDirectionalLightComponent* DL = It->FindComponentByClass<UDirectionalLightComponent>())
 			{
-				DL->SetIntensity(12.f);
-				DL->SetLightColor(FLinearColor(1.f, 0.86f, 0.68f));
+				DL->SetIntensity(8.f);
+				DL->SetLightColor(FLinearColor(1.f, 0.74f, 0.46f));
 			}
 		}
 	}
@@ -1806,7 +1815,9 @@ void AVEILWorldBuilder::DressBeaconSites()
 		for (int32 d = 0; d < 6 && DebrisVariants.Num() > 0; ++d)
 		{
 			const float Ang = FMath::DegreesToRadians(d * 137.50776405f);
-			const float Rad = 620.f * FMath::Sqrt((float)(d + 1));
+			// OUT AT THE SITE, NOT ON THE PLAZA. At 620 cm this ring landed 6-14 m from
+			// the spawn, which is the clutter that read as rubbish beside the market.
+			const float Rad = 1900.f * FMath::Sqrt((float)(d + 1));
 			SpawnBlock(Base + FVector(FMath::Cos(Ang) * Rad, FMath::Sin(Ang) * Rad, 60.f),
 				FVector(1.6f, 1.6f, 1.2f), DebrisVariants[d % DebrisVariants.Num()], Stone, 0.f);
 		}
@@ -2103,9 +2114,21 @@ void AVEILWorldBuilder::DressRegions()
 	int32 Terraces = 0;
 	{
 		const float RoadZero = FMath::RadiansToDegrees(FMath::Atan2(-2600.f, 0.f));
+		// L A I D  B Y  T H E  I D E N T I T Y.
+		//
+		// phi^2 = phi + 1, so a course whose width is r/phi lands its outer edge on
+		// exactly r * phi - which is the next course's inner edge. The terraces
+		// therefore TILE the hillside by construction: no gap between courses and no
+		// overlap, because the step is not tuned, it is derived. That is the whole
+		// of the law the user asks for, applied to the ground itself.
+		const double Phi = 1.618033988749895;
+		const double Phi2 = Phi + 1.0;                       // == Phi * Phi
+		double Rad = 2400.0;
 		for (int32 Ring = 0; Ring < 4; ++Ring)
 		{
-			const double Rad = 2400.0 * FMath::Pow(1.618033988749895, (double)Ring);
+			// r/phi, capped so a far course is still a course and not a plain.
+			const double Width = FMath::Min(Rad / Phi, 1500.0);
+			const double Centre = Rad + Width * 0.5;
 			const float TopZ = 160.f * (float)(Ring + 1);
 			for (int32 S = 0; S < 18; ++S)
 			{
@@ -2119,18 +2142,24 @@ void AVEILWorldBuilder::DressRegions()
 				}
 				if (bOnRoad) { continue; }
 
-				const FVector At((float)(FMath::Cos(Ang) * Rad), (float)(FMath::Sin(Ang) * Rad), 0.f);
+				const FVector At((float)(FMath::Cos(Ang) * Centre), (float)(FMath::Sin(Ang) * Centre), 0.f);
+				const float Side = (float)Width;
 				// The stone of the course, in the kit's own masonry.
-				if (Solid(At, FVector(1150.f, 1150.f, TopZ), Course, nullptr,
+				if (Solid(At, FVector(Side, Side, TopZ), Course, nullptr,
 					FLinearColor(0.42f, 0.43f, 0.47f), 0.f, Deg))
 				{
 					// A gold course line on the lip: the step reads as BUILT, not as bare stone.
-					Solid(At + FVector(0.f, 0.f, TopZ), FVector(1200.f, 1200.f, 18.f), Slab, Gold,
-						GoldC, 0.5f, Deg);
+					Solid(At + FVector(0.f, 0.f, TopZ), FVector(Side + 40.f, Side + 40.f, 18.f), Slab,
+						Gold, GoldC, 0.5f, Deg);
 					++Terraces;
 				}
 			}
+			// The identity, walking: inner + width = inner * phi = the next inner.
+			Rad = Rad + Width;
 		}
+		UE_LOG(LogVEIL, Warning,
+			TEXT("VEIL TERRACES: 4 courses, inner %.0f cm to outer %.0f cm. Course one tiles exactly (2400 + 2400/phi = 3883 = 2400*phi); courses two to four are capped at %.0f cm so a far course is still a course and not a plain."),
+			2400.0, Rad, 1500.0);
 	}
 
 	// 7. THE WATERFALL CLIFF, WEST OF THE PLAZA.
