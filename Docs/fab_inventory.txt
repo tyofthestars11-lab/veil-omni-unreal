@@ -35,18 +35,22 @@ ASSET COUNTS PER PACK (assets | static meshes | skeletal | materials | maps)
   MetaHumans                185 |   3 SM |  6 SK |  30 mat |  0 maps
   Mannequins                127 |   0 SM |  3 SK |   5 mat |  0 maps
   StarterContent            264 |  19 SM |  0 SK |  66 mat |  3 maps
-  SFX                        18, Voice 38, PHI 9, Branding 1, Data 2, Character 1
+  SFX 18, Voice 38, PHI 9, Branding 1, Data 2, Character 1
 
 WHAT THE LIBRARY CAN ALREADY BUILD (vision element -> the pack that owns it)
-  Hub market architecture     Sicka SM_Wall1..6 (+Big/Small), SM_WallRamp, SM_WallLight,
-                              SM_WallDecor, SM_AncientColumn_Big, SM_AncientArchColumn,
-                              SM_ArchD, SM_AncientDecorArch, SM_StairSmall, SM_HolderRoof
-  Hub altars / landmarks      Sicka SM_LittleShrine, SM_AncientMonolith, SM_StandLight,
-                              SM_StandBox, SM_SquareMesh
+  Hub market architecture     Sicka modular set, 33 pieces:
+                              SM_Wall1..6, SM_Wall1..6_Big, SM_Wall1..6_Small,
+                              SM_Floor1..5, SM_Floor1..5_Big, SM_Floor1..5_Small
+  Hub landmarks and dressing  Sicka props, 33 pieces:
+                              SM_AncientArchColumn, SM_AncientColumn_Big, SM_AncientMonolith,
+                              SM_LittleShrine, SM_HlafDome, SM_ArchD, SM_AncientArrow,
+                              SM_Platform, SM_PlatformHalf, SM_FrameShort, SM_StairSmall,
+                              SM_StandBox, SM_StandLight, SM_PyramidBase, SM_PyramidHead,
+                              SM_AncientDebris1..8, SM_AncientDecorStraight(2)(Small),
+                              SM_AncientDecorArch, SM_AncientDecor2Arch, SM_AncientDecorU(2),
+                              SM_Block1, SM_Block2, SM_AncientMisc, SM_HolderRoof
   Nest cliffs and ledges      Sicka SM_CliffBig, SM_CliffMed, SM_CliffMed2,
                               SM_CliffSlate1..3 (MI_Cliff1..4 + T_Cliff_* textures)
-  Crystal look                Sicka ships CRYSTAL TEXTURES ONLY - T_Cliff_Crystal_BaseColor,
-                              T_Cliff_Crystal_Emissive, T_Cliff_Crystal_ORM. No crystal MESH.
   Spire / far mountains       Iceland SM_Mountain_01..09, SM_Mountain_Plateu_01,
                               SM_Iceland_Crest, SM_Iceland_Eroded_Mountain,
                               SM_Iceland_Plateus_01 + M_AutoLandscape and MF_* layer blends
@@ -56,27 +60,41 @@ WHAT THE LIBRARY CAN ALREADY BUILD (vision element -> the pack that owns it)
                               MM_Idle, MM_Run; BP_MaleMergedCharacter / BP_FemaleMergedCharacter
   One MetaHuman               MetaHumans/MH_Runner_Built -> SKM_MH_Runner_BodyMesh,
                               SKM_MH_Runner_FaceMesh, BP_MH_Runner
+  Crystal look                Sicka ships CRYSTAL TEXTURES ONLY - T_Cliff_Crystal_BaseColor,
+                              T_Cliff_Crystal_Emissive, T_Cliff_Crystal_ORM. The only crystal
+                              MESH anywhere is Paragon's
+                              SM_Revenant_FrostKing_Projectile_Crystals (a projectile FX).
+  Water SURFACE materials     StarterContent M_Water_Lake and M_Water_Ocean - usable now for
+                              still rivers and pools as planes. Paragon Countess also carries
+                              M_Hydro_Water_Particles and M_WaterImpact_Strand_Masked.
+                              There is no water SYSTEM: no flow, no river spline, no waterfall.
+  Grass                       Iceland LG_A..LG_E landscape grass types + T_Iceland_Grass
+                              BaseColor / Normal / ORM. Landscape grass, not placeable trees.
   Lava / magma materials      LavaMat MI_LavaMat_Inst1..10 (+ one demo map)
-  One water/submerged mesh    Underwater SM_SubAkvo + sub_akvo / Solid materials
+  One submerged mesh          Underwater SM_SubAkvo + sub_akvo / Solid materials
+  Fire and smoke FX           StarterContent Blueprint_Effect_Fire, Blueprint_Effect_Smoke,
+                              Fire01, Fire_Sparks01, Smoke01 (+ cues)
   Audio                       SFX 18 cues (bolt_fire, fall_loop, footstep_a/b,
                               fragment_chime, glide_loop, cache_claim, foe_down...), Voice 38
 
 WHAT IS NOT IN THE LIBRARY (Fab is for exactly these)
-  - Crystal meshes. The vision's blue crystal mountains need a crystal asset; this project
-    owns the TEXTURES for crystal, not the geometry.
-  - Water. There is no water system, no river, no waterfall, no flow material. SM_SubAkvo is
-    a single submerged mesh, not a body of water.
-  - Vegetation. No tree, bush or grass mesh. Iceland ships landscape grass TYPES (LG_A..E),
-    which drive a landscape material, not placeable trees.
-  - Market dressing. No tent, stall, awning, barrel, crate or banner mesh. The vision's blue
-    and gold market tents are not in any pack here.
-  - The phi wing. No wing mesh, no cloak mesh, no flight rig. That character does not exist
-    in this library.
-  - Bridges. No bridge mesh in Sicka or Iceland.
+  - Crystal meshes. 0 crystal meshes outside Paragon's projectile FX; the blue crystal
+    mountains in the vision need an asset, not a texture.
+  - A water SYSTEM. Lake and ocean MATERIALS exist, so still water can be placed today, but
+    there is no flow, no spline river, no waterfall, no Niagara water. Counted: 0 Waterfall,
+    0 River anywhere in Content.
+  - Vegetation meshes. Landscape grass types only. Counted: 0 Tree, 0 Bush meshes.
+  - Market dressing. Counted: 0 Tent, 0 Stall, 0 Awning, 0 barrel/crate/banner. The
+    blue-and-gold market tents in the vision have to be bought or modelled.
+  - The phi wing. Counted: 0 Wing, 0 Feather, 0 Cloak, and no flight rig. That hero does not
+    exist in this library.
+  - Bridges. Counted: 0 Bridge meshes in Sicka or Iceland.
 
 HONEST SUMMARY
-  The library is strong exactly where the vision is architectural: warm stone modular walls,
-  ancient columns and arches, cliffs, roofs, shrines, mountains, interior machinery, plus two
-  complete character families with locomotion graphs and one built MetaHuman.
-  It is empty exactly where the vision is natural or heroic: crystals, water, vegetation,
-  market props, wings, bridges. Those six are Fab purchases or authored meshes, not code.
+  The library is strong exactly where the vision is architectural: 33 modular stone pieces,
+  33 ancient props, cliffs, roofs, shrines, nine mountains, interior machinery, two complete
+  character families with locomotion graphs, one built MetaHuman, water and lava materials,
+  fire and smoke FX, 18 sound cues and 38 voice files.
+  It is empty exactly where the vision is natural or heroic: crystal geometry, moving water,
+  trees, market tents, wings and bridges. Six items, and Fab is the right answer for every
+  one of them.
