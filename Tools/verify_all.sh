@@ -88,6 +88,34 @@ lines "$OUT/loop.log" | grep -aq "whole session survived" \
 gate "full loop (walk/beacons/fight/death/respawn/save)" "$OK" "session did not complete"
 lines "$OUT/loop.log" | grep -a "PHI OMNI PROOF: SAVE RESULT" | sed 's/.*PHI OMNI/     PHI OMNI/' | tee -a "$REPORT" > /dev/null
 
+# ------------------------------------------------- 6. NO SSL / CEF CHATTER
+# Chromium's ssl_client_socket_impl used to spray the console with net_error -100
+# and -107 while the game ran. The cause was the CEF host plugins (AIAssistant,
+# Nwiro, WebBrowserWidget) starting a browser inside the game; they are disabled
+# in VEIL.uproject, and the silence has held across full bakes and full plays.
+# A fix that only exists in someone's memory is not a fix, so the silence is a
+# gate: socket chatter in ANY log of this run fails the verdict, and so does a
+# cef3.log that the run has started writing again.
+SSLLINES=0
+for L in build_VEIL.log build_VEILEditor.log bake.log air.log tour.log loop.log; do
+  [ -f "$OUT/$L" ] || continue
+  N=$(lines "$OUT/$L" | grep -a -ci -E "ssl_client_socket_impl|net_error -1[07][0-9]")
+  SSLLINES=$((SSLLINES + ${N:-0}))
+done
+CEFLOG=$(find "$ROOT" -maxdepth 2 -name "cef3.log" 2>/dev/null | head -1)
+# The root cause, checked as a property of the project file: every plugin that can
+# start a browser inside the game must be off. If one is switched back on, the
+# verdict fails here instead of waiting for the console to start spitting sockets.
+PLUGINS_ON=0
+for P in AIAssistant Nwiro WebBrowserWidget; do
+  ON=$(grep -A4 "\"Name\": \"$P\"" "$ROOT/VEIL.uproject" | grep -c "\"Enabled\": true")
+  PLUGINS_ON=$((PLUGINS_ON + ${ON:-0}))
+done
+OK=1
+[ "$SSLLINES" -eq 0 ] && [ -z "$CEFLOG" ] && [ "$PLUGINS_ON" -eq 0 ] && OK=0
+gate "no ssl/cef socket chatter" "$OK" "ssl_lines=$SSLLINES cef3.log=${CEFLOG:-none} browser_plugins_on=$PLUGINS_ON"
+say "      ssl_lines=$SSLLINES cef3_log=${CEFLOG:-none} browser_plugins_on=$PLUGINS_ON"
+
 # ---------------------------------------------------------------- VERDICT
 if [ "$FAIL" -eq 0 ]; then
   say "VERDICT PASS - built, baked, photographed, all five regions stood on, loop closed."
