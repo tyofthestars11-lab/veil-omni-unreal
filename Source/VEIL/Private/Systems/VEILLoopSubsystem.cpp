@@ -1,4 +1,5 @@
 ﻿#include "Systems/VEILLoopSubsystem.h"
+#include "Systems/VEILCampaign.h"
 
 void UVEILLoopSubsystem::SetStage(EVEILStage S)
 {
@@ -36,12 +37,14 @@ bool UVEILLoopSubsystem::StartFinalWave()
 
 void UVEILLoopSubsystem::WaveCleared()
 {
+	if (UVEILCampaignSubsystem* Camp = GetWorld() ? GetWorld()->GetSubsystem<UVEILCampaignSubsystem>() : nullptr) { Camp->NoteWave(); }
 	if (Stage != EVEILStage::FinalWave) { return; }
 	WavesCleared = FMath::Min(WavesCleared + 1, TotalWaves);
 }
 
 void UVEILLoopSubsystem::BossDefeated()
 {
+	if (UVEILCampaignSubsystem* Camp = GetWorld() ? GetWorld()->GetSubsystem<UVEILCampaignSubsystem>() : nullptr) { Camp->NoteKill(true); }
 	if (Stage != EVEILStage::FinalWave || WavesCleared < TotalWaves) { return; }
 	bBossDefeated = true;
 	SetStage(EVEILStage::Beacon);

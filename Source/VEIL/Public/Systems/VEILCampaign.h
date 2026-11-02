@@ -75,6 +75,8 @@ public:
 	/** The HUD's two lines. Never empty. */
 	FString ObjectiveLine() const;
 	FString ActivityLine() const;
+	/** Nearest open activity and its bearing, for the HUD's compass line. */
+	FString NearestLine(const FVector& From) const;
 	FString ActTitle() const;
 
 	/** The fifty, whole, for a console dump or a proof. */

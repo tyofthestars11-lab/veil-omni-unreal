@@ -34,11 +34,13 @@ namespace
 	const FKindDef GKinds[] =
 	{
 		{ EVEILCounter::Kills,     TEXT("Hunt %d echoes in %s"),        { 3, 6, 10, 15, 21, 28, 36, 45, 55, 66 }, 40, 60 },
-		{ EVEILCounter::Fragments, TEXT("Recover %d fragments near %s"), { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 },       70, 90 },
+		// SUPPLY: the story places three fragments and one cache, so asks above that
+		// would be fifty checkboxes with four impossible rows in every region.
+		{ EVEILCounter::Fragments, TEXT("Recover %d fragments near %s"), { 1, 1, 2, 2, 2, 3, 3, 3, 3, 3 },       70, 90 },
 		{ EVEILCounter::Voices,    TEXT("Hear %d voices in %s"),        { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 },      30, 45 },
-		{ EVEILCounter::Caches,    TEXT("Read %d survey caches in %s"), { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 },      45, 70 },
-		{ EVEILCounter::Waves,     TEXT("Hold %d waves at %s"),         { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 },     100, 140 },
-		{ EVEILCounter::Beacons,   TEXT("Forge %d beacons for %s"),     { 1, 2, 3, 3, 3, 3, 3, 3, 3, 3 },        90, 120 },
+		{ EVEILCounter::Caches,    TEXT("Read %d survey caches in %s"), { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 },      45, 70 },
+		{ EVEILCounter::Waves,     TEXT("Hold %d waves at %s"),         { 1, 2, 3, 4, 5, 5, 5, 5, 5, 5 },     100, 140 },
+		{ EVEILCounter::Beacons,   TEXT("Forge %d beacons for %s"),     { 1, 1, 1, 2, 2, 2, 3, 3, 3, 3 },        90, 120 },
 	};
 	constexpr int32 GKindCount = UE_ARRAY_COUNT(GKinds);
 }
@@ -337,6 +339,35 @@ void UVEILCampaignSubsystem::SpawnMarkers()
 		++Placed;
 	}
 	UE_LOG(LogVEIL, Warning, TEXT("PHI CAMPAIGN: %d activity markers placed across five regions."), Placed);
+}
+
+
+FString UVEILCampaignSubsystem::NearestLine(const FVector& From) const
+{
+	float Best = FLT_MAX;
+	int32 BestIndex = INDEX_NONE;
+	for (int32 i = 0; i < Markers.Num(); ++i)
+	{
+		const AActor* M = Markers[i].Get();
+		if (!M || !Activities.IsValidIndex(i) || Activities[i].bDone) { continue; }
+		const float D = FVector::Dist2D(From, M->GetActorLocation());
+		if (D < Best) { Best = D; BestIndex = i; }
+	}
+	if (BestIndex == INDEX_NONE)
+	{
+		return Activities.Num() > 0 ? TEXT("every activity is closed") : FString();
+	}
+
+	// A bearing, not a distance alone: "240 m N" tells the runner which way to turn.
+	const FVector Delta = Markers[BestIndex]->GetActorLocation() - From;
+	const float Yaw = FMath::RadiansToDegrees(FMath::Atan2(Delta.Y, Delta.X));
+	const TCHAR* Dir = TEXT("E");
+	if (Yaw >= -45.f && Yaw < 45.f)        { Dir = TEXT("E"); }
+	else if (Yaw >= 45.f && Yaw < 135.f)   { Dir = TEXT("N"); }
+	else if (Yaw >= -135.f && Yaw < -45.f) { Dir = TEXT("S"); }
+	else                                   { Dir = TEXT("W"); }
+
+	return FString::Printf(TEXT("%s  -  %.0f m %s"), *Activities[BestIndex].Title, Best / 100.f, Dir);
 }
 
 // phi.acts - the whole board, so the fifty can be read without a menu.

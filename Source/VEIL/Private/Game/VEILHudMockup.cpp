@@ -15,6 +15,7 @@
 #include "Engine/World.h"
 #include "EngineUtils.h"
 #include "GameFramework/HUD.h"
+#include "GameFramework/Pawn.h"
 #include "Kismet/GameplayStatics.h"
 #include "Systems/OMNIQuestSystem.h"
 #include "Systems/VEILCampaign.h"
@@ -166,6 +167,10 @@ void VEILHudMockup::Draw(AHUD* H, UCanvas* C)
 		{
 			Objective = Camp->ObjectiveLine();
 			MockTxt(H, Camp->ActivityLine(), MockGold, BX + 34.f, BY - 16.f, Med, 0.62f);
+			if (const APawn* RunnerPawn = H->GetOwningPawn())
+			{
+				MockTxt(H, Camp->NearestLine(RunnerPawn->GetActorLocation()), MockDim, BX + 34.f, BY - 34.f, Med, 0.56f);
+			}
 		}
 		MockTxt(H, FString::Printf(TEXT("\u25C6  %s"), *Objective), MockWhite, BX + 34.f, BY + 30.f, Med, 0.74f);
 	}
