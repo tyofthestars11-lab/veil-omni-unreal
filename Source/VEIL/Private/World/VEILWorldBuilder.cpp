@@ -1896,16 +1896,20 @@ void AVEILWorldBuilder::DressPhiPalette()
 		{
 			// Gold STONE with a lit edge, not a glow stick: the emissive is a fraction of
 			// the gold, so the pillar reads as gilded masonry and still catches the sun.
-			Place(At + FVector(0.f, 0.f, 620.f), FVector(1.15f, 1.15f, 12.5f), Pillar, Gold,
-				GoldTint, 0.55f, FRotator(0.f, (float)(i * GoldenDeg), 0.f));
+			// MEASURED, like everything else that was a wafer before: 2.2 m across, 12.5 m
+			// tall, standing on the ground rather than buried to its cap.
+			Place(At + FVector(0.f, 0.f, 625.f), ScaleForCm(Pillar, FVector(220.f, 220.f, 1250.f)),
+				Pillar, Gold, GoldTint, 0.55f, FRotator(0.f, (float)(i * GoldenDeg), 0.f));
 			++Pillars;
 		}
 		if (Crystal && (i % 2) == 0)
 		{
 			const double CAng = Ang + 0.26;
 			const double CRad = Rad * PhiLocal * 0.86;
-			Place(FVector(FMath::Cos(CAng) * CRad, FMath::Sin(CAng) * CRad, 240.f),
-				FVector(2.4f, 2.4f, 6.5f), Crystal, Blue, CrystalTint, 0.45f,
+			// A SHARD, NOT A WAFER. These were the leaning blue plates beside the plaza:
+			// the cliff mesh scaled on Z alone. 7 m wide and 15 m tall, root on the ground.
+			Place(FVector(FMath::Cos(CAng) * CRad, FMath::Sin(CAng) * CRad, 750.f),
+				ScaleForCm(Crystal, FVector(700.f, 700.f, 1500.f)), Crystal, Blue, CrystalTint, 0.45f,
 				FRotator(0.f, (float)(i * 61.f), 7.f));
 			++Clusters;
 		}
@@ -1916,14 +1920,17 @@ void AVEILWorldBuilder::DressPhiPalette()
 	{
 		for (int32 K = 0; K < 3; ++K)
 		{
-			const float Half = 3.2f - K * 0.6f;
-			Place(FVector(0.f, 0.f, 1400.f + K * 2600.f), FVector(Half, Half, 26.f), Pillar, Gold,
-				GoldTint, 0.8f, FRotator(0.f, (float)(K * GoldenDeg), 0.f));
+			// Taper by the identity: 6.4 m, 4.0 m, 2.4 m across - each about 1/phi of the
+			// one below, so the stack narrows by the same law the terraces step by.
+			const float Side = 640.f / FMath::Pow((float)PhiLocal, (float)K);
+			Place(FVector(0.f, 0.f, 1400.f + K * 2600.f),
+				ScaleForCm(Pillar, FVector(Side, Side, 2600.f)), Pillar, Gold, GoldTint, 0.8f,
+				FRotator(0.f, (float)(K * GoldenDeg), 0.f));
 		}
 		if (Glow)
 		{
-			Place(FVector(0.f, 0.f, 9400.f), FVector(1.4f, 1.4f, 6.f), Pillar, Glow, GoldTint, 3.f,
-				FRotator::ZeroRotator);
+			Place(FVector(0.f, 0.f, 9400.f), ScaleForCm(Pillar, FVector(300.f, 300.f, 700.f)),
+				Pillar, Glow, GoldTint, 3.f, FRotator::ZeroRotator);
 		}
 	}
 
@@ -1936,7 +1943,7 @@ void AVEILWorldBuilder::DressPhiPalette()
 			const double Ang = FMath::DegreesToRadians(i * GoldenDeg);
 			const double Rad = 130.0 * FMath::Pow(PhiLocal, (double)(i % 9) * 0.5);
 			Place(FVector(FMath::Cos(Ang) * Rad, FMath::Sin(Ang) * Rad, 14.f),
-				FVector(0.85f, 0.85f, 0.05f), Tile, Gold, GoldTint, 0.28f,
+				ScaleForCm(Tile, FVector(85.f, 85.f, 14.f)), Tile, Gold, GoldTint, 0.28f,
 				FRotator(0.f, (float)(i * GoldenDeg), 0.f));
 		}
 	}
