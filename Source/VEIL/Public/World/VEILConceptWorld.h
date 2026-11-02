@@ -51,6 +51,12 @@ private:
 		UMaterialInterface* Water, UMaterialInterface* Stone, UMaterialInterface* Gold);
 	void BuildCrystals(UStaticMesh* Cone, UStaticMesh* Cylinder, UMaterialInterface* Water,
 		UMaterialInterface* Glow);
+	void BuildSpire(UStaticMesh* Cube, UStaticMesh* Cylinder, UStaticMesh* Sphere,
+		UMaterialInterface* Gold, UMaterialInterface* Stone, UMaterialInterface* Glow);
+	void BuildTerraces(UStaticMesh* Cube, UStaticMesh* Cylinder,
+		UMaterialInterface* Stone, UMaterialInterface* Water, UMaterialInterface* Gold);
+	void BuildCrystalRange(UStaticMesh* Cone, UStaticMesh* Cylinder,
+		UMaterialInterface* Water, UMaterialInterface* Glow);
 	void BuildDeep(UStaticMesh* Cube, UStaticMesh* Cylinder, UMaterialInterface* Water,
 		UMaterialInterface* Glow);
 	void BuildWings(UStaticMesh* Cube, UMaterialInterface* Gold);
