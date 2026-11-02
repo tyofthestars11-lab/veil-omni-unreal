@@ -393,7 +393,10 @@ void AVEILHudCanvas::DrawHUD()
 	// NO KICKER. The spec for this panel is the objective line, the three gauges and the
 	// level, inside 420 x 110. "CURRENT DIRECTIVE" was a label for a panel that had room
 	// to explain itself; at this size the gold sentence explains itself.
-	Y = PY + 8.f;
+	// SIX PIXELS LOWER. At PY + 8 the top of the cap height was being taken by the plate's
+	// gold trim band, so the directive read as though it had been sheared. The line now
+	// starts clear of the band, and the row steps below pay the six pixels back.
+	Y = PY + 14.f;
 
 	// THE DIRECTIVE IS A BANNER, NOT A LINE OF TEXT. It is the one sentence the
 	// player is acting on, so it gets the gold cloth and the cut ends.
@@ -408,7 +411,7 @@ void AVEILHudCanvas::DrawHUD()
 		// fixed unit and was shorter than the type, which sheared the top off the directive.
 		// Both now come from the same measured text, so the cloth always contains the words.
 		FVeilUI::Ribbon(this, FLinearColor(0.16f, 0.11f, 0.03f, 0.80f),
-			TX - 8.f, Y - 4.f, OW * 0.62f + 16.f,
+			TX - 8.f, Y - 6.f, OW * 0.62f + 16.f,
 			FMath::Max(U * 2.05f, OH * 0.62f + 8.f), true);
 	}
 	Shadow(Objective, FLinearColor(1.f, 0.90f, 0.46f), TX, Y, Big, 0.62f);
@@ -450,12 +453,12 @@ void AVEILHudCanvas::DrawHUD()
 		// number it used to carry under itself now sits on the row it belongs to.
 		Shadow(FString::Printf(TEXT("LV %d   XP %d / %d"), Q->Level, Q->XP, Need),
 			FLinearColor(0.72f, 0.86f, 1.f), BARX + BARW + 10.f, Y - 2.f, Med, 0.58f);
-		Y += 14.f;
+		Y += 11.f;
 	}
 
 	// Hairline, then secondary rows in a quieter weight of the same face.
 	DrawRect(FLinearColor(1.f, 1.f, 1.f, 0.10f), TX, Y, PW - U * 4.f, 1.f);
-	Y += 5.f;
+	Y += 4.f;
 
 	if (Q)
 	{
