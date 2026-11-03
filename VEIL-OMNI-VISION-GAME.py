@@ -239,7 +239,7 @@ def draw_scene(b, x, y, dialogue, mic=False):
     b.rect(42, 100, 190, 112, fill="#3f9a5c")
     b.text(262, 98, "STM 117/180", fill="#f6ecd2", size=10)
     b.poly([(400, 94), (414, 108), (400, 122), (386, 108)], fill="#e8c368")
-    b.text(400, 126, "LV 72", fill="#f6ecd2", size=9, anchor="center")
+    b.text(400, 114, "LV 72", fill="#f6ecd2", size=9, anchor="center")
 
     # minimap, 180x180 at 70%, gold ring
     b.oval(990, 20, 1152, 182, fill="#0d1a2c", outline="#e8c368", width=2)
@@ -269,11 +269,11 @@ def draw_scene(b, x, y, dialogue, mic=False):
     b.text(414, H - 50, "[E] talk    WASD walk    mic: one prompt only", fill="#8f7a44", size=9)
 
     if dialogue:
-        b.rect(24, H - 356, 664, H - 180, fill="#121a2c", outline="#e8c368", width=2)
+        b.rect(24, H - 356, 544, H - 180, fill="#121a2c", outline="#e8c368", width=2)
         b.text(44, H - 336, Keeper.name, fill="#e8c368", size=14, bold=True)
         b.text(44, H - 316, Keeper.title, fill="#8f7a44", size=9)
         b.text(44, H - 284, Keeper.line, fill="#f6ecd2", size=13)
-        b.text(640, H - 200, "[E] continue", fill="#e8c368", size=11, anchor="e")
+        b.text(520, H - 200, "[E] continue", fill="#e8c368", size=11, anchor="e")
 
 
 # ------------------------------------------------------------------ the game
