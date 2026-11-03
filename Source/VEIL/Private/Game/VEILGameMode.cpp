@@ -4208,6 +4208,38 @@ void AVEILPlayerController::Tick(float DeltaSeconds)
 		}
 		if (Cam)
 		{
+			// NAME WHAT IS ON SCREEN. The aerial showed dark radial beams; rather than guess
+			// which pass makes them, list the ten largest actors by horizontal extent.
+			static bool AirCensus = false;
+			if (!AirCensus)
+			{
+				AirCensus = true;
+				struct FBig { FString Name; FVector Size; FVector At; };
+				TArray<FBig> Big;
+				for (TActorIterator<AActor> It(GetWorld()); It; ++It)
+				{
+					AActor* A = *It;
+					if (!A || A == Cam || A->IsA<APawn>() || A->IsA<ACameraActor>()) { continue; }
+					FVector O, E;
+					A->GetActorBounds(false, O, E);
+					FBig B;
+					B.Name = A->GetActorLabel();
+					B.Size = E * 2.f;
+					B.At = A->GetActorLocation();
+					Big.Add(B);
+				}
+				Big.Sort([](const FBig& L, const FBig& R)
+				{
+					return FMath::Max(L.Size.X, L.Size.Y) > FMath::Max(R.Size.X, R.Size.Y);
+				});
+				const int32 N = FMath::Min(10, Big.Num());
+				for (int32 i = 0; i < N; ++i)
+				{
+					UE_LOG(LogVEIL, Warning, TEXT("PHI BIG: %s size %.0f x %.0f x %.0f at (%.0f, %.0f, %.0f)"),
+						*Big[i].Name, Big[i].Size.X, Big[i].Size.Y, Big[i].Size.Z,
+						Big[i].At.X, Big[i].At.Y, Big[i].At.Z);
+				}
+			}
 			SetViewTarget(Cam);
 			if (AirStep == 0 && AirClock >= 7.f)
 			{
