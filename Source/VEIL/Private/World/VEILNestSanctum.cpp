@@ -313,8 +313,13 @@ bool AVEILNestSanctum::BuildSanctum()
 	// ---- THE FALL OF WATER ----------------------------------------------------
 	if (Water)
 	{
-		SpawnPiece(Cube, FVector(0.f, 1500.f, DeckZ - 620.f), FVector(620.f, 24.f, 1240.f), Water, false);
-		SpawnPiece(Cube, FVector(0.f, 1520.f, DeckZ - 1240.f), FVector(700.f, 200.f, 40.f), Water, false);
+		// THE FALL MOVED OFF THE STREET AND BELOW THE DECK.
+		// It stood at X=0 on the spawn sightline with a deep-blue surface at deck height, which is
+		// the purple slab with a black top that filled the first frame - water rendered where a
+		// building should be reads as a placeholder no matter what it is made of. It is now west
+		// of the plaza and sunk under the deck, so it is a channel you find, not a wall you face.
+		SpawnPiece(Cube, FVector(-2600.f, 1500.f, DeckZ - 900.f), FVector(620.f, 24.f, 1240.f), Water, false);
+		SpawnPiece(Cube, FVector(-2600.f, 1520.f, DeckZ - 1520.f), FVector(700.f, 200.f, 40.f), Water, false);
 	}
 
 	bBuilt = true;
