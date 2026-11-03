@@ -1,4 +1,5 @@
 // VEIL: THE LAST SIGNAL - game mode + player controller implementation.
+#include "Components/SkeletalMeshComponent.h"
 #include "Game/VEILGameMode.h"
 #include "World/VEILNestSanctum.h"
 #include "World/VEILConceptWorld.h"
@@ -576,6 +577,31 @@ void AVEILGameMode::BeginPlay()
 
 		// Boot pass, before the first frame is lit.
 		PhiLightPass(FVector::ZeroVector);
+
+		// WHAT IS ACTUALLY IN THE SCENE, COUNTED.
+		// Four frozen-governor tests at 100 %% screen: shadows off 16.9-17.2 ms, every static
+		// mesh hidden 21.1 ms, Lumen fully off 23.5 ms, all skeletal meshes hidden 23.7 ms,
+		// and 25 %% screen no faster than 100 %%. Nothing visual explains a floor that ignores
+		// resolution - but hiding a mesh from the show flags does not unregister its
+		// primitive, so the count below is what the next test has to answer for.
+		{
+			int32 Actors = 0, StaticComps = 0, SkelComps = 0, LightComps = 0;
+			for (TActorIterator<AActor> It(GetWorld()); It; ++It)
+			{
+				++Actors;
+				TArray<UStaticMeshComponent*> Statics;
+				It->GetComponents<UStaticMeshComponent>(Statics);
+				StaticComps += Statics.Num();
+				TArray<USkeletalMeshComponent*> Skels;
+				It->GetComponents<USkeletalMeshComponent>(Skels);
+				SkelComps += Skels.Num();
+				TArray<ULightComponent*> Lights;
+				It->GetComponents<ULightComponent>(Lights);
+				LightComps += Lights.Num();
+			}
+			UE_LOG(LogVEIL, Display, TEXT("PHI WORLD: actors=%d staticComps=%d skeletalComps=%d lightComps=%d"),
+				Actors, StaticComps, SkelComps, LightComps);
+		}
 
 		// NO SECOND PASS. The boot pass above already clamps every light before the first frame is
 		// lit. Re-running it 2.7 s later changed shadow casting and radius on lights that GPUScene
