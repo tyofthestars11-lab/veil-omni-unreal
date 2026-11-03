@@ -27,6 +27,10 @@ public:
 	/** Build the whole district once. Safe to call again - it builds once. */
 	void BuildWorld();
 
+	/** Falling water moves: the falls are strips with no particle system behind them,
+	 *  so their Z is walked down each frame and wrapped at the base. */
+	virtual void Tick(float DeltaSeconds) override;
+
 	/**
 	 * The gold, the crystal and the Spire, in the project's own palette.
 	 *
@@ -167,6 +171,10 @@ private:
 	 *  Authored meshes are not unit cubes, so every instance is normalised before
 	 *  placement - the phi layout then reads the same with real art or without. */
 	static float MeshNorm(const UStaticMesh* Mesh);
+
+	/** Registered falling water and the height each strip wraps back to. */
+	TMap<TObjectPtr<UStaticMeshComponent>, float> FlowBase;
+	float FlowSpeed = 340.f;
 
 	bool bBuilt = false;
 	/** Set by BuildDistrictLayer: skip ground, plaza and the player start. */

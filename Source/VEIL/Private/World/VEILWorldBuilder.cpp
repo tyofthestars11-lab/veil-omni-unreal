@@ -144,7 +144,8 @@ namespace
 
 AVEILWorldBuilder::AVEILWorldBuilder()
 {
-	PrimaryActorTick.bCanEverTick = false;
+	// The district itself needs a tick now: falling water has no particle system to move it.
+	PrimaryActorTick.bCanEverTick = true;
 
 	static ConstructorHelpers::FObjectFinder<UStaticMesh> Cube(
 		TEXT("/Engine/BasicShapes/Cube.Cube"));
@@ -3876,6 +3877,25 @@ void AVEILWorldBuilder::BuildPhiForms()
 			0.15f + 0.15f * (float)k, FRotator(0.f, (float)k * 137.5077640500378f, 0.f)));
 		++DeepSteps;
 	}
+	// FALLING WATER REGISTERS ITSELF. The falls were spawned in three different passes with
+	// three different heights; rather than wire each site by hand, every tagged water strip
+	// standing above the river is registered here, with the height it wraps back to. The
+	// river stays out of it (it sits at Z=6 and flows along its own axis, not down).
+	if (World)
+	{
+		for (TActorIterator<AActor> ItW(World); ItW; ++ItW)
+		{
+			AActor* AW = *ItW;
+			if (!AW || !AW->Tags.Contains(FName(TEXT("PhiCity")))) { continue; }
+			UStaticMeshComponent* WC = AW->FindComponentByClass<UStaticMeshComponent>();
+			if (WC && WC->GetStaticMesh() == Water && WC->GetComponentLocation().Z > 300.f)
+			{
+				FlowBase.Add(WC, WC->GetComponentLocation().Z);
+			}
+		}
+	}
+	UE_LOG(LogVEIL, Warning, TEXT("PHI FLOW: %d falling piece(s) moved by the builder's own tick."), FlowBase.Num());
+
 	UE_LOG(LogVEIL, Warning,
 		TEXT("PHI RIVER: %d water piece(s), %d bridge(s); PHI DEEP: %d step(s) descending."),
 		RiverPieces, RiverBridges, DeepSteps);
@@ -4064,6 +4084,23 @@ void AVEILWorldBuilder::BuildPhiForms()
 		TEXT("PHI FORM: spire %d section(s), waterfalls %d, bridge segments %d, crystal shards %d - silhouettes, not tints."),
 		SpirePieces, Falls, Bridges, Shards);
 }
+
+void AVEILWorldBuilder::Tick(float DeltaSeconds)
+{
+	Super::Tick(DeltaSeconds);
+	if (FlowBase.Num() == 0) { return; }
+	for (TPair<TObjectPtr<UStaticMeshComponent>, float>& KV : FlowBase)
+	{
+		UStaticMeshComponent* Strip = KV.Key;
+		if (!Strip) { continue; }
+		FVector L = Strip->GetRelativeLocation();
+		// Fall, then reappear at the lip: a wrap, never a reset of the whole world.
+		L.Z -= FlowSpeed * DeltaSeconds;
+		if (L.Z < KV.Value - 900.f) { L.Z = KV.Value; }
+		Strip->SetRelativeLocation(L);
+	}
+}
+
 
 void AVEILWorldBuilder::BuildWorld()
 {
