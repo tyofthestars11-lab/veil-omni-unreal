@@ -63,6 +63,30 @@ class UIState:
         ]
 
 
+# ------------------------------------------------------------------ adapter
+class _Corners:
+    """The canvases size rect/oval by width and height; the panels are laid out with
+    corners. Convert once here so both the window and the PNG shots agree."""
+
+    def __init__(self, b):
+        self.b = b
+
+    def rect(self, x0, y0, x1, y1, fill=None, outline=None, width=1):
+        return self.b.rect(x0, y0, x1 - x0, y1 - y0, fill=fill, outline=outline, width=width)
+
+    def oval(self, x0, y0, x1, y1, fill=None, outline=None, width=1):
+        return self.b.oval(x0, y0, x1 - x0, y1 - y0, fill=fill, outline=outline, width=width)
+
+    def __getattr__(self, name):
+        return getattr(self.b, name)
+
+    def __setattr__(self, name, value):
+        if name == "b":
+            object.__setattr__(self, name, value)
+        else:
+            setattr(self.b, name, value)
+
+
 # ------------------------------------------------------------------ pieces
 def frame(b, x, y, w, h, fill=PANEL, thick=2):
     b.rect(x, y, x + w, y + h, fill=fill, outline=GOLD, width=thick)
@@ -131,6 +155,7 @@ def item_glyph(b, kind, cx, cy, s=1.0):
 # ------------------------------------------------------------------ HUD
 def draw_hud(b, st, dlg=None, zone_name="HUB", runner=None):
     W, H = 1280, 720
+    b = _Corners(b)
 
     # 1. player status, top-left, 330x130
     frame(b, 14, 12, 330, 130)
@@ -238,6 +263,7 @@ def draw_hud(b, st, dlg=None, zone_name="HUB", runner=None):
 # ------------------------------------------------------------------ menu
 def draw_menu(b, st, zone_name="HUB"):
     W, H = 1280, 720
+    b = _Corners(b)
     b.rect(0, 0, W, H, fill="#050b16")
     for i in range(8):
         t = i / 8.0
