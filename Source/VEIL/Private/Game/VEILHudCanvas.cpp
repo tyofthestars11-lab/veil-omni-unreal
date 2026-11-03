@@ -333,7 +333,7 @@ void AVEILHudCanvas::DrawHUD()
 	const float PX = 14.f;                        // spec margin, was 29.1
 	const float PY = 14.f;
 	const float PW = 420.f;                       // spec max width, was 470
-	const float PH = 140.f;                       // rows need room: 110 held seven lines that collided
+	const float PH = 156.f;                       // rows need room: 110 held seven lines that collided
 
 	auto Shadow = [this](const FString& S, FLinearColor C, float X, float Yy, UFont* F, float Sc)
 	{
@@ -424,14 +424,22 @@ void AVEILHudCanvas::DrawHUD()
 	// SIX PIXELS LOWER. At PY + 8 the top of the cap height was being taken by the plate's
 	// gold trim band, so the directive read as though it had been sheared. The line now
 	// starts clear of the band, and the row steps below pay the six pixels back.
-	Y = PY + 14.f;
+	// THE KICKER, AS THE REFERENCE DRAWS IT. A plate that begins with its own sentence
+	// has no masthead; the mockup leads with a letter-spaced gold label over a rule, and the
+	// eye reads "this is what I am doing now" before it reads the words. Spaced with
+	// spaces, because the canvas font has no tracking control and no second asset is worth
+	// it for one label.
+	DrawText(TEXT("C U R R E N T   D I R E C T I V E"), FLinearColor(1.f, 0.78f, 0.30f, 0.88f),
+		TX, PY + 8.f, Med, 0.46f);
+	DrawRect(FLinearColor(1.f, 0.78f, 0.30f, 0.30f), TX, PY + 19.f, CardW, 1.f);
+	Y = PY + 26.f;
 
 	// NO RIBBON BEHIND THE DIRECTIVE. The gold cloth sat over the line's cap height and its
 	// cut end took the first word, so the objective read "...k to the KEEPER" wherever the
 	// text or the ribbon was moved. At 420 x 110 the sentence is legible on the plate, and
 	// a panel this size has no room for a banner inside a banner.
 	Shadow(Fitted(Objective, Big, 0.62f, CardW), FLinearColor(1.f, 0.90f, 0.46f), TX, Y, Big, 0.62f);
-	Y += 22.f;
+	Y += 21.f;
 
 	// Bars carry the state; the numbers stay for exact reading.
 	if (Pawn)
@@ -534,6 +542,15 @@ void AVEILHudCanvas::DrawHUD()
 		const int32 Party = W->GetSubsystem<UPHICompanionParty>() ? W->GetSubsystem<UPHICompanionParty>()->Count() : 0;
 		Shadow(Fitted(FString::Printf(TEXT("LEAD %s   PARTY %d/5"), *Lead, Party), Med, 0.58f, CardW),
 			FLinearColor(0.78f, 0.84f, 0.92f), TX, Y, Med, 0.58f);
+	}
+
+	// ONE ROW, REAL KEYS. The reference puts the gestures along the bottom of the plate
+	// where they can be read without leaving the frame. Every key here is bound in
+	// SetupInputComponent, so the row teaches nothing that does not work.
+	{
+		const FString Hints = TEXT("[E] SPEAK   [SPACE] NEXT   [TAB] CHART   [H] MANUAL   [P] PAUSE");
+		Shadow(Fitted(Hints, Med, 0.50f, CardW), FLinearColor(0.74f, 0.79f, 0.88f, 0.66f),
+			TX, PY + PH - 17.f, Med, 0.50f);
 	}
 
 	// THE KEY LIST IS GONE. At 420 x 110 the panel has no room for a permanent line of
