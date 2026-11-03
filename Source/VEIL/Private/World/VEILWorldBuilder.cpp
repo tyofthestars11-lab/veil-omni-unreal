@@ -803,7 +803,10 @@ void AVEILWorldBuilder::BuildDistrict()
 
 	// Stone, not night-blue: the plain under the city is flagstone in the vision.
 	const FLinearColor GroundTint(0.30f, 0.30f, 0.31f);
-	const FLinearColor TowerTint(0.23f, 0.25f, 0.38f);
+	// Warm quarried stone, not the cold blue this used to be: at 0.23/0.25/0.38 the towers
+	// read as purple slabs under the district's dusk, which is what a player calls a
+	// placeholder no matter how good the mesh is.
+	const FLinearColor TowerTint(0.34f, 0.29f, 0.24f);
 	const FLinearColor TowerTintWarm(0.34f, 0.24f, 0.16f);
 	// CUT STONE, NOT SAND. This tint DOES land - the dune slabs under the plain carry a
 	// colour parameter, which is why the ground went tan the moment it was set warm.
@@ -1164,6 +1167,15 @@ UInstancedStaticMeshComponent* AVEILWorldBuilder::MakeSet(UStaticMesh* Mesh,
 	UWorld* World = GetWorld();
 	if (!World || !Mesh) { return nullptr; }
 
+	// NO ENGINE SHAPE IN AN INSTANCED SET EITHER. The band courses were made from CubeMesh,
+	// the engine cube, which the component-level swap could not rescue because an empty
+	// instanced set has no bounds to fit against. Substituting here means the builder
+	// never emits a primitive at all.
+	if (Mesh && Mesh->GetPathName().StartsWith(TEXT("/Engine/BasicShapes/")))
+	{
+		if (FloorMesh) { Mesh = FloorMesh; }
+		else if (WallMesh) { Mesh = WallMesh; }
+	}
 	UInstancedStaticMeshComponent* Set = NewObject<UInstancedStaticMeshComponent>(this);
 	Set->SetStaticMesh(Mesh);
 	Set->SetMobility(EComponentMobility::Movable);

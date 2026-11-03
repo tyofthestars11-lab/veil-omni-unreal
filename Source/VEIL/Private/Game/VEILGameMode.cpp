@@ -880,12 +880,23 @@ void AVEILGameMode::BeginPlay()
 		}
 		if (bAlreadyBuilt)
 		{
+			// A BAKED LEVEL IS NO LONGER THE FINAL WORD. Standing down left the market as
+			// whatever an older bake saved: stretched shells and placeholder-derived boards,
+			// with the real architecture unreachable behind this branch. The saved shells are
+			// cleared and the district is raised fresh from the kit, so what plays is built by
+			// the code in this file - tiled walls, 3 m doorways, real roofs, 6.4 m interiors.
 			UE_LOG(LogVEIL, Warning,
-				TEXT("VEIL STAGE: map=%s already holds the baked district - builder stands down, the saved world is the world."),
+				TEXT("VEIL STAGE: map=%s was baked - CLEARING THE SAVED SHELLS and rebuilding the district from the kit."),
 				*GetWorld()->GetName());
+			Builder->BuildWorld();
 		}
-		else if (bPlacedWorld) { Builder->BuildDistrictLayer(); }
-		else { Builder->BuildWorld(); }
+		// REAL STRUCTURES ON EVERY MAP, INCLUDING THE PLAYED ONE.
+		// A placed map used to get BuildDistrictLayer only: a street overlay laid over whatever
+		// the bake left, so the market's buildings were old stretched shells while the real
+		// architecture sat behind a branch this map never reached. BuildWorld clears the old
+		// stage, rebuilds the lighting, and raises the district from the kit - walls tiled at
+		// 4 m, doorways 3 m wide, roofs from the roof asset, rooms with 6.4 m clear.
+		Builder->BuildWorld();
 
 		// THE NEST HAS A FLOOR EVEN WHEN THE HUB IS BURIED.
 		//
