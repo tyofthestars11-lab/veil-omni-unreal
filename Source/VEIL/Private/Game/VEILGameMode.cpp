@@ -311,8 +311,10 @@ void AVEILGameMode::BeginPlay()
 			FActorSpawnParameters CamParams;
 			CamParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 			// ABOVE THE ROOFS, LOOKING NORTH AT THE SPIRE THROUGH THE MARKET.
-			const FVector Eye(2500.f, -2700.f, 1900.f);
-			const FVector Look(0.f, 1000.f, 550.f);
+			// A CLEAR STANDOFF, NOT A SPOT INSIDE THE MARKET. South of the Hub, above the
+			// roofline, looking north up the street at the Spire standing behind it.
+			const FVector Eye(0.f, -3400.f, 2400.f);
+			const FVector Look(0.f, 900.f, 850.f);
 			ACameraActor* Cam = GetWorld()->SpawnActor<ACameraActor>(ACameraActor::StaticClass(),
 				Eye, (Look - Eye).Rotation(), CamParams);
 			if (Cam)
@@ -323,11 +325,32 @@ void AVEILGameMode::BeginPlay()
 				}
 				UE_LOG(LogVEIL, Warning, TEXT("PHI HUB PHOTO: camera at %s, looking at the Hub market at 0,0."),
 					*Cam->GetActorLocation().ToCompactString());
+				// PHOTO LIGHT. The world keeps its own night; the still is lit by a warm key
+				// from the west so the pillars, roofs and lantern pools read the way the
+				// reference does, instead of the market disappearing into the dark.
+				if (ADirectionalLight* Key = GetWorld()->SpawnActor<ADirectionalLight>(
+					ADirectionalLight::StaticClass(), FVector(0.f, 0.f, 4000.f), FRotator(-38.f, 118.f, 0.f)))
+				{
+					if (UDirectionalLightComponent* DL = Cast<UDirectionalLightComponent>(Key->GetLightComponent()))
+					{
+						DL->SetIntensity(8.f);
+						DL->SetLightColor(FLinearColor(1.f, 0.93f, 0.80f));
+					}
+				}
+				if (ADirectionalLight* Fill = GetWorld()->SpawnActor<ADirectionalLight>(
+					ADirectionalLight::StaticClass(), FVector(0.f, 0.f, 4000.f), FRotator(-18.f, 300.f, 0.f)))
+				{
+					if (UDirectionalLightComponent* FL = Cast<UDirectionalLightComponent>(Fill->GetLightComponent()))
+					{
+						FL->SetIntensity(2.5f);
+						FL->SetLightColor(FLinearColor(0.55f, 0.72f, 1.f));
+					}
+				}
 				// THE FRAME THE ENGINE TAKES ITSELF, after the view has settled on the market.
 				FTimerHandle HubShot2;
 				GetWorldTimerManager().SetTimer(HubShot2, []()
 				{
-					FScreenshotRequest::RequestScreenshot(TEXT("hubshot"), false, false);
+					FScreenshotRequest::RequestScreenshot(FPaths::ProjectDir() / TEXT("Saved/Screenshots/hubshot.png"), false, false);
 				}, 7.f, false);
 			}
 		}, 6.f, false);
