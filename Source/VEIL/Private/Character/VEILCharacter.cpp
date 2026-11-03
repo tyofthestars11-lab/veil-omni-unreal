@@ -315,20 +315,38 @@ void AVEILCharacter::BeginPlay()
 			int32 Made = 0;
 			for (int32 Side = -1; Side <= 1; Side += 2)
 			{
-				UStaticMeshComponent* Wing = NewObject<UStaticMeshComponent>(this,
-					*FString::Printf(TEXT("PhiWing%d"), Side > 0 ? 1 : 0));
-				if (!Wing) { continue; }
-				Wing->SetupAttachment(GetMesh());
-				Wing->SetStaticMesh(Panel);
-				Wing->SetRelativeLocation(FVector(-8.f, 16.f * (float)Side, 148.f));
-				Wing->SetRelativeRotation(FRotator(0.f, 0.f, 24.f * (float)Side));
-				Wing->SetRelativeScale3D(FVector(0.03f, 1.4f, 0.85f));
-				Wing->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-				Wing->SetMobility(EComponentMobility::Movable);
-				if (WingGold) { Wing->SetMaterial(0, WingGold); }
-				Wing->RegisterComponent();
-				Wings.Add(Wing);
-				++Made;
+				// LAYERED FEATHERS, NOT ONE CARDBOARD PANEL. The plates show a fan of
+				// gold feathers - seven per wing, each shorter than the one below and
+				// swept back - so the silhouette reads as a wing from any angle.
+				for (int32 F = 0; F < 7; ++F)
+				{
+					UStaticMeshComponent* Feather = NewObject<UStaticMeshComponent>(this,
+						*FString::Printf(TEXT("PhiWing%d_%d"), Side > 0 ? 1 : 0, F));
+					if (!Feather) { continue; }
+					Feather->SetupAttachment(GetMesh());
+					Feather->SetStaticMesh(Panel);
+					const float Spread = 24.f + F * 12.f;
+					const float Len = 1.55f - F * 0.13f;
+					const float Depth = 0.62f - F * 0.045f;
+					Feather->SetRelativeLocation(FVector(-10.f,
+						20.f * (float)Side + (float)Side * F * 9.f, 152.f - F * 7.f));
+					Feather->SetRelativeRotation(FRotator(0.f, (float)Side * (14.f + F * 6.f),
+						(float)Side * Spread));
+					Feather->SetRelativeScale3D(FVector(0.015f, Len, Depth));
+					Feather->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+					Feather->SetMobility(EComponentMobility::Movable);
+					if (WingGold)
+					{
+						const int32 Slots = FMath::Max(1, (int32)Feather->GetNumMaterials());
+						for (int32 Slot = 0; Slot < Slots; ++Slot)
+						{
+							Feather->SetMaterial(Slot, WingGold);
+						}
+					}
+					Feather->RegisterComponent();
+					Wings.Add(Feather);
+					++Made;
+				}
 			}
 			UE_LOG(LogVEIL, Warning,
 				TEXT("PHI WINGS: %d phi panel(s) bound to the runner's back - the silhouette the vision asks for."),
@@ -1144,8 +1162,12 @@ void AVEILCharacter::Tick(float DeltaSeconds)
 		for (int32 w = 0; w < Wings.Num(); ++w)
 		{
 			if (!Wings[w]) { continue; }
-			const float Side = (w == 0) ? -1.f : 1.f;
-			Wings[w]->SetRelativeRotation(FRotator(Flap * 16.f, 0.f, Side * (26.f + Flap * 13.f)));
+			// Feathers alternate side by side; the row is its index within the wing.
+			const float Side = (w % 2 == 0) ? -1.f : 1.f;
+			const int32 Row = w / 2;
+			Wings[w]->SetRelativeRotation(FRotator(Flap * (8.f + Row * 2.f),
+				Side * (14.f + Row * 6.f),
+				Side * (26.f + Row * 11.f + Flap * 9.f)));
 		}
 	}
 	Super::Tick(DeltaSeconds);
