@@ -9,7 +9,7 @@ public class VEIL : ModuleRules
 
 		PublicDependencyModuleNames.AddRange(new string[]
 		{
-			"Core",
+			"Core", "Json",
 			"CoreUObject",
 			"Engine",
 			"ProceduralMeshComponent",
