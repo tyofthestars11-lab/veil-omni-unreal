@@ -1461,6 +1461,12 @@ void AVEILCharacter::JumpFromInput()
 		return;
 	}
 	LastJumpTapAt = Now;
+	// A REFUSED LEAP SAYS SO. Jump() is silent when the movement component
+	// will not leave the ground, which reads in a log as a dead key.
+	UE_LOG(LogVEIL, Log, TEXT("PHI JUMP: story=%d flying=%d canJump=%d mode=%d velZ=%.0f"),
+		IsStoryHoldingInput() ? 1 : 0, bFlying ? 1 : 0, CanJump() ? 1 : 0,
+		GetCharacterMovement() ? (int32)GetCharacterMovement()->MovementMode : -1,
+		GetVelocity().Z);
 	Jump();
 }
 

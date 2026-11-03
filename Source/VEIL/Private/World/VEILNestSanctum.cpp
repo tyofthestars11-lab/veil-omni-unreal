@@ -18,10 +18,10 @@ namespace
 
 	// The project's own palette, the same paths the district already uses. Stone is the kit's
 	// cut stone: the gold is trim, never a body.
-	const TCHAR* StonePath = TEXT("/Game/StarterContent/Materials/M_Brick_Cut_Stone.M_Brick_Cut_Stone");
-	const TCHAR* GoldPath = TEXT("/Game/PHI/Palette/M_PHI_GoldMetallic.M_PHI_GoldMetallic");
-	const TCHAR* GlowPath = TEXT("/Game/PHI/Palette/M_PHI_WhiteEmissive.M_PHI_WhiteEmissive");
-	const TCHAR* WaterPath = TEXT("/Game/PHI/Palette/M_PHI_DeepBlue.M_PHI_DeepBlue");
+	const TCHAR* NestStonePath = TEXT("/Game/StarterContent/Materials/M_Brick_Cut_Stone.M_Brick_Cut_Stone");
+	const TCHAR* NestGoldPath = TEXT("/Game/PHI/Palette/M_PHI_GoldMetallic.M_PHI_GoldMetallic");
+	const TCHAR* NestGlowPath = TEXT("/Game/PHI/Palette/M_PHI_WhiteEmissive.M_PHI_WhiteEmissive");
+	const TCHAR* NestWaterPath = TEXT("/Game/PHI/Palette/M_PHI_DeepBlue.M_PHI_DeepBlue");
 }
 
 AVEILNestSanctum::AVEILNestSanctum()
@@ -191,10 +191,10 @@ bool AVEILNestSanctum::BuildSanctum()
 	UStaticMesh* Cube = LoadObject<UStaticMesh>(nullptr, TEXT("/Engine/BasicShapes/Cube.Cube"));
 	UStaticMesh* Cyl = LoadObject<UStaticMesh>(nullptr, TEXT("/Engine/BasicShapes/Cylinder.Cylinder"));
 	UStaticMesh* Ball = LoadObject<UStaticMesh>(nullptr, TEXT("/Engine/BasicShapes/Sphere.Sphere"));
-	UMaterialInterface* Stone = LoadObject<UMaterialInterface>(nullptr, StonePath);
-	UMaterialInterface* Gold = LoadObject<UMaterialInterface>(nullptr, GoldPath);
-	UMaterialInterface* Glow = LoadObject<UMaterialInterface>(nullptr, GlowPath);
-	UMaterialInterface* Water = LoadObject<UMaterialInterface>(nullptr, WaterPath);
+	UMaterialInterface* Stone = LoadObject<UMaterialInterface>(nullptr, NestStonePath);
+	UMaterialInterface* Gold = LoadObject<UMaterialInterface>(nullptr, NestGoldPath);
+	UMaterialInterface* Glow = LoadObject<UMaterialInterface>(nullptr, NestGlowPath);
+	UMaterialInterface* Water = LoadObject<UMaterialInterface>(nullptr, NestWaterPath);
 
 	if (!Cube || !Cyl || !Stone)
 	{

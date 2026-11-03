@@ -1,4 +1,6 @@
 // VEIL: THE LAST SIGNAL - game mode + player controller implementation.
+#include "GameFramework/CharacterMovementComponent.h"
+#include "GameFramework/HUD.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Game/VEILGameMode.h"
 #include "World/VEILNestSanctum.h"
@@ -2335,7 +2337,8 @@ void AVEILPlayerController::BeginPlay()
 		|| FParse::Param(FCommandLine::Get(), TEXT("phitour"))
 		|| FParse::Param(FCommandLine::Get(), TEXT("phiseat"))
 		|| FParse::Param(FCommandLine::Get(), TEXT("phimemory"))
-		|| FParse::Param(FCommandLine::Get(), TEXT("phiquanta"));
+		|| FParse::Param(FCommandLine::Get(), TEXT("phiquanta"))
+		|| FParse::Param(FCommandLine::Get(), TEXT("philive"));
 	{
 		// A VALUED SWITCH IS STILL A PROOF RUN. FParse::Param does not match
 		// "-phiregion=0", so the list above missed it and the title screen took the
@@ -4085,6 +4088,171 @@ void AVEILPlayerController::Tick(float DeltaSeconds)
 	if (AVEILCharacter* Runner = Cast<AVEILCharacter>(GetPawn()))
 	{
 		Runner->HoldGoldenCamera(DeltaSeconds);
+	}
+
+	// LIVE PLAY TEST (-philive): the game presses its own keys, then reports.
+	//
+	// Every event below goes through APlayerController::InputKey as a simulated
+	// key, the same entry point a physical keyboard reaches. So this walks the
+	// whole chain a player walks - mapping context, action binding, handler,
+	// movement component - instead of calling handlers directly and proving only
+	// that a function compiles. Each step measures, prints PASS or FAIL, and the
+	// run ends with a count a person can read.
+	if (FParse::Param(FCommandLine::Get(), TEXT("philive")))
+	{
+		static float LiveT = 0.f;
+		static float LiveJumpAt = 6.7f;
+		static float LiveLookAt = 0.f;
+		static float LiveFireAt = 0.f;
+		static int32 LivePhase = 0;
+		static int32 LivePass = 0, LiveFail = 0;
+		static int32 LiveJumpTries = 0;
+		static bool bLiveJumpPress = false;
+		static FVector LiveStart = FVector::ZeroVector;
+		static float LiveZ0 = 0.f, LiveYaw0 = 0.f, LiveWalkSpeed = 0.f;
+		static float LiveFire0 = -100.f, LiveSwing0 = -100.f;
+		LiveT += DeltaSeconds;
+
+		AVEILCharacter* LiveRunner = Cast<AVEILCharacter>(GetPawn());
+		auto SendKey = [this](const FKey& Key, EInputEvent Event, float Amount = 1.f) -> bool
+		{
+			return InputKey(FInputKeyEventArgs::CreateSimulated(Key, Event, Amount, 5));
+		};
+		auto Say = [](const TCHAR* What, bool bPass, const FString& Detail)
+		{
+			if (bPass) { ++LivePass; } else { ++LiveFail; }
+			UE_LOG(LogVEIL, Warning, TEXT("PHI LIVE %s: %s - %s"),
+				bPass ? TEXT("PASS") : TEXT("FAIL"), What, *Detail);
+		};
+
+		if (LivePhase == 0 && LiveT >= 4.f)
+		{
+			LivePhase = 1;
+			const AHUD* LiveHud = GetHUD();
+			Say(TEXT("possession"),
+				LiveRunner != nullptr && LiveRunner->IsLocallyControlled() && LiveRunner->GetController() == this,
+				FString::Printf(TEXT("pawn=%s class=%s locallyControlled=%d controller=%s hud=%s"),
+					LiveRunner ? *LiveRunner->GetName() : TEXT("NONE"),
+					LiveRunner ? *LiveRunner->GetClass()->GetName() : TEXT("NONE"),
+					LiveRunner && LiveRunner->IsLocallyControlled() ? 1 : 0,
+					*GetClass()->GetName(),
+					LiveHud ? *LiveHud->GetClass()->GetName() : TEXT("NONE")));
+			Say(TEXT("camera"),
+				LiveRunner != nullptr && LiveRunner->FindComponentByClass<UCameraComponent>() != nullptr,
+				LiveRunner ? FString::Printf(TEXT("arm=%.0f cm pitch=%.2f ring=%d"),
+					LiveRunner->GetCameraArmLength(), LiveRunner->GetCameraPitch(),
+					LiveRunner->GetCameraRing()) : FString(TEXT("no runner")));
+			if (LiveRunner) { LiveStart = LiveRunner->GetActorLocation(); }
+			const bool bTookW = SendKey(EKeys::W, IE_Pressed);
+			UE_LOG(LogVEIL, Warning, TEXT("PHI LIVE: W down, input stack accepted=%d, from %s"),
+				bTookW ? 1 : 0, *LiveStart.ToCompactString());
+		}
+		else if (LivePhase == 1 && LiveT >= 5.6f)
+		{
+			LivePhase = 2;
+			SendKey(EKeys::W, IE_Released);
+			const float Moved = LiveRunner ? FVector::Dist2D(LiveRunner->GetActorLocation(), LiveStart) : 0.f;
+			Say(TEXT("walk"), Moved > 200.f,
+				FString::Printf(TEXT("W for 1.6 s moved the body %.0f cm (speed %.0f cm/s, maxWalk %.0f)"),
+					Moved, LiveRunner ? LiveRunner->GetVelocity().Size2D() : 0.f,
+					LiveRunner && LiveRunner->GetCharacterMovement() ? LiveRunner->GetCharacterMovement()->MaxWalkSpeed : 0.f));
+			LiveWalkSpeed = LiveRunner && LiveRunner->GetCharacterMovement() ? LiveRunner->GetCharacterMovement()->MaxWalkSpeed : 0.f;
+			SendKey(EKeys::LeftShift, IE_Pressed);
+		}
+		else if (LivePhase == 2 && LiveT >= 6.1f)
+		{
+			LivePhase = 3;
+			const float SprintSpeed = LiveRunner && LiveRunner->GetCharacterMovement() ? LiveRunner->GetCharacterMovement()->MaxWalkSpeed : 0.f;
+			Say(TEXT("sprint"),
+				LiveRunner != nullptr && LiveRunner->IsSprintingNow() && SprintSpeed > LiveWalkSpeed + 100.f,
+				FString::Printf(TEXT("shift raised maxWalk %.0f -> %.0f, sprinting=%d"),
+					(double)LiveWalkSpeed, (double)SprintSpeed, LiveRunner && LiveRunner->IsSprintingNow() ? 1 : 0));
+			SendKey(EKeys::LeftShift, IE_Released);
+			LiveZ0 = LiveRunner ? LiveRunner->GetActorLocation().Z : 0.f;
+			SendKey(EKeys::SpaceBar, IE_Pressed);
+			LiveJumpAt = LiveT + 0.5f;
+		}
+		else if (LivePhase == 3 && LiveT >= LiveJumpAt)
+		{
+			// Measured half a second after the press: the body is back on the
+			// ground by 1.3 s, so a later reading would call a good jump a dead
+			// one. A press the story gate swallowed is retried, and every attempt
+			// says why it failed.
+			if (bLiveJumpPress)
+			{
+				bLiveJumpPress = false;
+				LiveZ0 = LiveRunner ? LiveRunner->GetActorLocation().Z : 0.f;
+				SendKey(EKeys::SpaceBar, IE_Pressed);
+				LiveJumpAt = LiveT + 0.5f;
+			}
+			else
+			{
+				SendKey(EKeys::SpaceBar, IE_Released);
+				const float Rise = LiveRunner ? LiveRunner->GetActorLocation().Z - LiveZ0 : 0.f;
+				if (Rise <= 20.f && LiveJumpTries < 3)
+				{
+					++LiveJumpTries;
+					UE_LOG(LogVEIL, Warning,
+						TEXT("PHI LIVE: jump attempt %d lifted %.0f cm - canJump=%d story=%d velZ=%.0f - retrying"),
+						LiveJumpTries, (double)Rise,
+						LiveRunner && LiveRunner->CanJump() ? 1 : 0,
+						LiveRunner && LiveRunner->IsStoryHoldingInput() ? 1 : 0,
+						LiveRunner ? (double)LiveRunner->GetVelocity().Z : 0.0);
+					bLiveJumpPress = true;
+					LiveJumpAt = LiveT + 1.2f;
+				}
+				else
+				{
+					Say(TEXT("jump"), Rise > 20.f,
+						FString::Printf(TEXT("space lifted the body %.0f cm (velZ %.0f, attempts %d)"),
+							(double)Rise, LiveRunner ? (double)LiveRunner->GetVelocity().Z : 0.0, LiveJumpTries + 1));
+					LivePhase = 4;
+					LiveYaw0 = GetControlRotation().Yaw;
+					for (int32 q = 0; q < 20; ++q) { SendKey(EKeys::MouseX, IE_Axis, 40.f); }
+					LiveLookAt = LiveT + 0.5f;
+				}
+			}
+		}
+		else if (LivePhase == 4 && LiveT >= LiveLookAt)
+		{
+			LivePhase = 5;
+			// Reported, not counted: the mapping is a 2D Mouse2D key, and one
+			// axis injection says whether look input arrives, nothing more.
+			UE_LOG(LogVEIL, Warning, TEXT("PHI LIVE INFO: look - yaw %.1f -> %.1f after 20 mouse X samples"),
+				(double)LiveYaw0, (double)GetControlRotation().Yaw);
+			LiveFire0 = LiveRunner ? LiveRunner->GetLastFireTime() : -100.f;
+			SendKey(EKeys::LeftMouseButton, IE_Pressed);
+			SendKey(EKeys::LeftMouseButton, IE_Released);
+			LiveFireAt = LiveT + 0.6f;
+		}
+		else if (LivePhase == 5 && LiveT >= LiveFireAt)
+		{
+			LivePhase = 6;
+			const float FireTime = LiveRunner ? LiveRunner->GetLastFireTime() : -100.f;
+			Say(TEXT("fire"), FireTime > LiveFire0,
+				FString::Printf(TEXT("left click stamped the weapon clock %.3f -> %.3f"), (double)LiveFire0, (double)FireTime));
+			LiveSwing0 = LiveRunner ? LiveRunner->GetLastSwingTime() : -100.f;
+			SendKey(EKeys::F, IE_Pressed);
+			SendKey(EKeys::F, IE_Released);
+			LiveLookAt = LiveT + 0.6f;
+		}
+		else if (LivePhase == 6 && LiveT >= LiveLookAt)
+		{
+			LivePhase = 7;
+			const float SwingTime = LiveRunner ? LiveRunner->GetLastSwingTime() : -100.f;
+			Say(TEXT("swing"), SwingTime > LiveSwing0,
+				FString::Printf(TEXT("F stamped the swing clock %.3f -> %.3f"), (double)LiveSwing0, (double)SwingTime));
+			SendKey(EKeys::E, IE_Pressed);
+			SendKey(EKeys::E, IE_Released);
+			UE_LOG(LogVEIL, Warning, TEXT("PHI LIVE: E sent - whatever it claims is written by the world, into this same log."));
+		}
+		else if (LivePhase == 7 && LiveT >= LiveLookAt + 1.f)
+		{
+			LivePhase = 8;
+			UE_LOG(LogVEIL, Warning, TEXT("PHI LIVE SUMMARY: pass=%d fail=%d - %s"),
+				LivePass, LiveFail,
+				LiveFail == 0 ? TEXT("THE GAME IS PLAYABLE ON THESE AXES") : TEXT("NOT PLAYABLE YET"));
+		}
 	}
 
 	// PHI CAMERA PROBE: four seconds of real tick, then say exactly where the
