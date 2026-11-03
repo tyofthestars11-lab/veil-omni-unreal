@@ -4299,6 +4299,7 @@ void AVEILPlayerController::Tick(float DeltaSeconds)
 			const FName CityTag(TEXT("PhiCity"));
 			const FName GroundTag(TEXT("PhiGround"));
 			int32 Cleared = 0;
+			int32 Parked = 0;
 			for (TActorIterator<AActor> ItLock(GetWorld()); ItLock; ++ItLock)
 			{
 				AActor* A = *ItLock;
@@ -4311,7 +4312,13 @@ void AVEILPlayerController::Tick(float DeltaSeconds)
 					|| Nm.Contains(TEXT("Beacon")) || Nm.Contains(TEXT("Builder"))) { continue; }
 				const FBox B = A->GetComponentsBoundingBox(true);
 				if (!B.IsValid || B.Min.Z > 500.f) { continue; }
-				A->Destroy();
+				// NOTHING IS DELETED. A loose piece is moved to a golden-angle ring outside the
+				// square, so the plaza is clear and the world still carries every piece it built.
+				const double ParkAng = (double)Parked * 137.5077640500378 * 3.14159265358979323846 / 180.0;
+				const float ParkR = 1600.f + 90.f * FMath::Sqrt((float)Parked);
+				A->SetActorLocation(FVector(FMath::Cos(ParkAng) * ParkR, FMath::Sin(ParkAng) * ParkR, 40.f),
+					false, nullptr, ETeleportType::TeleportPhysics);
+				++Parked;
 				++Cleared;
 			}
 			uint32 Hash = 2166136261u;
@@ -4326,7 +4333,7 @@ void AVEILPlayerController::Tick(float DeltaSeconds)
 				Hash = (Hash ^ GetTypeHash(Packed)) * 16777619u;
 				++Counted;
 			}
-			UE_LOG(LogVEIL, Warning, TEXT("PHI WORLD HASH: %08x over %d district piece(s); plaza cleared of %d loose actor(s)."),
+			UE_LOG(LogVEIL, Warning, TEXT("PHI WORLD HASH: %08x over %d district piece(s); plaza cleared by moving %d loose actor(s) onto a phi ring."),
 				Hash, Counted, Cleared);
 		}
 	}

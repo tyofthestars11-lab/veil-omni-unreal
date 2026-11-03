@@ -3198,10 +3198,10 @@ void AVEILWorldBuilder::BuildPhiDistrict()
 	// radius below it, and every tile is 1.25x that gap, so consecutive rings overlap and
 	// a hole cannot open by construction.
 	TArray<float> RingR;
-	for (int32 k = 0; k < 8; ++k)
+	for (int32 k = 0; k < 12; ++k)
 	{
 		const float R = PlazaR * (float)FMath::Pow(Phi, (double)k);
-		if (R > CityR * 1.05f) { break; }
+		// NO CUTOFF. Phi has no edge; the ring count is the only bound, and it is a count.
 		RingR.Add(R);
 	}
 	UE_LOG(LogVEIL, Warning, TEXT("PHI RINGS: %d ring(s) at %s"),
@@ -3307,22 +3307,12 @@ void AVEILWorldBuilder::BuildPhiDistrict()
 	{
 		const double Ang = (double)i * GoldenDeg;
 		const float R = PlazaR + Growth * FMath::Sqrt((float)i);
-		if (R > CityR) { continue; }
-		bool bBlocked = false;
-		for (int32 Spoke = 0; Spoke < 13 && !bBlocked; ++Spoke)
-		{
-			const double SAng = FMath::Fmod((double)Spoke * GoldenDeg, 360.0);
-			const float Diff = (float)FMath::Abs(FMath::Fmod(Ang - SAng + 540.0, 360.0) - 180.0);
-			if (Diff < 4.5f) { bBlocked = true; }
-		}
-		for (int32 k = 0; k < RingR.Num() && !bBlocked; ++k)
-		{
-			if (FMath::Abs(R - RingR[k]) < AveW * 0.75f) { bBlocked = true; }
-		}
-		if (bBlocked) { ++OnStreet; continue; }
+		// NO CUTOFF AND NO REJECTION: the lot is placed because the law placed it.
+		// ZERO CONSTRAINTS. Nothing is skipped for an avenue, a ring road or an
+		// occupancy map: phi packs the pieces, and the overlap is the packing.
 
 		const float Rad = FMath::DegreesToRadians((float)Ang);
-		const int32 Band = FMath::Clamp((int32)(FMath::Loge(R / PlazaR) / FMath::Loge((float)Phi)), 0, 5);
+		const int32 Band = (int32)(FMath::Loge(R / PlazaR) / FMath::Loge((float)Phi));
 		const float Foot = 1350.f / (float)FMath::Pow(Phi, (double)Band);
 		const float Height = 760.f * (float)FMath::Pow(Phi, (double)(Band + 1));
 		const FVector At(FMath::Cos(Rad) * R, FMath::Sin(Rad) * R, 0.f);
@@ -3352,8 +3342,9 @@ void AVEILWorldBuilder::BuildPhiDistrict()
 	}
 
 	UE_LOG(LogVEIL, Warning,
-		TEXT("PHI DISTRICT: %d block(s) on the sunflower, %d skipped as street, %d ring(s), 13 golden avenues, %d ring road segment(s)."),
-		Built, OnStreet, RingR.Num(), RingR.Num() * 24);
+		TEXT("PHI DISTRICT: %d of %d lot(s) placed, %d rejected, %d clamped, %d ring(s), 13 streets, %d road segment(s)."),
+		Built, Lots, 0, 0, RingR.Num(), RingR.Num() * 24);
+	UE_LOG(LogVEIL, Warning, TEXT("PHI CONSTRAINTS: 0 - no keep-out, no cutoff, no clamp, no rejection in this pass."));
 
 	// MEASURE THE PLAN, THEN SETTLE IT. Six seconds in: trace a golden spiral through the
 	// disc and count the samples that stand on PhiGround - a hole is a number, not an
