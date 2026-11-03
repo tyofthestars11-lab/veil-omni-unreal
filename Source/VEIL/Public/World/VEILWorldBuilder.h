@@ -90,6 +90,7 @@ public:
 private:
 	void BuildLighting();
 	void BuildDistrict();
+	void BuildCityGrid();
 
 	/** The silhouette the reference frame asks for: crystal range, cliff falls,
 	 *  terraced houses, bridges, phi pillars, beacon shafts. */
