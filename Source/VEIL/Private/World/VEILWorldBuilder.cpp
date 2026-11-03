@@ -1,5 +1,6 @@
 ﻿// VEIL: THE LAST SIGNAL - runtime world builder implementation.
 #include "World/VEILWorldBuilder.h"
+#include "GameFramework/Pawn.h"
 #include "World/VEILSky.h"
 #include "World/PHILayout.h"
 
@@ -3717,6 +3718,52 @@ void AVEILWorldBuilder::BuildPhiForms()
 		SectionH *= 1.618033988749895f;
 		++SpirePieces;
 	}
+	// A BLUE-AND-GOLD MASS, NOT A ROW OF BOXES. Nine volumes on a phi stack, blue and gold
+	// alternating, so the south edge reads as one lit mass with two colours rather than
+	// nine separate cubes. Height steps by phi, so the roofline is ragged instead of flat.
+	int32 CityPieces = 0;
+	for (int32 k = 0; k < 9; ++k)
+	{
+		const double A1 = (double)k * 137.5077640500378 * 3.14159265358979323846 / 180.0;
+		const float RR = (float)(FMath::Sqrt((double)(k + 1)) * 220.0);
+		const float H = 900.f * FMath::Pow(1.618033988749895f, (float)(k % 3));
+		Tag(SpawnBlockRot(FVector((float)(FMath::Cos(A1) * RR), -2000.f + (float)(FMath::Sin(A1) * RR), H * 0.5f),
+			FVector(520.f / ColCm.X, 520.f / ColCm.Y, H / ColCm.Z),
+			Col, (k % 2 == 0) ? Blue : Gold, (k % 2 == 0) ? 0.9f : 1.6f,
+			FRotator(0.f, (float)FMath::RadiansToDegrees(A1), 0.f)));
+		++CityPieces;
+	}
+
+	// GOLD WINGS ON THE RUNNER. The vision names them and Play has never carried them: two
+	// phi-tapered panels hung off the runner's own root, so they travel with the body
+	// instead of standing in the plaza as props. Attached after spawning, not placed nearby.
+	int32 Wings = 0;
+	if (UWorld* WingsWorld = GetWorld())
+	{
+		if (APlayerController* PC = WingsWorld->GetFirstPlayerController())
+		{
+			if (APawn* P = PC->GetPawn())
+			{
+				for (int32 Side = -1; Side <= 1; Side += 2)
+				{
+					UStaticMeshComponent* Wing = SpawnBlockRot(
+						P->GetActorLocation() + P->GetActorRightVector() * 70.f * (float)Side + FVector(0.f, 0.f, 40.f),
+						FVector(90.f / ColCm.X, 6.f / ColCm.Y, 160.f / ColCm.Z),
+						Col, Gold, 1.4f,
+						FRotator(0.f, P->GetActorRotation().Yaw + 18.f * (float)Side, 22.f * (float)Side));
+					if (Wing && Wing->GetOwner())
+					{
+						Wing->AttachToComponent(P->GetRootComponent(), FAttachmentTransformRules::KeepWorldTransform);
+						++Wings;
+					}
+				}
+			}
+		}
+	}
+	UE_LOG(LogVEIL, Warning,
+		TEXT("PHI FORM EXTRA: blue-gold city %d piece(s), runner wings %d attached to the body."),
+		CityPieces, Wings);
+
 	UE_LOG(LogVEIL, Warning, TEXT("PHI SPIRE: column unit %.0f x %.0f x %.0f cm, %d section(s), top at %.0f cm."),
 		ColCm.X, ColCm.Y, ColCm.Z, SpirePieces, Z);
 
