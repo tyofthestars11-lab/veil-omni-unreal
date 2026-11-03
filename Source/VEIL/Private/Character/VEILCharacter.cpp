@@ -212,11 +212,18 @@ AVEILCharacter::AVEILCharacter()
 			TEXT("/Game/Polyart/SharedResources/Characters/AnimationStuff/Animations/Locomotion/Male/MM_Idle.MM_Idle"));
 		static ConstructorHelpers::FObjectFinder<UAnimSequence> JogFinder(
 			TEXT("/Game/Polyart/SharedResources/Characters/AnimationStuff/Animations/Locomotion/Shared/MM_Run.MM_Run"));
+		// THE AIR CLIP WAS THE RUN CLIP. Both finders pointed at MM_Run, so a falling runner
+		// kept sprinting in mid-air - a visible lie in a game whose whole third act is
+		// double-jump and glide. MM_Fall_Loop ships in the same folder and belongs to the
+		// same skeleton, so the air state now has its own motion.
 		static ConstructorHelpers::FObjectFinder<UAnimSequence> AirFinder(
-			TEXT("/Game/Polyart/SharedResources/Characters/AnimationStuff/Animations/Locomotion/Shared/MM_Run.MM_Run"));
+			TEXT("/Game/Polyart/SharedResources/Characters/AnimationStuff/Animations/Locomotion/Shared/MM_Fall_Loop.MM_Fall_Loop"));
+		static ConstructorHelpers::FObjectFinder<UAnimSequence> LandFinder(
+			TEXT("/Game/Polyart/SharedResources/Characters/AnimationStuff/Animations/Locomotion/Shared/MM_Land.MM_Land"));
 		if (IdleFinder.Succeeded()) IdleSequence = IdleFinder.Object;
 		if (JogFinder.Succeeded()) JogSequence = JogFinder.Object;
 		if (AirFinder.Succeeded()) AirSequence = AirFinder.Object;
+		if (LandFinder.Succeeded()) LandSequence = LandFinder.Object;
 		UE_LOG(LogVEIL, Log, TEXT("PHI BODY MOTION: idle=%s jog=%s air=%s"),
 			IdleSequence ? *IdleSequence->GetName() : TEXT("none"),
 			JogSequence ? *JogSequence->GetName() : TEXT("none"),
@@ -247,14 +254,21 @@ void AVEILCharacter::DriveBodyAnimation(float DeltaSeconds)
 	const UCharacterMovementComponent* Move = GetCharacterMovement();
 	const bool bInAir = Move && Move->IsFalling();
 	const float Speed = GetVelocity().Size2D();
+	// A LANDING IS A MOMENT, NOT A SPEED BAND. The body used to jump straight from the fall
+	// loop to the jog the instant it touched down, which reads as a cut. The first ground
+	// frame after air plays the land clip once, then the speed band takes over.
+	const bool bLanding = bWasFalling && !bInAir;
+	bWasFalling = bInAir;
 
-	UAnimSequence* Wanted = bInAir ? AirSequence.Get() : (Speed > 60.f ? JogSequence.Get() : IdleSequence.Get());
+	UAnimSequence* Wanted = bInAir ? AirSequence.Get()
+		: (bLanding ? LandSequence.Get() : (Speed > 60.f ? JogSequence.Get() : IdleSequence.Get()));
 	if (!Wanted) Wanted = IdleSequence.Get();
 	if (!Wanted) return;
 
 	if (Wanted != PlayingSequence)
 	{
-		Body->PlayAnimation(Wanted, true);
+		// The land clip plays once; loops that should repeat still repeat.
+		Body->PlayAnimation(Wanted, Wanted != LandSequence.Get());
 		PlayingSequence = Wanted;
 		UE_LOG(LogVEIL, Log, TEXT("PHI BODY MOTION: playing %s (speed %.0f)"), *Wanted->GetName(), Speed);
 	}

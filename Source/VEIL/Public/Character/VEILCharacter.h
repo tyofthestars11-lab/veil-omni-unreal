@@ -455,6 +455,9 @@ private:
 	TObjectPtr<UAnimSequence> JogSequence;
 	UPROPERTY()
 	TObjectPtr<UAnimSequence> AirSequence;
+	/** The landing clip: a fall has an end, and the end has its own motion. */
+	TObjectPtr<UAnimSequence> LandSequence;
+	bool bWasFalling = false;
 	UPROPERTY()
 	TObjectPtr<UAnimSequence> PlayingSequence;
 
