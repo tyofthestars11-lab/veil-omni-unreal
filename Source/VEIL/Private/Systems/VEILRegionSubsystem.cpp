@@ -16,7 +16,7 @@ FVEILRegionInfo UVEILRegionSubsystem::GetInfo(EVEILRegion R) const
 	// could actually walk. These are the anchors from the design:
 	//   Keeper 900,0        -> Hub
 	//   Seer -450,780       -> The Nest
-	//   fragment 2800,500   -> The Spire
+	//   Spire zone 0,3500   -> The Spire (Hark's law: the landmark is not the Hub)
 	//   fragment 600,-2100  -> Omni District (the Cache at 0,-6200 also resolves here)
 	case EVEILRegion::Hub:
 		I.Name = FText::FromString(TEXT("Hub"));
@@ -28,7 +28,8 @@ FVEILRegionInfo UVEILRegionSubsystem::GetInfo(EVEILRegion R) const
 		I.MusicCue = TEXT("Explore_Nest"); I.FragmentSites = 3; break;
 	case EVEILRegion::Spire:
 		I.Name = FText::FromString(TEXT("The Spire"));
-		I.Center = FVector2D(28.f, 5.f) * S; I.Palette = FLinearColor(0.35f, 0.66f, 1.f);
+		// 0,3500, not 2800,500: the Spire is its own zone on the district's north edge.
+		I.Center = FVector2D(0.f, 35.f) * S; I.Palette = FLinearColor(0.35f, 0.66f, 1.f);
 		I.MusicCue = TEXT("Combat_Spire"); I.FragmentSites = 2; break;
 	case EVEILRegion::OmniDistrict:
 		I.Name = FText::FromString(TEXT("Omni District"));

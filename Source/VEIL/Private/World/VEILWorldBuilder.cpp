@@ -2398,7 +2398,11 @@ void AVEILWorldBuilder::DressPhiPalette()
 		// dressing problem. The Bible fixes the spawn; the landmark moves instead. At
 		// 30 m east it is the tallest thing in the sky from the plaza and leaves the
 		// centre of the Nest as open ground the player can stand and walk in.
-		const FVector Spire(3000.f, 0.f, 0.f);
+		// ONE SPIRE, ON THE LAW'S ADDRESS. This pass built a second spire at 3000,0 while the
+		// forms pass built one at 0,0 - two landmarks, neither where the law puts them, and
+		// the one at the origin stood on the Vault. Hark fixes the Spire at 0,3500, so both
+		// passes agree and the district has exactly one vertical statement.
+		const FVector Spire(0.f, 3500.f, 0.f);
 		for (int32 K = 0; K < 3; ++K)
 		{
 			// Taper by the identity: 6.4 m, 4.0 m, 2.4 m across - each about 1/phi of the
