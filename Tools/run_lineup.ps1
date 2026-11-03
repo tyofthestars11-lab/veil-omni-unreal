@@ -2,7 +2,7 @@ $ErrorActionPreference = 'SilentlyContinue'
 Remove-Item 'D:\VEIL-OMNI\Saved\Screenshots\lineup.png' -Force
 Remove-Item 'D:\VEIL-OMNI\lineup.log' -Force
 $exe = 'C:\Program Files\Epic Games\UE_5.8\Engine\Binaries\Win64\UnrealEditor.exe'
-$p = Start-Process -FilePath $exe -ArgumentList 'D:\VEIL-OMNI\VEIL.uproject','/Game/Maps/VEILDistrict','-game','-windowed','-resx=1280','-resy=720','-log','-abslog=D:\VEIL-OMNI\lineup.log','-philineup' -PassThru
+$p = Start-Process -FilePath $exe -ArgumentList 'D:\VEIL-OMNI\VEIL.uproject','/Game/Maps/VEILDistrict','-game','-windowed','-resx=1280','-resy=720','-log','-abslog=D:\VEIL-OMNI\lineup.log','-phisnap','-philineup' -PassThru
 Start-Sleep -Seconds 28
 Stop-Process -Id $p.Id -Force
 Add-Type -AssemblyName System.Drawing
