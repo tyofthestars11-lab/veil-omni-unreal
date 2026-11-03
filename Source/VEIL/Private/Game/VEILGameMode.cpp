@@ -310,8 +310,11 @@ void AVEILGameMode::BeginPlay()
 		{
 			FActorSpawnParameters CamParams;
 			CamParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+			// ABOVE THE ROOFS, LOOKING NORTH AT THE SPIRE THROUGH THE MARKET.
+			const FVector Eye(2500.f, -2700.f, 1900.f);
+			const FVector Look(0.f, 1000.f, 550.f);
 			ACameraActor* Cam = GetWorld()->SpawnActor<ACameraActor>(ACameraActor::StaticClass(),
-				FVector(2600.f, -2600.f, 900.f), FRotator(-12.f, 135.f, 0.f), CamParams);
+				Eye, (Look - Eye).Rotation(), CamParams);
 			if (Cam)
 			{
 				if (APlayerController* ViewPC = UGameplayStatics::GetPlayerController(GetWorld(), 0))
@@ -320,6 +323,12 @@ void AVEILGameMode::BeginPlay()
 				}
 				UE_LOG(LogVEIL, Warning, TEXT("PHI HUB PHOTO: camera at %s, looking at the Hub market at 0,0."),
 					*Cam->GetActorLocation().ToCompactString());
+				// THE FRAME THE ENGINE TAKES ITSELF, after the view has settled on the market.
+				FTimerHandle HubShot2;
+				GetWorldTimerManager().SetTimer(HubShot2, []()
+				{
+					FScreenshotRequest::RequestScreenshot(TEXT("hubshot"), false, false);
+				}, 7.f, false);
 			}
 		}, 6.f, false);
 	}

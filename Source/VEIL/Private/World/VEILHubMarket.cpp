@@ -5,6 +5,8 @@
 #include "Engine/StaticMesh.h"
 #include "Engine/World.h"
 #include "Materials/MaterialInterface.h"
+#include "Engine/PointLight.h"
+#include "Components/PointLightComponent.h"
 #include "VEIL.h"
 
 namespace
@@ -70,6 +72,21 @@ void AVEILHubMarket::BuildPillar(const FVector& At, float YawDeg)
 	// The lamp: an emissive body between two gold caps, so it reads as lit at distance.
 	Part(Cube, At + FVector(0.f, 0.f, 990.f), FVector(0.85f, 0.85f, 0.85f), Yaw, Glow, false);
 	Part(Cube, At + FVector(0.f, 0.f, 1045.f), FVector(1.1f, 1.1f, 0.16f), Yaw, Gold, false);
+	// REAL LIGHT, NOT JUST AN EMISSIVE CUBE. The reference market is lit by its lanterns;
+	// an emissive surface without a light source leaves the plaza black at night.
+	if (UWorld* W = GetWorld())
+	{
+		if (APointLight* Lamp = W->SpawnActor<APointLight>(APointLight::StaticClass(),
+			At + FVector(0.f, 0.f, 1010.f), FRotator::ZeroRotator))
+		{
+			if (UPointLightComponent* L = Cast<UPointLightComponent>(Lamp->GetLightComponent()))
+			{
+				L->SetIntensity(3200.f);
+				L->SetAttenuationRadius(1600.f);
+				L->SetLightColor(FLinearColor(1.f, 0.70f, 0.36f));
+			}
+		}
+	}
 
 	// Banner down the face, blue cloth with gold rails top and bottom, and the phi mark.
 	const FVector Face = At + Fwd * 44.f;
@@ -123,6 +140,23 @@ void AVEILHubMarket::BuildCrystal(const FVector& At)
 	++Crystals;
 }
 
+void AVEILHubMarket::BuildHouse(const FVector& At, float YawDeg)
+{
+	// THE BLUE-ROOFED HOUSE. Stone below, blue pyramid above, warm windows: the
+	// reference's town is blue-roofed and lamplit, not a row of gold boxes.
+	const FRotator Yaw(0.f, YawDeg, 0.f);
+	Part(Cube, At + FVector(0.f, 0.f, 210.f), FVector(4.4f, 4.4f, 4.2f), Yaw, Stone, true);
+	Part(Cone, At + FVector(0.f, 0.f, 500.f), FVector(4.9f, 4.9f, 2.4f), Yaw, Blue, true);
+	Part(Cube, At + FVector(0.f, 0.f, 432.f), FVector(4.7f, 4.7f, 0.16f), Yaw, Gold, false);
+	for (int32 W = 0; W < 4; ++W)
+	{
+		const float A = FMath::DegreesToRadians((float)W * 90.f);
+		const FVector Out(FMath::Cos(A), FMath::Sin(A), 0.f);
+		Part(Cube, At + Out * 224.f + FVector(0.f, 0.f, 250.f), FVector(0.9f, 0.9f, 0.9f), Yaw, Glow, false);
+	}
+	++Houses;
+}
+
 void AVEILHubMarket::Build()
 {
 	UWorld* W = GetWorld();
@@ -165,8 +199,14 @@ void AVEILHubMarket::Build()
 		Place(2140.f + 90.f * (float)i, (float)i, 29.f,
 			[this](const FVector& At, float) { BuildCrystal(At); });
 	}
+	// THE EIGHT MARKET HOUSES, on their own ring between the stalls and the peaks.
+	for (int32 i = 0; i < 8; ++i)
+	{
+		Place(1260.f + 70.f * (float)(i % 3), (float)i, 47.f,
+			[this](const FVector& At, float Yaw) { BuildHouse(At, Yaw); });
+	}
 
 	UE_LOG(LogVEIL, Warning,
-		TEXT("PHI HUB MARKET: %d phi pillar(s) with lamps and banners, %d blue-canvas stall(s), %d crystal peak(s); %d spot(s) had no ground and were not floated."),
-		Pillars, Stalls, Crystals, Missing);
+		TEXT("PHI HUB MARKET: %d phi pillar(s) with lamps and banners, %d blue-canvas stall(s), %d blue-roofed house(s), %d crystal peak(s); %d spot(s) had no ground and were not floated."),
+		Pillars, Stalls, Houses, Crystals, Missing);
 }

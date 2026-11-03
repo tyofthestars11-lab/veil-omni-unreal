@@ -34,6 +34,7 @@ public:
 	int32 Pillars = 0;
 	int32 Stalls = 0;
 	int32 Crystals = 0;
+	int32 Houses = 0;
 	int32 Banners = 0;
 
 private:
@@ -46,6 +47,7 @@ private:
 	void BuildPillar(const FVector& At, float YawDeg);
 	void BuildStall(const FVector& At, float YawDeg);
 	void BuildCrystal(const FVector& At);
+	void BuildHouse(const FVector& At, float YawDeg);
 
 	UPROPERTY() UStaticMesh* Cube = nullptr;
 	UPROPERTY() UStaticMesh* Cylinder = nullptr;
