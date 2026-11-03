@@ -146,7 +146,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "VEIL|AI")
 	/** Reach is a fight's length, not a sniper lane: 1400 cm let five machines
 	 *  kill a 100 HP runner in about two seconds from across the plaza. */
-	float AttackRange = 700.f;
+	float AttackRange = 300.f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "VEIL|AI")
 	float WeaponDamage = 5.f;

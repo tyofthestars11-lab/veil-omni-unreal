@@ -353,11 +353,22 @@ void AVEILCharacter::BeginPlay()
 	{
 		const float GEff = Phys->GravityScale * GetWorld()->GetGravityZ();
 		const float Rise = FMath::Square(Phys->JumpZVelocity) / FMath::Max(1.f, -2.f * GEff);
+		// GROUNDED IS A TRACE, NOT A TICK ORDER. BeginPlay runs before the movement component
+		// applies gravity, so IsMovingOnGround() reads false on a body standing on stone and
+		// the receipt said "grounded 0" for a runner with his feet on the plaza. The floor is
+		// asked directly, from the capsule's underside downward.
+		FHitResult Floor;
+		FCollisionQueryParams FloorQ(SCENE_QUERY_STAT(PhysFloor), false, this);
+		const float Half = GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
+		const FVector Feet = GetActorLocation() - FVector(0.f, 0.f, Half);
+		const bool bFloor = GetWorld()->LineTraceSingleByChannel(Floor, Feet + FVector(0.f, 0.f, 12.f),
+			Feet - FVector(0.f, 0.f, 120.f), ECC_Visibility, FloorQ);
 		UE_LOG(LogVEIL, Warning,
-			TEXT("PHI PHYSICS: gravity %.0f, walk %.0f, sprint %.0f, leap %.0f cm/s = %.0f cm, glide %.0f with drop %.0f, capsule r %.0f half-height %.0f, grounded %d."),
+			TEXT("PHI PHYSICS: gravity %.0f, walk %.0f, sprint %.0f, leap %.0f cm/s = %.0f cm, glide %.0f with drop %.0f, capsule r %.0f half-height %.0f, grounded %d (floor %s at %.0f cm)."),
 			GEff, Phys->MaxWalkSpeed, SprintSpeed, Phys->JumpZVelocity, Rise,
-			Phys->MaxFlySpeed, GlideDrop, GetCapsuleComponent()->GetScaledCapsuleRadius(),
-			GetCapsuleComponent()->GetScaledCapsuleHalfHeight(), Phys->IsMovingOnGround() ? 1 : 0);
+			Phys->MaxFlySpeed, GlideDrop, GetCapsuleComponent()->GetScaledCapsuleRadius(), Half,
+			bFloor ? 1 : 0, bFloor && Floor.GetActor() ? *Floor.GetActor()->GetName() : TEXT("NONE"),
+			bFloor ? Floor.Distance : -1.f);
 	}
 	// THE BLUE SWEEP, WHERE IT CANNOT BE SKIPPED. A flat blue box is a cube or plane
 	// carrying M_PHI_DeepBlue: not a crystal cone, not water. Called here (the path that
