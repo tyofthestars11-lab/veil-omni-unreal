@@ -375,15 +375,20 @@ void AVEILGameMode::BeginPlay()
 			// the runner's own facing, then traces the sightline and pulls in until clear, so
 			// the camera is always looking at the body and never at the back of a crate.
 			const FVector Look = At + FVector(0.f, 0.f, 100.f);
-			FVector Eye = At + Fwd * 300.f + Right * 90.f + FVector(0.f, 0.f, 140.f);
-			FHitResult Blocked;
+			// CLEAR STANDOFFS, TRIED IN ORDER. Pulling the camera in along a blocked sightline
+			// put it inside the obstruction and filled half the frame with a wall. These
+			// candidates step up and back over whatever is in the street; the first one with
+			// an unbroken view of the chest wins, and the runner is always centred.
 			FCollisionQueryParams Q(SCENE_QUERY_STAT(LineupSight), false, Runner);
-			if (GetWorld()->LineTraceSingleByChannel(Blocked, Look, Eye, ECC_Visibility, Q))
+			auto Clear = [&](const FVector& Candidate)
 			{
-				const float Span = FVector::Dist(Look, Eye);
-				const float Safe = FMath::Max(120.f, Blocked.Distance - 50.f);
-				Eye = Look + (Eye - Look) * (Safe / FMath::Max(1.f, Span));
-			}
+				FHitResult H;
+				return !GetWorld()->LineTraceSingleByChannel(H, Look, Candidate, ECC_Visibility, Q);
+			};
+			FVector Eye = At + Fwd * 300.f + Right * 90.f + FVector(0.f, 0.f, 140.f);
+			if (!Clear(Eye)) { Eye = At + Fwd * 240.f + FVector(0.f, 0.f, 300.f); }
+			if (!Clear(Eye)) { Eye = At + Fwd * 200.f + FVector(0.f, 0.f, 440.f); }
+			if (!Clear(Eye)) { Eye = At + Fwd * 520.f + FVector(0.f, 0.f, 520.f); }
 			FActorSpawnParameters CamParams;
 			CamParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 			ACameraActor* Cam = GetWorld()->SpawnActor<ACameraActor>(ACameraActor::StaticClass(),
@@ -392,6 +397,10 @@ void AVEILGameMode::BeginPlay()
 			if (APlayerController* ViewPC = UGameplayStatics::GetPlayerController(GetWorld(), 0))
 			{
 				ViewPC->SetViewTargetWithBlend(Cam, 0.f);
+				// A PORTRAIT, NOT A SCREENSHOT OF THE HUD. The gold ribbon panels cover the left
+				// third of the frame, which is exactly where a wing sits; the overlay comes back
+				// on the next ordinary run.
+				ViewPC->ConsoleCommand(TEXT("ShowHUD"), true);
 			}
 			if (ADirectionalLight* Key = GetWorld()->SpawnActor<ADirectionalLight>(
 				ADirectionalLight::StaticClass(), FVector(0.f, 0.f, 4000.f), FRotator(-34.f, 120.f, 0.f)))
