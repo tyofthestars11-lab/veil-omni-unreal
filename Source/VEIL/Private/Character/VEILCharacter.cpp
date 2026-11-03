@@ -1176,6 +1176,56 @@ void AVEILCharacter::Tick(float DeltaSeconds)
 	// on the machine will ever help. Held for phi seconds, the runner is moved to
 	// the first open ground the golden angle finds, and the log names both ends.
 	{
+		// THE RUNNER WAKES ON THE PLAZA, NOT ON THE SCENERY.
+		// Measured with -philive: four seconds in he stands at Z=598.15, on top of
+		// the composition shells the district raises around the plaza, and his
+		// first leap lifts 0 cm into the slab above him. Every earlier fix traced
+		// DOWN and took the first blocking hit, which is that shell. This one takes
+		// the LOWEST solid under the seat, which is the ground he is meant to stand
+		// on, and says what it found either way.
+		{
+			static bool bSeatSettled = false;
+			static float SeatClock = 0.f;
+			if (!bSeatSettled)
+			{
+				SeatClock += DeltaSeconds;
+				if (SeatClock >= 2.5f)
+				{
+					bSeatSettled = true;
+					if (UWorld* SeatWorld = GetWorld())
+					{
+						const FVector Here = GetActorLocation();
+						TArray<FHitResult> Hits;
+						FCollisionQueryParams SeatParams(SCENE_QUERY_STAT(VEILSeatProbe), false, this);
+						SeatWorld->LineTraceMultiByChannel(Hits,
+							Here + FVector(0.f, 0.f, 2500.f), Here - FVector(0.f, 0.f, 3000.f),
+							ECC_Visibility, SeatParams);
+						float FloorZ = -100000.f;
+						for (const FHitResult& Hit : Hits)
+						{
+							if (!Hit.bBlockingHit) { continue; }
+							if (FloorZ < -90000.f || Hit.ImpactPoint.Z < FloorZ) { FloorZ = Hit.ImpactPoint.Z; }
+						}
+						const float HalfHeight = GetCapsuleComponent() ? GetCapsuleComponent()->GetScaledCapsuleHalfHeight() : 96.f;
+						const float TargetZ = FloorZ + HalfHeight + 2.f;
+						if (FloorZ > -90000.f && Here.Z > TargetZ + 120.f)
+						{
+							SetActorLocation(FVector(Here.X, Here.Y, TargetZ), false, nullptr, ETeleportType::TeleportPhysics);
+							UE_LOG(LogVEIL, Warning,
+								TEXT("PHI SEAT: runner was %.0f cm above the lowest solid under his seat - stood on the plaza at Z=%.0f instead (floor %.0f, %d hits)."),
+								Here.Z - TargetZ, TargetZ, FloorZ, Hits.Num());
+						}
+						else
+						{
+							UE_LOG(LogVEIL, Warning,
+								TEXT("PHI SEAT: runner stands at Z=%.0f on the lowest solid under him (floor %.0f, %d hits) - no move needed."),
+								Here.Z, FloorZ, Hits.Num());
+						}
+					}
+				}
+			}
+		}
+
 		static float StuckClock = 0.f;
 		const UCharacterMovementComponent* StuckMove = GetCharacterMovement();
 		const bool bPushing = !MoveAxis.IsNearlyZero();
