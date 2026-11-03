@@ -18,6 +18,7 @@
 
 #include "CoreMinimal.h"
 #include "Subsystems/WorldSubsystem.h"
+#include "Systems/VEILPhi.h"
 #include "VEILPerf.generated.h"
 
 UCLASS()
@@ -118,7 +119,7 @@ public:
 private:
 	void PhaseLockTick(float DeltaSeconds, float TargetMs);
 
-	static constexpr float Phi = 1.618033988749895f;
+	static constexpr float Phi = VeilPhi::PhiF;
 	/** 1000 / 60: the budget for a 60 fps frame. */
 	static constexpr float BudgetMs = 17.0324f; /* the golden pitch: 1000/58.71 fps */
 

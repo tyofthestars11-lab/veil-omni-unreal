@@ -93,7 +93,7 @@ bool UOMNIQuestSystem::ClaimBeaconNear(const FVector& From, float ReachCm)
 {
 	// The reach is a step, not a district: phi of the site's own debris ring (620 cm),
 	// so "standing at the beacon" means within about ten metres of its stones.
-	const float Reach = ReachCm > 0.f ? ReachCm : 620.f * 1.6180339887f;
+	const float Reach = ReachCm > 0.f ? ReachCm : 620.f * VeilPhi::PhiF;
 	for (int32 i = 0; i < GPhiBeaconCount; ++i)
 	{
 		const FPhiBeaconSite& Site = GPhiBeaconSites[i];
@@ -175,7 +175,7 @@ bool UOMNIQuestSystem::ClaimMine(const FName& MineName, const FString& Owner, in
 
 int32 UOMNIQuestSystem::XPNeedForLevel(int32 InLevel)
 {
-	const double Phi = 1.618033988749895;
+	const double Phi = VeilPhi::Phi;
 	return FMath::RoundToInt(20.0 * FMath::Pow(Phi, (double)FMath::Max(0, InLevel - 1)));
 }
 
@@ -404,6 +404,7 @@ void UOMNIQuestSystem::DefeatWarden()
 // there and pressing the key.
 #include "HAL/IConsoleManager.h"
 #include "EngineUtils.h"
+#include "Systems/VEILPhi.h"
 
 static FAutoConsoleCommandWithWorldAndArgs GPhiClaimBeacon(
 	TEXT("phi.claim"),

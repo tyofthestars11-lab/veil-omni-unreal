@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "Systems/VEILPhi.h"
 #include "VEILCrowd.generated.h"
 
 class UInstancedStaticMeshComponent;

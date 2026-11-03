@@ -3,6 +3,7 @@
 #include "HAL/IConsoleManager.h"
 #include "Misc/AutomationTest.h"
 #include "VEIL.h"
+#include "Systems/VEILPhi.h"
 
 namespace PHIPhase
 {
@@ -75,10 +76,10 @@ namespace PHIPhase
 		Locks.Add(Lock(TEXT("Builder"), 137.507764));      // golden angle, degrees
 		Locks.Add(Lock(TEXT("Lighting"), 17.0324));        // golden pitch, degrees
 		Locks.Add(Lock(TEXT("LivingWorld"), Phi));
-		Locks.Add(Lock(TEXT("Movement"), 0.618033988749895));
+		Locks.Add(Lock(TEXT("Movement"), VeilPhi::InvPhi));
 		Locks.Add(Lock(TEXT("Combat"), 900.0));            // Keeper X
 		Locks.Add(Lock(TEXT("Tester"), 80.9));             // Vault Z magnitude
-		Locks.Add(Lock(TEXT("ONE"), Phi * Phi));           // 2.618033988749895
+		Locks.Add(Lock(TEXT("ONE"), Phi * Phi));           // VeilPhi::Phi2
 		return Locks;
 	}
 

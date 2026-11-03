@@ -4,17 +4,18 @@
 #include "Systems/VEILTime.h"
 #include "Systems/VEILSociety.h"
 #include "VEIL.h"
+#include "Systems/VEILPhi.h"
 
 namespace
 {
 	// Named with a suffix on purpose: a bare `Phi` at file scope shadows the
 	// engine's own Chaos constants and the build treats that as an error.
-	constexpr float PhiV = 1.618033988749895f;
+	constexpr float PhiV = VeilPhi::PhiF;
 
 	/** One day of living is worth 1/phi^3 of a rung: slow, but it never stops. */
-	constexpr float DayGrowthRung = 1.f / (1.618033988749895f * 1.618033988749895f * 1.618033988749895f);
+	constexpr float DayGrowthRung = 1.f / (VeilPhi::PhiF * VeilPhi::PhiF * VeilPhi::PhiF);
 	/** A kindness or a slight is worth more than a quiet day. */
-	constexpr float DeedRung = 1.f / (1.618033988749895f * 1.618033988749895f);
+	constexpr float DeedRung = 1.f / (VeilPhi::PhiF * VeilPhi::PhiF);
 
 	/** Deterministic 0..1 from two integers: the same day never repeats a take. */
 	float Hash01(uint32 A, uint32 B)
@@ -138,7 +139,7 @@ void UPHILivingWorld::SpeakAmongThemselves()
 	// cast, so the same pair does not keep meeting and the same line does not
 	// come back until the whole list has been round.
 	const int32 N = Order.Num();
-	const uint32 Stride = (uint32)(N * 0.618033988749895f) > 0u ? (uint32)(N * 0.618033988749895f) : 1u;
+	const uint32 Stride = (uint32)(N * VeilPhi::InvPhiF) > 0u ? (uint32)(N * VeilPhi::InvPhiF) : 1u;
 	const int32 IA = (int32)((Exchanges * Stride) % (uint32)N);
 	const int32 IB = (int32)((Exchanges * Stride + 1u + (uint32)FMath::Max(1, N / 3)) % (uint32)N);
 	const FName A = Order[(IA + N) % N];

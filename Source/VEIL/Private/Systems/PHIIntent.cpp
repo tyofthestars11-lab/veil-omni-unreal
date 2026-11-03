@@ -8,17 +8,18 @@
 #include "Systems/VEILEnemy.h"
 #include "Systems/VEILTime.h"
 #include "VEIL.h"
+#include "Systems/VEILPhi.h"
 
 namespace
 {
 	// 1/phi^2 = 0.381966: the contraction factor, and also the window the cycle
 	// runs on, so the law and the clock are literally the same number.
 	constexpr float GContract = 0.381966011250105f;
-	constexpr float GPhi = 1.618033988749895f;
+	constexpr float GPhi = VeilPhi::PhiF;
 	/** Measured chaos above this feeds the world; below 1/phi^2 it rests. */
-	constexpr float GHigh = 0.618033988749895f;
+	constexpr float GHigh = VeilPhi::InvPhiF;
 	constexpr float GLow = 0.381966011250105f;
-	constexpr float GWindowSeconds = 2.618033988749895f; // phi^2
+	constexpr float GWindowSeconds = VeilPhi::Phi2F; // phi^2
 	/** How many frame samples one cycle averages. */
 	constexpr int32 GFrames = 48;
 }

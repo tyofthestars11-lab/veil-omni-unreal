@@ -1,4 +1,4 @@
-﻿// VEIL canvas HUD: objectives, health, progression, win/lose.
+// VEIL canvas HUD: objectives, health, progression, win/lose.
 #include "Game/VEILHudCanvas.h"
 #include "VEIL.h"
 #include "Game/VEILGameMode.h"
@@ -42,9 +42,10 @@
 #include "Game/VEILGameMode.h"
 #include "Engine/Canvas.h"
 #include "SceneView.h"
+#include "Systems/VEILPhi.h"
 
 // Vertical margin on the same phi grid as the horizontal one.
-#define UPHIMITO_PHI_SAFE (1.618033988749895f)
+#define UPHIMITO_PHI_SAFE (VeilPhi::PhiF)
 
 // MINIMAP DIAMETER = SCREEN HEIGHT / PHI^3 * 0.70. One definition, so the ring, its
 // bezel, the compass letters, the plan inside it and the manual card beneath it can
@@ -913,7 +914,7 @@ void AVEILHudCanvas::DrawHUD()
 			// below, and an overlap made both unreadable.
 			const float OY = LY2 - 20.f;
 			FVeilUI::Chip(this, FLinearColor(0.05f, 0.07f, 0.11f, 0.50f), OX - 10.f, OY - 4.f, OW + 20.f, 17.f);
-			const bool bClean = Lock->GetInPhasePct() >= 100.f * (1.f - 1.f / (1.618033988749895f * 1.618033988749895f * 1.618033988749895f * 1.618033988749895f * 1.618033988749895f * 1.618033988749895f));
+			const bool bClean = Lock->GetInPhasePct() >= 100.f * (1.f - 1.f / (VeilPhi::PhiF * VeilPhi::PhiF * VeilPhi::PhiF * VeilPhi::PhiF * VeilPhi::PhiF * VeilPhi::PhiF));
 			DrawText(OmniLine, bClean ? FLinearColor(0.72f, 0.9f, 1.f) : FLinearColor(1.f, 0.78f, 0.5f),
 				OX, OY, Med, 0.6f);
 		}
@@ -1912,7 +1913,7 @@ void AVEILHudCanvas::DrawHUD()
 					FLinearColor(0.86f, 0.89f, 0.95f), LogX + 14.f, Row, Med, 0.66f);
 				Row += 19.f;
 			}
-			DrawText(TEXT("PHI 1.618033988749895   GOLDEN 137.5077640500378"),
+			DrawText(TEXT("PHI VeilPhi::Phi   GOLDEN VeilPhi::GoldenAngleDeg"),
 				FLinearColor(0.788f, 0.635f, 0.290f), LogX + 14.f, Row, Med, 0.62f);
 		}
 	}

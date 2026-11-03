@@ -19,11 +19,12 @@
 #include "Systems/VEILRegionSubsystem.h"
 #include "TimerManager.h"
 #include "VEIL.h"
+#include "Systems/VEILPhi.h"
 
 namespace
 {
-	constexpr double OsPhi = 1.618033988749895;
-	constexpr double OsPhiSq = 2.618033988749895;
+	constexpr double OsPhi = VeilPhi::Phi;
+	constexpr double OsPhiSq = VeilPhi::Phi2;
 }
 
 TStatId UVEILOS::GetStatId() const { return GetStatID(); }

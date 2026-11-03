@@ -8,11 +8,12 @@
 #include "Kismet/GameplayStatics.h"
 #include "Materials/MaterialInterface.h"
 #include "VEIL.h"
+#include "Systems/VEILPhi.h"
 
 namespace
 {
-	constexpr float ContentGoldenDeg = 137.50776405f;
-	constexpr float ContentPhi = 1.6180339887f;
+	constexpr float ContentGoldenDeg = VeilPhi::GoldenAngleF;
+	constexpr float ContentPhi = VeilPhi::PhiF;
 	const TCHAR* GoldPath = TEXT("/Game/PHI/Palette/M_PHI_GoldMetallic.M_PHI_GoldMetallic");
 	// NOT THE PLACEHOLDER PALETTE. This pass dresses props around the RUNNER, so its
 // blue read as the flat purple slab standing beside him in the captures. The

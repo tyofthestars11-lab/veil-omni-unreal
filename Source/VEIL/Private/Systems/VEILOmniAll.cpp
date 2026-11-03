@@ -24,10 +24,11 @@
 #include "Systems/VEILVault.h"
 #include "World/VEILWorldBuilder.h"
 #include "VEIL.h"
+#include "Systems/VEILPhi.h"
 
 namespace
 {
-	constexpr double OmniPhi = 1.618033988749895;
+	constexpr double OmniPhi = VeilPhi::Phi;
 
 	/** The one gold the district is dressed in. Authored for this project, so it
 	 *  actually carries the colour; a missing palette must never stop the world. */
@@ -649,7 +650,7 @@ void UVEILOmniAll::BuildNestRegion()
 	// lives on the ground the region actually has: three fragments to recover off
 	// the cliffs, four machines holding them.
 	const FVector Centre(VEILOmniAuthority::NestX, VEILOmniAuthority::NestY, 0.f);
-	const float GoldenDeg = 137.507764f;
+	const float GoldenDeg = VeilPhi::GoldenAngleF;
 
 	auto GroundAt = [World](const FVector& At) -> FVector
 	{
@@ -768,7 +769,7 @@ void UVEILOmniAll::BuildRegionChain(int32 RegionIndex)
 	if (!World) { return; }
 
 	const FVector Centre(CentreX[RegionIndex], CentreY[RegionIndex], 0.f);
-	const float GoldenDeg = 137.507764f;
+	const float GoldenDeg = VeilPhi::GoldenAngleF;
 
 	// Street level, not rooftops: a trace from 800 cm above the walking line finds
 	// the ground the runner is on, never a dome or a Vault roof above it.

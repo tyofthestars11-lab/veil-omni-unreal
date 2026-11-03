@@ -1,4 +1,4 @@
-﻿// VEIL: THE LAST SIGNAL - runtime world builder implementation.
+// VEIL: THE LAST SIGNAL - runtime world builder implementation.
 #include "World/VEILWorldBuilder.h"
 #include "GameFramework/Pawn.h"
 #include "World/VEILSky.h"
@@ -44,6 +44,7 @@
 #include "Serialization/JsonSerializer.h"
 #include "Misc/Paths.h"
 #include "Misc/FileHelper.h"
+#include "Systems/VEILPhi.h"
 
 namespace
 {
@@ -84,7 +85,7 @@ namespace
 		// reached 0.9% and my old 0.5% bar then reported failure on a placement that
 		// was already within a centimetre per metre. The gate has to fit the
 		// process, not the other way round.
-		const double Phi = 1.618033988749895;
+		const double Phi = VeilPhi::Phi;
 		const double Want = 2.0 * (double)HalfCm;
 		for (int32 Pass = 0; Pass < 13; ++Pass)
 		{
@@ -811,10 +812,10 @@ void AVEILWorldBuilder::BuildDistrict()
 		if (Count <= 0) { return 0; }
 		if (Count == 5)
 		{
-			const double Frac = FMath::Frac((double)Index * 0.618033988749895);
+			const double Frac = FMath::Frac((double)Index * VeilPhi::InvPhi);
 			return FMath::Clamp((int32)FMath::Floor(Frac * 5.0), 0, 4);
 		}
-		return FMath::Abs((int32)FMath::Fmod((float)Index * 137.5077640500378f, (float)Count));
+		return FMath::Abs((int32)FMath::Fmod((float)Index * VeilPhi::GoldenAngleF, (float)Count));
 	};
 	auto WallAt = [this, Wall, GoldenPick](int32 i) -> UStaticMesh*
 	{
@@ -865,7 +866,7 @@ void AVEILWorldBuilder::BuildDistrict()
 		bool bHoleInTheWorld = false;
 		for (int32 i = 1; i <= 34 && !bHoleInTheWorld; ++i)
 		{
-			const float Ang = FMath::DegreesToRadians(i * 137.507764f);
+			const float Ang = FMath::DegreesToRadians(i * VeilPhi::GoldenAngleF);
 			const float Rad = 260.f * FMath::Sqrt((float)i);
 			const FVector At(FMath::Cos(Ang) * Rad, FMath::Sin(Ang) * Rad, 0.f);
 			FHitResult Floor;
@@ -933,8 +934,8 @@ void AVEILWorldBuilder::BuildDistrict()
 	// can feel. Every block has a job, set back from the road, and the road
 	// itself is kept clear all the way out.
 	// ------------------------------------------------------------------
-	const float Phi = 1.61803398875f;
-	const float GoldenAngleDeg = 137.50776405f;
+	const float Phi = VeilPhi::PhiF;
+	const float GoldenAngleDeg = VeilPhi::GoldenAngleF;
 	const float RoadClear = 620.f;       // nothing within this of a road centre
 	const float PlotBase = 1250.f;       // first plot out from the plaza
 	int32 Shops = 0, Homes = 0, Camps = 0, Shrines = 0, Towers = 0, Stalls = 0;
@@ -1178,8 +1179,8 @@ void AVEILWorldBuilder::BuildDistrict()
 // ---------------------------------------------------------------------------
 namespace
 {
-	const float PhiRegion = 1.61803398875f;
-	const float GoldenAngleRegion = 137.50776405f;
+	const float PhiRegion = VeilPhi::PhiF;
+	const float GoldenAngleRegion = VeilPhi::GoldenAngleF;
 }
 
 float AVEILWorldBuilder::MeshNorm(const UStaticMesh* Mesh)
@@ -1961,7 +1962,7 @@ void AVEILWorldBuilder::BuildDistrictLayer()
 	// never destroyed, because deleting the horizon is how a fix empties a world.
 	if (UWorld* W = GetWorld())
 	{
-		const double PhiRef = 1.618033988749895;
+		const double PhiRef = VeilPhi::Phi;
 		float RSpan = 0.f;
 		if (UVEILRegionSubsystem* Regions = W->GetSubsystem<UVEILRegionSubsystem>())
 		{
@@ -2057,7 +2058,7 @@ void AVEILWorldBuilder::BuildDistrictLayer()
 			const float Before = DL->Intensity;
 			if (Before > 0.f && Before < 8.f)
 			{
-				DL->SetIntensity(Before * (float)(1.6180339887 * 1.6180339887));
+				DL->SetIntensity(Before * (float)(VeilPhi::Phi * VeilPhi::Phi));
 				UE_LOG(LogVEIL, Warning, TEXT("VEIL SUN: %s intensity %.2f -> %.2f lux (one golden step of the authored key)"),
 					*It->GetName(), Before, DL->Intensity);
 				++SunsLit;
@@ -2138,12 +2139,12 @@ void AVEILWorldBuilder::BuildHorizon()
 {
 	if (MountainVariants.Num() == 0) { return; }
 
-	const float PhiV = 1.61803398875f;
+	const float PhiV = VeilPhi::PhiF;
 	const FLinearColor Ridge(0.40f, 0.39f, 0.44f);
 	int32 Placed = 0;
 	for (int32 i = 0; i < 16; ++i)
 	{
-		const float Ang = FMath::DegreesToRadians(i * 137.50776405f);
+		const float Ang = FMath::DegreesToRadians(i * VeilPhi::GoldenAngleF);
 		// 26 km, WRITTEN AS CENTIMETRES. This line used to say 26000.f, which is 260
 		// metres - the ring was standing inside the plaza with sixteen 1.8 km-wide
 		// ridges around the player, and every one of them contained the camera. That
@@ -2222,7 +2223,7 @@ void AVEILWorldBuilder::DressBeaconSites()
 		// same order as everything else in this world.
 		for (int32 d = 0; d < 6 && DebrisVariants.Num() > 0; ++d)
 		{
-			const float Ang = FMath::DegreesToRadians(d * 137.50776405f);
+			const float Ang = FMath::DegreesToRadians(d * VeilPhi::GoldenAngleF);
 			// OUT AT THE SITE, NOT ON THE PLAZA. At 620 cm this ring landed 6-14 m from
 			// the spawn, which is the clutter that read as rubbish beside the market.
 			const float Rad = 1900.f * FMath::Sqrt((float)(d + 1));
@@ -2307,8 +2308,8 @@ void AVEILWorldBuilder::DressPhiPalette()
 		}
 	};
 
-	const double PhiLocal = 1.618033988749895;
-	const double GoldenStep = 137.50776405003785;
+	const double PhiLocal = VeilPhi::Phi;
+	const double GoldenStep = VeilPhi::GoldenAngleDeg;
 	const FLinearColor GoldTint(0.55f, 0.47f, 0.34f);   // bronze-stone, not plastic gold
 	const FLinearColor CrystalTint(0.30f, 0.62f, 1.f);
 
@@ -2563,7 +2564,7 @@ void AVEILWorldBuilder::BuildWaterAndSkyline()
 	{
 		UStaticMesh* Peak = LoadObject<UStaticMesh>(nullptr, MountainPaths[K]);
 		if (!Peak) { continue; }
-		const float Ang = FMath::DegreesToRadians(K * 137.50776405f);
+		const float Ang = FMath::DegreesToRadians(K * VeilPhi::GoldenAngleF);
 		const float Rad = 7200.f + 900.f * (float)(K % 3);
 		const FVector At(FMath::Cos(Ang) * Rad, FMath::Sin(Ang) * Rad, -400.f);
 		const float Height = 2600.f + 700.f * (float)(K % 4);
@@ -2582,7 +2583,7 @@ void AVEILWorldBuilder::BuildWaterAndSkyline()
 	{
 		for (int32 K = 0; K < 3; ++K)
 		{
-			const float Ang = FMath::DegreesToRadians(K * 120.f + 137.50776405f);
+			const float Ang = FMath::DegreesToRadians(K * 120.f + VeilPhi::GoldenAngleF);
 			const FVector At(FMath::Cos(Ang) * 760.f, FMath::Sin(Ang) * 760.f, 0.f);
 			UStaticMeshComponent* Body = SpawnBlockRot(At + FVector(0.f, 0.f, 900.f),
 				FVector(2.2f, 2.2f, 18.f), PillarMesh, FLinearColor(0.42f, 0.36f, 0.29f), 0.f,
@@ -2615,7 +2616,7 @@ void AVEILWorldBuilder::BuildMarketRing()
 	for (int32 K = 0; K < 13; ++K)
 	{
 		// Golden angle, as the Bible requires of every ring in this world.
-		const float Ang = FMath::DegreesToRadians(K * 137.50776405f);
+		const float Ang = FMath::DegreesToRadians(K * VeilPhi::GoldenAngleF);
 		const float Rad = 1150.f + 90.f * (float)(K % 3);
 		const FVector At(FMath::Cos(Ang) * Rad, FMath::Sin(Ang) * Rad, 0.f);
 
@@ -2732,7 +2733,7 @@ void AVEILWorldBuilder::DressRegions()
 	// player sees. Warm rock reads as the same cliff the kit authored.
 	const FLinearColor BlueC(0.44f, 0.41f, 0.36f);
 	const FLinearColor IceC(0.52f, 0.76f, 1.f);
-	const double GoldenStep = 137.50776405003785;
+	const double GoldenStep = VeilPhi::GoldenAngleDeg;
 	int32 Market = 0, Nest = 0, Omni = 0, Peaks = 0, Beacons = 0;
 
 	// 1. THE HUB MARKET: sixteen stalls and sixteen gold posts on the golden angle, ring
@@ -2844,7 +2845,7 @@ void AVEILWorldBuilder::DressRegions()
 		// therefore TILE the hillside by construction: no gap between courses and no
 		// overlap, because the step is not tuned, it is derived. That is the whole
 		// of the law the user asks for, applied to the ground itself.
-		const double Phi = 1.618033988749895;
+		const double Phi = VeilPhi::Phi;
 		const double Phi2 = Phi + 1.0;                       // == Phi * Phi
 		double Rad = 2400.0;
 		for (int32 Ring = 0; Ring < 4; ++Ring)
@@ -2861,7 +2862,7 @@ void AVEILWorldBuilder::DressRegions()
 				for (int32 R = 0; R < 4 && !bOnRoad; ++R)
 				{
 					if (FMath::Abs(FMath::FindDeltaAngleDegrees(Deg,
-						RoadZero + (float)R * 137.507764f)) < 16.f) { bOnRoad = true; }
+						RoadZero + (float)R * VeilPhi::GoldenAngleF)) < 16.f) { bOnRoad = true; }
 				}
 				if (bOnRoad) { continue; }
 
@@ -2929,7 +2930,7 @@ void AVEILWorldBuilder::DressRegions()
 			const float Side = 880.f - (float)K * 124.f;
 			const float Z = 320.f + TierH * (float)K;
 			if (Solid(Base + FVector(0.f, 0.f, Z), FVector(Side, Side, TierH), Pillar, Gold, GoldC,
-				0.45f, (float)K * 137.507764f))
+				0.45f, (float)K * VeilPhi::GoldenAngleF))
 			{
 				Solid(Base + FVector(0.f, 0.f, Z + TierH - 25.f),
 					FVector(Side + 70.f, Side + 70.f, 50.f), Slab, Glow, GoldC, 2.2f, 0.f);
@@ -3167,8 +3168,8 @@ void AVEILWorldBuilder::BuildPhiDistrict()
 	// the golden angle, and the blocks are one phyllotaxis - the same object a sunflower
 	// is. A grid with phi ornamented onto it is the half-Cartesian compromise this
 	// replaces.
-	const double Phi = 1.618033988749895;
-	const double GoldenDeg = 137.5077640500378;
+	const double Phi = VeilPhi::Phi;
+	const double GoldenDeg = VeilPhi::GoldenAngleDeg;
 	const float PlazaR = 1500.f;   // the open plaza: r < 15 m
 	const float CityR = 13500.f;   // the district's edge: r = 135 m
 
@@ -3383,7 +3384,7 @@ void AVEILWorldBuilder::BuildPhiDistrict()
 		TArray<FString> EmptyAt;
 		for (int32 i = 1; i <= 600; ++i)
 		{
-			const double Ang = FMath::DegreesToRadians(FMath::Fmod((double)i * 137.5077640500378, 360.0));
+			const double Ang = FMath::DegreesToRadians(FMath::Fmod((double)i * VeilPhi::GoldenAngleDeg, 360.0));
 			const float R = CityR * FMath::Sqrt((float)i / 600.f);
 			const FVector At(FMath::Cos(Ang) * R, FMath::Sin(Ang) * R, 0.f);
 			FHitResult H;
@@ -3395,7 +3396,7 @@ void AVEILWorldBuilder::BuildPhiDistrict()
 			if (!W->LineTraceSingleByChannel(H, At + FVector(0.f, 0.f, 6000.f), At - FVector(0.f, 0.f, 6000.f), ECC_Visibility, P))
 			{
 				++OnNothing;
-				if (EmptyAt.Num() < 6) { EmptyAt.Add(FString::Printf(TEXT("r=%.0f a=%.0f"), R, FMath::Fmod((float)i * 137.5077640500378f, 360.f))); }
+				if (EmptyAt.Num() < 6) { EmptyAt.Add(FString::Printf(TEXT("r=%.0f a=%.0f"), R, FMath::Fmod((float)i * VeilPhi::GoldenAngleF, 360.f))); }
 				continue;
 			}
 			const AActor* HitA = H.GetActor();
@@ -3564,8 +3565,8 @@ void AVEILWorldBuilder::BuildPhiWhole()
 	auto Round2 = [](double V) { return FMath::RoundToDouble(V * 100.0) / 100.0; };
 	auto PhiPlace = [Round2](int32 I, double BaseX, double BaseY, double& OutX, double& OutY)
 	{
-		const double Ang = (double)I * 137.5077640500378 * 3.14159265358979323846 / 180.0;
-		const double Rad = FMath::Sqrt((double)I) * 1.618033988749895 * 100.0;
+		const double Ang = (double)I * VeilPhi::GoldenAngleDeg * 3.14159265358979323846 / 180.0;
+		const double Rad = FMath::Sqrt((double)I) * VeilPhi::Phi * 100.0;
 		OutX = Round2(BaseX + Rad * FMath::Cos(Ang));
 		OutY = Round2(BaseY + Rad * FMath::Sin(Ang));
 	};
@@ -3743,10 +3744,10 @@ void AVEILWorldBuilder::BuildPhiForms()
 	{
 		Tag(SpawnBlockRot(FVector(SpireX, SpireY, Z + SectionH * 0.5f),
 			FVector(SectionW / ColCm.X, SectionW / ColCm.Y, SectionH / ColCm.Z), Col, Gold, 2.2f,
-			FRotator(0.f, (float)k * 137.5077640500378f, 0.f)));
+			FRotator(0.f, (float)k * VeilPhi::GoldenAngleF, 0.f)));
 		Z += SectionH;
-		SectionW /= 1.618033988749895f;
-		SectionH *= 1.618033988749895f;
+		SectionW /= VeilPhi::PhiF;
+		SectionH *= VeilPhi::PhiF;
 		++SpirePieces;
 	}
 	// A BLUE-AND-GOLD MASS, NOT A ROW OF BOXES. Nine volumes on a phi stack, blue and gold
@@ -3755,9 +3756,9 @@ void AVEILWorldBuilder::BuildPhiForms()
 	int32 CityPieces = 0;
 	for (int32 k = 0; k < 9; ++k)
 	{
-		const double A1 = (double)k * 137.5077640500378 * 3.14159265358979323846 / 180.0;
+		const double A1 = (double)k * VeilPhi::GoldenAngleDeg * 3.14159265358979323846 / 180.0;
 		const float RR = (float)(FMath::Sqrt((double)(k + 1)) * 220.0);
-		const float H = 900.f * FMath::Pow(1.618033988749895f, (float)(k % 3));
+		const float H = 900.f * FMath::Pow(VeilPhi::PhiF, (float)(k % 3));
 		Tag(SpawnBlockRot(FVector((float)(FMath::Cos(A1) * RR), -2000.f + (float)(FMath::Sin(A1) * RR), H * 0.5f),
 			FVector(520.f / ColCm.X, 520.f / ColCm.Y, H / ColCm.Z),
 			Col, (k % 2 == 0) ? Blue : Gold, (k % 2 == 0) ? 0.9f : 1.6f,
@@ -3809,9 +3810,9 @@ void AVEILWorldBuilder::BuildPhiForms()
 		}
 		for (int32 k = 0; k < 42; ++k)
 		{
-			const double A1 = (double)k * 137.5077640500378 * 3.14159265358979323846 / 180.0;
+			const double A1 = (double)k * VeilPhi::GoldenAngleDeg * 3.14159265358979323846 / 180.0;
 			const float RR = (float)(FMath::Sqrt((double)(k + 1)) * 240.0);
-			const float H = 300.f * FMath::Pow(1.618033988749895f, (float)((k % 6) + 1));
+			const float H = 300.f * FMath::Pow(VeilPhi::PhiF, (float)((k % 6) + 1));
 			const float W = 260.f + RR * 0.08f;
 			const float CXr = 6200.f + (float)(FMath::Cos(A1) * RR);
 			const float CYr = -1200.f + (float)(FMath::Sin(A1) * RR);
@@ -3843,7 +3844,7 @@ void AVEILWorldBuilder::BuildPhiForms()
 		for (int32 k = 0; k < 28; ++k)
 		{
 			const double A1 = (double)k * (2.0 * 3.14159265358979323846 / 28.0);
-			const float H = 700.f * FMath::Pow(1.618033988749895f, (float)(k % 3));
+			const float H = 700.f * FMath::Pow(VeilPhi::PhiF, (float)(k % 3));
 			const FVector At((float)(FMath::Cos(A1) * R2), (float)(FMath::Sin(A1) * R2), H * 0.5f);
 			Tag(SpawnBlockRot(At, FVector(1400.f / CliffCm.X, 600.f / CliffCm.Y, H / CliffCm.Z),
 				CliffMesh, CliffFace, 0.f, FRotator(0.f, (float)FMath::RadiansToDegrees(A1) + 90.f, 0.f)));
@@ -3902,10 +3903,10 @@ void AVEILWorldBuilder::BuildPhiForms()
 	int32 DeepSteps = 0;
 	for (int32 k = 0; k < 5; ++k)
 	{
-		const float R3 = 1400.f * FMath::Pow(0.618033988749895f, (float)k);
+		const float R3 = 1400.f * FMath::Pow(VeilPhi::InvPhiF, (float)k);
 		Tag(SpawnBlockRot(FVector(0.f, -5000.f, -250.f * (float)k),
 			FVector(2.f * R3 / 100.f, 2.f * R3 / 100.f, 0.3f), Stone, Gold,
-			0.15f + 0.15f * (float)k, FRotator(0.f, (float)k * 137.5077640500378f, 0.f)));
+			0.15f + 0.15f * (float)k, FRotator(0.f, (float)k * VeilPhi::GoldenAngleF, 0.f)));
 		++DeepSteps;
 	}
 	// FALLING WATER REGISTERS ITSELF. The falls were spawned in three different passes with
@@ -4010,7 +4011,7 @@ void AVEILWorldBuilder::BuildPhiForms()
 		{
 			for (int32 i4 = 0; i4 < 24 && Kits.Num() > 0; ++i4)
 			{
-				const double A4 = (double)(i4 + 1) * 137.5077640500378 * 3.14159265358979323846 / 180.0;
+				const double A4 = (double)(i4 + 1) * VeilPhi::GoldenAngleDeg * 3.14159265358979323846 / 180.0;
 				const float Rad4 = (float)(FMath::Sqrt((double)(i4 + 1)) * 260.0);
 				UStaticMesh* Kit = Kits[i4 % Kits.Num()];
 				Tag(SpawnBlockRot(
@@ -4072,7 +4073,7 @@ void AVEILWorldBuilder::BuildPhiForms()
 	int32 Falls = 0;
 	for (int32 k = 0; k < 4; ++k)
 	{
-		const double A1 = (double)k * 137.5077640500378 * 3.14159265358979323846 / 180.0;
+		const double A1 = (double)k * VeilPhi::GoldenAngleDeg * 3.14159265358979323846 / 180.0;
 		const float R = 1200.f;
 		Tag(SpawnBlockRot(FVector(FMath::Cos(A1) * R, FMath::Sin(A1) * R, 900.f),
 			FVector(6.f, 0.25f, 18.f), Water, WaterBlue, 0.8f,
@@ -4083,7 +4084,7 @@ void AVEILWorldBuilder::BuildPhiForms()
 	int32 Bridges = 0;
 	for (int32 k = 0; k < 4; ++k)
 	{
-		const double A2 = ((double)k + 0.5) * 137.5077640500378 * 3.14159265358979323846 / 180.0;
+		const double A2 = ((double)k + 0.5) * VeilPhi::GoldenAngleDeg * 3.14159265358979323846 / 180.0;
 		const float R = 1500.f;
 		for (int32 seg = 0; seg < 5; ++seg)
 		{
@@ -4099,8 +4100,8 @@ void AVEILWorldBuilder::BuildPhiForms()
 	int32 Shards = 0;
 	for (int32 k = 0; k < 5; ++k)
 	{
-		const double A3 = (double)(k + 1) * 137.5077640500378 * 3.14159265358979323846 / 180.0;
-		const double R = FMath::Sqrt((double)(k + 1)) * 1.618033988749895 * 100.0;
+		const double A3 = (double)(k + 1) * VeilPhi::GoldenAngleDeg * 3.14159265358979323846 / 180.0;
+		const double R = FMath::Sqrt((double)(k + 1)) * VeilPhi::Phi * 100.0;
 		const float X = (float)(2800.0 + R * FMath::Cos(A3));
 		const float Y = (float)(500.0 + R * FMath::Sin(A3));
 		for (int32 sh = 0; sh < 3; ++sh)
@@ -4223,8 +4224,8 @@ void AVEILWorldBuilder::BuildVista()
 	const FLinearColor Gold(0.72f, 0.56f, 0.28f);
 	const FLinearColor StoneC(0.42f, 0.39f, 0.35f);
 	const FLinearColor WaterC(0.52f, 0.74f, 1.0f);
-	const float PhiV = 1.61803398875f;
-	const float GoldDeg = 137.50776405f;
+	const float PhiV = VeilPhi::PhiF;
+	const float GoldDeg = VeilPhi::GoldenAngleF;
 
 	int32 Peaks = 0, Falls = 0, Houses = 0, Bridges = 0, Pillars = 0, Shafts = 0;
 

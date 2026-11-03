@@ -91,6 +91,7 @@
 #include "World/VEILMount.h"
 #include "VEIL.h"
 #include "World/VEILWorldBuilder.h"
+#include "Systems/VEILPhi.h"
 
 // ---------------------------------------------------------------------------
 // Game Mode
@@ -429,7 +430,7 @@ void AVEILGameMode::BeginPlay()
 		{
 			for (int32 i = 0; i < 4; ++i)
 			{
-				const float A = FMath::DegreesToRadians(137.5077640500378f * (float)(i + 1));
+				const float A = FMath::DegreesToRadians(VeilPhi::GoldenAngleF * (float)(i + 1));
 				const FVector Post(FMath::Cos(A) * 1000.f, FMath::Sin(A) * 1000.f, 200.f);
 				// DEFERRED, SO THE KIND AND POST EXIST BEFORE THE BODY STANDS. SpawnActor ran
 				// BeginPlay first, when every mount was still the default Gold Wing at the origin.
@@ -1237,8 +1238,8 @@ void AVEILGameMode::BeginPlay()
 				APawn* Pawn = UGameplayStatics::GetPlayerPawn(Self, 0);
 				if (!W || !Pawn) { return; }
 
-				const float GAngleDeg = 137.507764f;
-				const float Roomy = 42.f * 1.618033988749895f * 1.618033988749895f;
+				const float GAngleDeg = VeilPhi::GoldenAngleF;
+				const float Roomy = 42.f * VeilPhi::PhiF * VeilPhi::PhiF;
 
 				FCollisionQueryParams Params(SCENE_QUERY_STAT(VeilSeatProbe), false);
 				Params.AddIgnoredActor(Pawn);
@@ -4655,7 +4656,7 @@ void AVEILPlayerController::Tick(float DeltaSeconds)
 				if (!B.IsValid || B.Min.Z > 500.f) { continue; }
 				// NOTHING IS DELETED. A loose piece is moved to a golden-angle ring outside the
 				// square, so the plaza is clear and the world still carries every piece it built.
-				const double ParkAng = (double)Parked * 137.5077640500378 * 3.14159265358979323846 / 180.0;
+				const double ParkAng = (double)Parked * VeilPhi::GoldenAngleDeg * 3.14159265358979323846 / 180.0;
 				const float ParkR = 1600.f + 90.f * FMath::Sqrt((float)Parked);
 				A->SetActorLocation(FVector(FMath::Cos(ParkAng) * ParkR, FMath::Sin(ParkAng) * ParkR, 40.f),
 					false, nullptr, ETeleportType::TeleportPhysics);

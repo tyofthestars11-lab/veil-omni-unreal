@@ -5,6 +5,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "Systems/VEILPhi.h"
 #include "VEILCharacter.generated.h"
 
 class UCameraComponent;
@@ -131,7 +132,7 @@ public:
 	 *  AttackersAllowed of them may land a blow in the same window. */
 	int32 AttackersAllowed = 2;
 	TArray<float> RecentHitTimes;
-	float TokenWindow = 1.f / 1.618033988749895f;   // phi^-1 = 0.618 s
+	float TokenWindow = 1.f / VeilPhi::PhiF;   // phi^-1 = 0.618 s
 	bool bTokenHoldAnnounced = false;
 
 	/** REWARDING, NOT PUNISHING. The runner cannot be hurt for phi^5 = 11.0902

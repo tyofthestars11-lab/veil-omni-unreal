@@ -5,6 +5,7 @@
 #include "GameFramework/Pawn.h"
 #include "Kismet/GameplayStatics.h"
 #include "VEIL.h"
+#include "Systems/VEILPhi.h"
 
 namespace
 {
@@ -24,7 +25,7 @@ namespace
 		TEXT("THE DEEP NIGHT"),
 	};
 
-	constexpr float GVeilTimePhi = 1.618033988749895f;
+	constexpr float GVeilTimePhi = VeilPhi::PhiF;
 	/** An unobserved field resolves itself after this many real seconds. */
 	// 8 s, not 13: with 1-second beats early in the day, a 13 s hold could stall
 	// the clock for longer than a whole stretch of the morning.

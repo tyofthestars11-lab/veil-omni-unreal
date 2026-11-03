@@ -12,11 +12,12 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Systems/VEILPhi.h"
 
 namespace VEILGolden
 {
 	// phi^2 = phi + 1
-	static constexpr double Phi = 1.618033988749895;
+	static constexpr double Phi = VeilPhi::Phi;
 
 	// 360 / phi^2 = 137.5077640500379 - the angle between successive leaves.
 	static constexpr double GoldenAngleDeg = 137.507764;

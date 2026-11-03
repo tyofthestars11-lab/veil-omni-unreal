@@ -9,6 +9,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Systems/VEILPerf.h"
 #include "VEIL.h"
+#include "Systems/VEILPhi.h"
 
 namespace
 {
@@ -168,13 +169,13 @@ void UVEILMapCapture::Tick(float DeltaTime)
 			{
 				if (ScaleNow < ScaleAtLastCapture - 1.5f)
 				{
-					CaptureInterval = FMath::Min(CaptureIntervalMax, CaptureInterval * 1.618033988749895f);
+					CaptureInterval = FMath::Min(CaptureIntervalMax, CaptureInterval * VeilPhi::PhiF);
 					UE_LOG(LogVEIL, Log, TEXT("PHI MAP: the shot cost render scale (%.1f -> %.1f%%) - next map shot in %.1f s."),
 						ScaleAtLastCapture, ScaleNow, CaptureInterval);
 				}
 				else if (ScaleNow >= ScaleAtLastCapture - 0.1f)
 				{
-					CaptureInterval = FMath::Max(CaptureIntervalMin, CaptureInterval / 1.618033988749895f);
+					CaptureInterval = FMath::Max(CaptureIntervalMin, CaptureInterval / VeilPhi::PhiF);
 				}
 			}
 			ScaleAtLastCapture = ScaleNow;
@@ -225,14 +226,14 @@ void UVEILMapCapture::CaptureNow(const FVector& Focus, float YawRadians)
 
 void UVEILMapCapture::ZoomIn()
 {
-	MapExtent = FMath::Max(MapExtentMin, MapExtent / 1.618033988749895f);
+	MapExtent = FMath::Max(MapExtentMin, MapExtent / VeilPhi::PhiF);
 	CaptureNow(bHasFocus ? LastFocus : MapCenter, MapYaw);
 	UE_LOG(LogVEIL, Log, TEXT("PHI MAP: zoom in - %.0f cm across."), MapExtent * 2.f);
 }
 
 void UVEILMapCapture::ZoomOut()
 {
-	MapExtent = FMath::Min(MapExtentMax, MapExtent * 1.618033988749895f);
+	MapExtent = FMath::Min(MapExtentMax, MapExtent * VeilPhi::PhiF);
 	CaptureNow(bHasFocus ? LastFocus : MapCenter, MapYaw);
 	UE_LOG(LogVEIL, Log, TEXT("PHI MAP: zoom out - %.0f cm across."), MapExtent * 2.f);
 }

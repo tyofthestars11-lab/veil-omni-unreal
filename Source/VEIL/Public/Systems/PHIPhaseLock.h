@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Systems/VEILPhi.h"
 
 /**
  * PHI PHASE LOCK
@@ -22,7 +23,7 @@
 namespace PHIPhase
 {
 	/** phi, to the digits the rest of the project uses. */
-	constexpr double Phi = 1.618033988749895;
+	constexpr double Phi = VeilPhi::Phi;
 
 	/** rung = ln(value)/ln(phi). */
 	double RungOf(double Value);

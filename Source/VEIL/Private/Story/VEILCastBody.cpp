@@ -5,6 +5,7 @@
 #include "Engine/SkeletalMesh.h"
 #include "Animation/Skeleton.h"
 #include "VEIL.h"
+#include "Systems/VEILPhi.h"
 
 namespace
 {
@@ -131,7 +132,7 @@ VEILCastBody::EBody VEILCastBody::ForRole(const FString& Role)
 		static const EBody CombatRoster[] = { EBody::Elara, EBody::Murdock, EBody::Runner,
 			EBody::CountessGilded, EBody::CountessCarnivale };
 		const int32 CombatCount = (int32)UE_ARRAY_COUNT(CombatRoster);
-		const double Frac = FMath::Frac((double)GetTypeHash(R) * 0.618033988749895);
+		const double Frac = FMath::Frac((double)GetTypeHash(R) * VeilPhi::InvPhi);
 		const int32 Pick = FMath::Clamp((int32)FMath::Floor(Frac * (double)CombatCount), 0, CombatCount - 1);
 		return CombatRoster[Pick];
 	}
@@ -140,14 +141,14 @@ VEILCastBody::EBody VEILCastBody::ForRole(const FString& Role)
 	if (R.Contains(TEXT("machine")) || R.Contains(TEXT("drone")))
 	{
 		// Machines get their own two bodies, split by name, not one rig for all of them.
-		return (FMath::Frac((double)GetTypeHash(R) * 0.618033988749895) > 0.5) ? EBody::CountessRedRevo : EBody::CountessGilded;
+		return (FMath::Frac((double)GetTypeHash(R) * VeilPhi::InvPhi) > 0.5) ? EBody::CountessRedRevo : EBody::CountessGilded;
 	}
 
 	// EVERYONE ELSE SPREADS OVER THE WHOLE ROSTER. Not three bodies out of eight: the
 	// fractional part of hash * phi steps by the golden ratio, so successive names land far
 	// apart in the roster and no two neighbours wear the same silhouette by accident.
 	const uint32 Hash = GetTypeHash(R);
-	const double Frac = FMath::Frac((double)Hash * 0.618033988749895);
+	const double Frac = FMath::Frac((double)Hash * VeilPhi::InvPhi);
 	const int32 Total = Count();
 	return (EBody)FMath::Clamp((int32)FMath::Floor(Frac * (double)Total), 0, Total - 1);
 }
@@ -194,7 +195,7 @@ void VEILCastBody::DressParts(AActor* Owner, USkeletalMeshComponent* Body, const
 	{
 		// Two parts, stepped by the golden ratio from the role's own name, so two people in
 		// the same body do not wear the same hair and the same shoulders.
-		const double Frac = FMath::Frac((double)Hash * 0.618033988749895 + (double)k * 0.381966011250105);
+		const double Frac = FMath::Frac((double)Hash * VeilPhi::InvPhi + (double)k * 0.381966011250105);
 		const int32 Pick = FMath::Clamp((int32)FMath::Floor(Frac * (double)PartCount), 0, PartCount - 1);
 		USkeletalMesh* PartMesh = LoadObject<USkeletalMesh>(nullptr, Parts[Pick].Mesh);
 		if (!PartMesh)
@@ -266,7 +267,7 @@ void VEILCastBody::Apply(USkeletalMeshComponent* Comp, EBody Body, const FString
 	Comp->SetRelativeRotation(FRotator(0.f, -90.f, 0.f));
 	// TWO PEOPLE IN THE SAME BODY ARE STILL NOT THE SAME PERSON. Height varies on the golden
 	// ratio from the role's own name, so a shared body is 6 to 18 cm apart from its twin.
-	const float RoleScale = 0.94f + 0.12f * (float)FMath::Frac((double)GetTypeHash(Role.ToLower()) * 0.618033988749895);
+	const float RoleScale = 0.94f + 0.12f * (float)FMath::Frac((double)GetTypeHash(Role.ToLower()) * VeilPhi::InvPhi);
 	Comp->SetRelativeScale3D(FVector(Scale * RoleScale));
 	Comp->SetVisibility(true);
 

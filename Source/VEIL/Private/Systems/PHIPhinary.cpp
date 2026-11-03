@@ -1,8 +1,9 @@
 #include "Systems/PHIPhinary.h"
+#include "Systems/VEILPhi.h"
 
 namespace VEILPhinary
 {
-	const double Phi = 1.618033988749895;
+	const double Phi = VeilPhi::Phi;
 
 	namespace
 	{

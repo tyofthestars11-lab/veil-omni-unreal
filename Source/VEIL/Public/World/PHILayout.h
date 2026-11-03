@@ -10,14 +10,15 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Systems/VEILPhi.h"
 
 namespace PHILayout
 {
 	/** The locked ratio. */
-	constexpr double Phi = 1.618033988749895;
+	constexpr double Phi = VeilPhi::Phi;
 
 	/** The locked golden angle in degrees. */
-	constexpr double GoldenDeg = 137.5077640500378;
+	constexpr double GoldenDeg = VeilPhi::GoldenAngleDeg;
 
 	/** phi^N as a float for placement maths. */
 	inline float Power(int32 N)

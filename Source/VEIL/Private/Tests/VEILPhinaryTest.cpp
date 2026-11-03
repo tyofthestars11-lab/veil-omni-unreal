@@ -3,6 +3,7 @@
 
 #include "Misc/AutomationTest.h"
 #include "Systems/PHIPhinary.h"
+#include "Systems/VEILPhi.h"
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FVEILPhinaryTest, "VEIL.Phinary.RoundTrip",
 	EAutomationTestFlags::EditorContext | EAutomationTestFlags::CommandletContext |
@@ -19,7 +20,7 @@ bool FVEILPhinaryTest::RunTest(const FString& Parameters)
 	TestTrue(TEXT("phi^2 is spelled 100 in base phi"), PhiSquared == FString(TEXT("100")));
 
 	// Every value the game actually holds, written and read back.
-	static const double Cases[] = { 1.0, Phi, 2.0, 3.0, 0.5, 1.0 / Phi, 2.618033988749895, 20.0, 137.507764, 0.0170324 };
+	static const double Cases[] = { 1.0, Phi, 2.0, 3.0, 0.5, 1.0 / Phi, VeilPhi::Phi2, 20.0, 137.507764, 0.0170324 };
 	for (const double V : Cases)
 	{
 		const FString Numeral = VEILPhinary::Encode(V);

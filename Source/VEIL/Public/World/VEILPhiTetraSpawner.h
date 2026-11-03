@@ -23,6 +23,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "Systems/VEILPhi.h"
 #include "VEILPhiTetraSpawner.generated.h"
 
 class UProceduralMeshComponent;
@@ -69,9 +70,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "VEIL|Phi")
 	float BaseSize = 20.f;
 
-	/** Growth per step. phi^2 = phi + 1, so 1.618033988749895. */
+	/** Growth per step. phi^2 = phi + 1, so VeilPhi::Phi. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "VEIL|Phi")
-	float Growth = 1.618033988749895f;
+	float Growth = VeilPhi::PhiF;
 
 	/** Yaw advance per step, in degrees. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "VEIL|Phi")

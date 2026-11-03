@@ -4,6 +4,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Systems/VEILPhi.h"
 #include "PHIMito.generated.h"
 
 UCLASS()
@@ -12,9 +13,9 @@ class VEIL_API UPHIMito : public UObject
 	GENERATED_BODY()
 
 public:
-	static constexpr float Phi = 1.618033988749895f;
+	static constexpr float Phi = VeilPhi::PhiF;
 	static constexpr float LnPhi = 0.48121182505960347f;
-	static constexpr float GoldenAngleDeg = 137.50776405003785f;
+	static constexpr float GoldenAngleDeg = VeilPhi::GoldenAngleF;
 
 	/** Rung address of any positive quantity. Returns 0 for x <= 0. */
 	static float Rung(float x)

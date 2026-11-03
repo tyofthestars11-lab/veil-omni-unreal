@@ -15,12 +15,13 @@
 #include "Misc/FileHelper.h"
 #include "Misc/Paths.h"
 #include "VoiceModule.h"
+#include "Systems/VEILPhi.h"
 
 namespace
 {
 	// Named OnePhi, not Phi: the engine's Chaos headers declare locals called Phi,
 	// and this project compiles that shadowing warning as an error (C4459).
-	constexpr float OnePhi = 1.618033988749895f;
+	constexpr float OnePhi = VeilPhi::PhiF;
 
 	AVEILCharacter* OneRunner(UWorld* World)
 	{

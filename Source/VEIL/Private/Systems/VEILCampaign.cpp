@@ -6,6 +6,7 @@
 #include "Systems/VEILActivityMarker.h"
 #include "Systems/OMNIQuestSystem.h"
 #include "VEIL.h"
+#include "Systems/VEILPhi.h"
 
 namespace
 {
@@ -302,7 +303,7 @@ FVector UVEILCampaignSubsystem::AnchorFor(int32 Region, int32 Slot) const
 	// player is sent to and the land it stands on are the same distance away.
 	constexpr float WorldScale = 46.97871376f;
 	const int32 R = FMath::Clamp(Region, 0, 4);
-	const double Angle = FMath::DegreesToRadians(Slot * 137.50776405003785);
+	const double Angle = FMath::DegreesToRadians(Slot * VeilPhi::GoldenAngleDeg);
 	const double Radius = 700.0 + 210.0 * Slot;
 	FVector P = Anchors[R] * WorldScale;
 	P.X += FMath::Cos(Angle) * Radius;

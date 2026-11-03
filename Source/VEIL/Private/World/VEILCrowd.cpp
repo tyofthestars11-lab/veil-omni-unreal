@@ -9,10 +9,11 @@
 #include "Materials/MaterialInterface.h"
 #include "Story/VEILCastBody.h"
 #include "VEIL.h"
+#include "Systems/VEILPhi.h"
 
 namespace
 {
-	constexpr float CrowdGoldenDeg = 137.50776405f;
+	constexpr float CrowdGoldenDeg = VeilPhi::GoldenAngleF;
 	const TCHAR* CrowdStonePath = TEXT("/Game/StarterContent/Materials/M_Brick_Cut_Stone.M_Brick_Cut_Stone");
 	const TCHAR* CrowdGoldPath = TEXT("/Game/PHI/Palette/M_PHI_GoldMetallic.M_PHI_GoldMetallic");
 	const TCHAR* CrowdQuinnPath = TEXT("/Game/Polyart/SharedResources/Characters/Meshes/SkeletalMeshes/SK_Quinn_Simple.SK_Quinn_Simple");
@@ -107,7 +108,7 @@ void AVEILCrowd::Populate(int32 Count)
 		// market are eight different silhouettes instead of one mesh with two skins.
 		const int32 RosterCount = VEILCastBody::Count();
 		const int32 BodyIndex = FMath::Abs((int32)FMath::Floor(
-			FMath::Frac((double)i * 0.618033988749895) * (double)RosterCount));
+			FMath::Frac((double)i * VeilPhi::InvPhi) * (double)RosterCount));
 		const VEILCastBody::EBody Body = (VEILCastBody::EBody)FMath::Clamp(BodyIndex, 0, RosterCount - 1);
 		USkeletalMesh* RosterBody = VEILCastBody::LoadMesh(Body);
 		UClass* RosterGraph = VEILCastBody::LoadGraph(Body);

@@ -27,6 +27,7 @@
 
 #include "CoreMinimal.h"
 #include "Subsystems/WorldSubsystem.h"
+#include "Systems/VEILPhi.h"
 #include "PHIIntent.generated.h"
 
 UCLASS()
@@ -38,7 +39,7 @@ public:
 	virtual void Tick(float DeltaTime) override;
 	virtual TStatId GetStatId() const override;
 
-	static constexpr float Phi = 1.618033988749895f;
+	static constexpr float Phi = VeilPhi::PhiF;
 
 	/** The world's measured chaos this cycle, 0..1. */
 	float GetChaos() const { return Chaos; }

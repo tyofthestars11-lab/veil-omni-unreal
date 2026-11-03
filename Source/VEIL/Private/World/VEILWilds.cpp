@@ -13,11 +13,12 @@
 #include "Systems/VEILProgression.h"
 #include "Systems/VEILEnemy.h"
 #include "VEIL.h"
+#include "Systems/VEILPhi.h"
 
 namespace
 {
-	constexpr float WildsGoldenDeg = 137.50776405f;
-	constexpr float WildsPhi = 1.6180339887f;
+	constexpr float WildsGoldenDeg = VeilPhi::GoldenAngleF;
+	constexpr float WildsPhi = VeilPhi::PhiF;
 	/** 1/phi^2: the decide threshold. Below it a camp rests, above it hunts. */
 	constexpr float WildsRestDigit = 0.3819660113f;
 

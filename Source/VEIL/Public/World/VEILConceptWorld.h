@@ -18,6 +18,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "Systems/VEILPhi.h"
 #include "VEILConceptWorld.generated.h"
 
 class UMaterialInterface;

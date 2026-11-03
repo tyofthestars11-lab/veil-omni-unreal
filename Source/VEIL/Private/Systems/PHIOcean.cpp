@@ -1,4 +1,4 @@
-﻿// PHI ocean implementation.
+// PHI ocean implementation.
 #include "Systems/PHIOcean.h"
 
 #include "Character/VEILCharacter.h"
@@ -8,6 +8,7 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Materials/MaterialInterface.h"
 #include "VEIL.h"
+#include "Systems/VEILPhi.h"
 
 APhiOcean::APhiOcean()
 {
@@ -75,7 +76,7 @@ void APhiOcean::GrowFish(int32 Count)
 		// same water looked different on every run and nothing could be checked twice. Index
 		// on the golden angle at a phi-spaced radius: the same fish are in the same places,
 		// every session, and a screenshot can be compared with the last one.
-		const float Ang = FMath::DegreesToRadians(i * 137.50776405f);
+		const float Ang = FMath::DegreesToRadians(i * VeilPhi::GoldenAngleF);
 		const float Rad = FMath::Sqrt((float)i + 0.5f) * (WaterSize.X * 0.18f);
 		const FVector At = GetActorLocation() + FVector(
 			FMath::Cos(Ang) * Rad, FMath::Sin(Ang) * Rad,
@@ -106,7 +107,7 @@ void APhiOcean::GrowFlora(int32 Count)
 	{
 		// THE BED IS PLANTED, NOT SOWN AT RANDOM. Same golden angle as the fish, so the
 		// fronds follow one law instead of two different dice.
-		const float Ang = FMath::DegreesToRadians(i * 137.50776405f);
+		const float Ang = FMath::DegreesToRadians(i * VeilPhi::GoldenAngleF);
 		const float Rad = FMath::Sqrt((float)i + 0.5f) * (WaterSize.X * 0.12f);
 		const FVector At = Base + FVector(
 			FMath::Cos(Ang) * Rad, FMath::Sin(Ang) * Rad,

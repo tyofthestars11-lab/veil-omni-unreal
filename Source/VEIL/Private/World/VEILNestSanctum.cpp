@@ -11,10 +11,11 @@
 #include "Kismet/GameplayStatics.h"
 #include "Materials/MaterialInterface.h"
 #include "VEIL.h"
+#include "Systems/VEILPhi.h"
 
 namespace
 {
-	constexpr float NestGoldenDeg = 137.50776405f;
+	constexpr float NestGoldenDeg = VeilPhi::GoldenAngleF;
 
 	// The project's own palette, the same paths the district already uses. Stone is the kit's
 	// cut stone: the gold is trim, never a body.
@@ -61,7 +62,7 @@ void AVEILNestSanctum::Tick(float DeltaSeconds)
 	{
 		UPointLightComponent* Lamp = BeaconLamps[i].Get();
 		if (!Lamp || !BeaconBase.IsValidIndex(i)) { continue; }
-		const float Phase = HaloPhase * 1.6180339887f + i * 2.39996323f;   // golden angle, radians
+		const float Phase = HaloPhase * VeilPhi::PhiF + i * 2.39996323f;   // golden angle, radians
 		Lamp->SetIntensity(BeaconBase[i] * (1.f + 0.18f * FMath::Sin(Phase)));
 	}
 }

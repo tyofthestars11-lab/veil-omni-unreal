@@ -1,4 +1,4 @@
-﻿// PHI dynamic weather implementation.
+// PHI dynamic weather implementation.
 #include "Systems/PHIWeather.h"
 
 #include "Components/AudioComponent.h"
@@ -14,6 +14,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Systems/PHI_Sfx.h"
 #include "VEIL.h"
+#include "Systems/VEILPhi.h"
 
 static UExponentialHeightFogComponent* PhiFogComp(AExponentialHeightFog* Fog)
 {
@@ -160,7 +161,7 @@ void UPHIWeather::TickWorld(float DeltaSeconds)
 	if (Sun)
 	{
 		const float Elev = FMath::Sin((Hour - 6.f) / 24.f * 2.f * PI);
-		Sun->SetActorRotation(FRotator(-Elev * 90.f, 137.507764f, 0.f));
+		Sun->SetActorRotation(FRotator(-Elev * 90.f, VeilPhi::GoldenAngleF, 0.f));
 		if (WholeHour != LastHourLogged)
 		{
 			LastHourLogged = WholeHour;

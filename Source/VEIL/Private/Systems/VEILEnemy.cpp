@@ -1,4 +1,4 @@
-﻿#include "Systems/VEILEnemy.h"
+#include "Systems/VEILEnemy.h"
 #include "AIController.h"
 #include "Perception/AIPerceptionComponent.h"
 #include "Perception/AISenseConfig_Sight.h"
@@ -22,6 +22,7 @@
 #include "EngineUtils.h"
 #include "Animation/VEILLocomotionAnimInstance.h"
 #include "Story/VEILCastBody.h"
+#include "Systems/VEILPhi.h"
 
 AVEILEnemy::AVEILEnemy(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)

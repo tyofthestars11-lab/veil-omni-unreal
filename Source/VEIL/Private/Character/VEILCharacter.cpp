@@ -52,6 +52,7 @@
 #include "AI/VEILFactionAI.h"
 #include "EngineUtils.h"
 #include "VEIL.h"
+#include "Systems/VEILPhi.h"
 
 AVEILCharacter::AVEILCharacter()
 {
@@ -103,7 +104,7 @@ AVEILCharacter::AVEILCharacter()
 	CameraBoom->TargetArmLength = 420.f;
 	// Golden pitch + golden angle, phi not Cartesian: SpringArm pitch -17.0324, yaw 137.507764.
 	// Cartesian flat rotation (0,0,0 / -90) is fuel only, never the frame.
-	CameraBoom->SetRelativeRotation(FRotator(-17.0324f, 137.507764f, 0.f));
+	CameraBoom->SetRelativeRotation(FRotator(-17.0324f, VeilPhi::GoldenAngleF, 0.f));
 	// The arm must NOT re-derive its own rotation: with this on, the lens was
 	// measured 420 cm BELOW the body looking straight up while control rotation
 	// read a clean -17.0324. The controller drives the golden pitch every frame
@@ -1479,7 +1480,7 @@ void AVEILCharacter::Tick(float DeltaSeconds)
 					}
 					for (int32 i = 1; i <= 34 && !bMoved; ++i)
 					{
-						const float Ang = FMath::DegreesToRadians(i * 137.50776405f);
+						const float Ang = FMath::DegreesToRadians(i * VeilPhi::GoldenAngleF);
 						const float Rad = 260.f * FMath::Sqrt((float)i);
 						const float PX = From.X + FMath::Cos(Ang) * Rad;
 						const float PY = From.Y + FMath::Sin(Ang) * Rad;

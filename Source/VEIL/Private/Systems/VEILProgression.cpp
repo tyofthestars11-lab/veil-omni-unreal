@@ -4,13 +4,14 @@
 #include "Kismet/GameplayStatics.h"
 #include "Systems/OMNIQuestSystem.h"
 #include "VEIL.h"
+#include "Systems/VEILPhi.h"
 
 const FString UVEILProgression::SaveSlotName = TEXT("VEILOMNI_Save0");
 
 int32 UVEILProgression::XPNeedForLevel(int32 InLevel)
 {
 	// round(20 * phi^(level-1)), phi = 1.61803398875. Level 1 -> 20.
-	const double Phi = 1.61803398875;
+	const double Phi = VeilPhi::Phi;
 	return FMath::RoundToInt(20.0 * FMath::Pow(Phi, (double)FMath::Max(1, InLevel) - 1.0));
 }
 

@@ -10,11 +10,12 @@
 #include "Kismet/GameplayStatics.h"
 #include "Materials/MaterialInterface.h"
 #include "VEIL.h"
+#include "Systems/VEILPhi.h"
 
 namespace
 {
-	constexpr float ConceptPhi = 1.6180339887f;
-	constexpr float ConceptGoldenDeg = 137.50776405f;
+	constexpr float ConceptPhi = VeilPhi::PhiF;
+	constexpr float ConceptGoldenDeg = VeilPhi::GoldenAngleF;
 	// THE COUNTRY IS THE HUB MULTIPLIED BY PHI^8.
 	// The Bible's authority coordinates do not move; the land around them does.
 	// One exponent, applied to every exploration radius, turns a courtyard into

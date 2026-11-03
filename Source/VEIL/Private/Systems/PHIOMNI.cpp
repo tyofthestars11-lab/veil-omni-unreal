@@ -5,6 +5,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Systems/PHIMito.h"
 #include "VEIL.h"
+#include "Systems/VEILPhi.h"
 
 namespace
 {

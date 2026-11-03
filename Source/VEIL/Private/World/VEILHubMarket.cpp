@@ -8,12 +8,13 @@
 #include "Engine/PointLight.h"
 #include "Components/PointLightComponent.h"
 #include "VEIL.h"
+#include "Systems/VEILPhi.h"
 
 namespace
 {
 	// The golden angle, to the digit the vision states. Placement only - no random seed,
 	// no jitter, so the same district is the same district on every boot.
-	constexpr float HubGoldenDeg = 137.50776405f;
+	constexpr float HubGoldenDeg = VeilPhi::GoldenAngleF;
 	const TCHAR* HubGoldPath = TEXT("/Game/PHI/Palette/M_PHI_GoldMetallic.M_PHI_GoldMetallic");
 	const TCHAR* HubBluePath = TEXT("/Game/PHI/Palette/M_PHI_DeepBlue.M_PHI_DeepBlue");
 	const TCHAR* HubGlowPath = TEXT("/Game/PHI/Palette/M_PHI_WhiteEmissive.M_PHI_WhiteEmissive");
