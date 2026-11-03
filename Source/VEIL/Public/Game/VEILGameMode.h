@@ -211,6 +211,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "VEIL|UI")
 	void TogglePauseMenu();
 
+	/** [V] rides the nearest mount (900, grounded) or steps off it. */
+	void ToggleMount();
+
 	/** The win screen is a page: it owns the pointer while it is up. */
 	bool bWinScreenOpen = false;
 

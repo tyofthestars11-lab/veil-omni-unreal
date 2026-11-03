@@ -88,6 +88,7 @@
 #include "TimerManager.h"
 #include "Engine/StaticMesh.h"
 #include "World/VEILKitMesh.h"
+#include "World/VEILMount.h"
 #include "VEIL.h"
 #include "World/VEILWorldBuilder.h"
 
@@ -417,6 +418,28 @@ void AVEILGameMode::BeginPlay()
 			// path every other proof shot uses; a game-mode timer stalled at the moment of
 			// capture and HighResShot wrote nothing at all. See AVEILPlayerController::Tick.
 		}, 5.f, false);
+	}
+
+	// FOUR MOUNTS, ONE PER PEOPLE, ON THE HUB RING. The blueprint's BP_Mount has four
+	// varieties, 900 speed and no float; they stand on the ring by the golden angle and
+	// each finds its own floor, so they are grounded rather than placed at a guessed height.
+	{
+		FTimerHandle MountHandle;
+		GetWorldTimerManager().SetTimer(MountHandle, [this]()
+		{
+			for (int32 i = 0; i < 4; ++i)
+			{
+				const float A = FMath::DegreesToRadians(137.5077640500378f * (float)(i + 1));
+				const FVector Post(FMath::Cos(A) * 1000.f, FMath::Sin(A) * 1000.f, 200.f);
+				FActorSpawnParameters P;
+				P.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+				if (AVEILMount* M = GetWorld()->SpawnActor<AVEILMount>(AVEILMount::StaticClass(), Post,
+					FRotator(0.f, FMath::RadiansToDegrees(A), 0.f), P))
+				{
+					M->Configure((EVEILMountKind)i, Post);
+				}
+			}
+		}, 4.f, false);
 	}
 
 	// OPEN THE SKY BEFORE ANYONE IS SEATED.
@@ -3687,6 +3710,52 @@ void AVEILPlayerController::OnOneTextCommitted(const FText& Text, ETextCommit::T
 		CommitType == ETextCommit::OnEnter ? TEXT("Enter") : TEXT("focus loss"));
 }
 
+void AVEILPlayerController::ToggleMount()
+{
+	AVEILCharacter* Runner = Cast<AVEILCharacter>(GetPawn());
+	if (!Runner || !GetWorld()) { return; }
+
+	AVEILMount* Best = nullptr;
+	float BestD = 900.f;
+	for (TActorIterator<AVEILMount> It(GetWorld()); It; ++It)
+	{
+		const float D = FVector::Dist2D(It->GetActorLocation(), Runner->GetActorLocation());
+		if (D < BestD) { BestD = D; Best = *It; }
+	}
+	if (!Best)
+	{
+		UE_LOG(LogVEIL, Warning, TEXT("PHI MOUNT: nothing within 9 m to ride."));
+		return;
+	}
+
+	if (Best->IsRidden())
+	{
+		// STEPPING OFF PUTS THE BODY BACK ON THE STONE, NOT IN THE AIR.
+		Best->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+		const FVector Back = Best->GetActorLocation();
+		Best->SetActorLocation(FVector(Back.X, Back.Y, Back.Z - 96.f));
+		Best->SetRidden(false);
+		Runner->WalkSpeed = 439.f;
+		Runner->SprintSpeed = 750.f;
+		if (UCharacterMovementComponent* Move = Runner->GetCharacterMovement()) { Move->MaxWalkSpeed = 439.f; }
+		UE_LOG(LogVEIL, Warning, TEXT("PHI MOUNT: stepped off the %s. The runner walks at %.0f again."),
+			Best->KindName(), Runner->WalkSpeed);
+		return;
+	}
+
+	Best->AttachToActor(Runner, FAttachmentTransformRules::KeepRelativeTransform);
+	Best->SetActorRelativeLocation(FVector(0.f, 0.f, -96.f));
+	Best->SetRidden(true);
+	Runner->WalkSpeed = Best->GetMountSpeed();
+	Runner->SprintSpeed = Best->GetMountSpeed();
+	if (UCharacterMovementComponent* Move = Runner->GetCharacterMovement())
+	{
+		Move->MaxWalkSpeed = Best->GetMountSpeed();
+	}
+	UE_LOG(LogVEIL, Warning, TEXT("PHI MOUNT: riding the %s at %.0f, grounded."),
+		Best->KindName(), Best->GetMountSpeed());
+}
+
 void AVEILPlayerController::SetupInputComponent()
 {
 	Super::SetupInputComponent();
@@ -3789,6 +3858,14 @@ bool AVEILPlayerController::InputKey(const FInputKeyEventArgs& Params)
 	// session ("Set new viewmode: Wireframe" in the log when F1 was pressed for
 	// help). They are claimed here, before the exec handler can see them: F1
 	// opens the field manual, the rest do nothing at all.
+	// [V] RIDES. A mount is a body at a post, not a vehicle system: the nearest one within
+	// nine metres is saddled, the runner's pace becomes its 900, and [V] again steps off.
+	if (K == EKeys::V && !bTypingToONE)
+	{
+		ToggleMount();
+		return true;
+	}
+
 	if (K == EKeys::F1)
 	{
 		if (Params.Event == IE_Pressed)
