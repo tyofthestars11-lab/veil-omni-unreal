@@ -3706,13 +3706,18 @@ void AVEILWorldBuilder::BuildPhiForms()
 			if (Probe->GetOwner()) { Probe->GetOwner()->Destroy(); }
 		}
 	}
+	// THE SPIRE IS NOT THE HUB. Hark's law puts it at (0, 3500); it stood at (0, 0), where
+	// the Vault, the Keeper and the plaza are - a 992 m tower planted on the runner's own
+	// doorstep, which is why the plaza read as a wall and the skyline never separated. The
+	// district's centre is a plaza; the Spire is a landmark on the district's north edge.
+	const float SpireX = 0.f, SpireY = 3500.f;
 	int32 SpirePieces = 0;
 	float Z = 500.f;
 	float SectionH = 500.f;
 	float SectionW = 1400.f;
 	for (int32 k = 0; k < 10; ++k)
 	{
-		Tag(SpawnBlockRot(FVector(0.f, 0.f, Z + SectionH * 0.5f),
+		Tag(SpawnBlockRot(FVector(SpireX, SpireY, Z + SectionH * 0.5f),
 			FVector(SectionW / ColCm.X, SectionW / ColCm.Y, SectionH / ColCm.Z), Col, Gold, 2.2f,
 			FRotator(0.f, (float)k * 137.5077640500378f, 0.f)));
 		Z += SectionH;
@@ -4035,8 +4040,8 @@ void AVEILWorldBuilder::BuildPhiForms()
 		TEXT("PHI FORM EXTRA: blue-gold city %d piece(s), runner wings %d attached to the body."),
 		CityPieces, Wings);
 
-	UE_LOG(LogVEIL, Warning, TEXT("PHI SPIRE: column unit %.0f x %.0f x %.0f cm, %d section(s), top at %.0f cm."),
-		ColCm.X, ColCm.Y, ColCm.Z, SpirePieces, Z);
+	UE_LOG(LogVEIL, Warning, TEXT("PHI SPIRE: column unit %.0f x %.0f x %.0f cm, %d section(s), top at %.0f cm, at %.0f, %.0f."),
+		ColCm.X, ColCm.Y, ColCm.Z, SpirePieces, Z, SpireX, SpireY);
 
 	int32 Falls = 0;
 	for (int32 k = 0; k < 4; ++k)
