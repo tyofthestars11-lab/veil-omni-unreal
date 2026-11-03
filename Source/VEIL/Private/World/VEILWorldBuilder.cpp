@@ -3975,6 +3975,38 @@ void AVEILWorldBuilder::BuildPhiForms()
 		TEXT("PHI REGIONS: %d prop(s) across Hub/Nest/Omni/Deep, %d kit path(s) missing."),
 		RegionProps, KitMissing);
 
+	// CULL BY SIZE, NOT BY DISTANCE ALONE. A 992 m Spire and a 260 cm shard cannot share one
+	// rule: the small piece would cost frames while never being seen, the large one would
+	// vanish and take the skyline with it. Diameter picks the rule; anything past 3 km across
+	// is never culled. Pawns are skipped, so the runner's own body can never be culled away.
+	int32 CullTagged = 0, CullNever = 0, CullPawnsSkipped = 0;
+	if (World)
+	{
+		for (TActorIterator<AActor> ItC(World); ItC; ++ItC)
+		{
+			AActor* AC = *ItC;
+			if (!AC) { continue; }
+			if (AC->IsA<APawn>() || AC->IsA<ACameraActor>()) { ++CullPawnsSkipped; continue; }
+			TArray<UStaticMeshComponent*> Meshes;
+			AC->GetComponents<UStaticMeshComponent>(Meshes);
+			for (UStaticMeshComponent* MC : Meshes)
+			{
+				if (!MC) { continue; }
+				const float Diam = (float)(MC->Bounds.SphereRadius * 2.0);
+				float Dist = 0.f;
+				if (Diam < 300.f) { Dist = 9000.f; }
+				else if (Diam < 900.f) { Dist = 24000.f; }
+				else if (Diam < 3000.f) { Dist = 70000.f; }
+				else { Dist = 0.f; ++CullNever; }
+				MC->SetCullDistance(Dist);
+				++CullTagged;
+			}
+		}
+	}
+	UE_LOG(LogVEIL, Warning,
+		TEXT("PHI CULL: %d mesh(es) given a size rule, %d never culled (skyline), %d pawn/camera actor(s) skipped."),
+		CullTagged, CullNever, CullPawnsSkipped);
+
 	UE_LOG(LogVEIL, Warning,
 		TEXT("PHI TERRAIN: crystal range %d shard(s), terrace cliffs %d, cliff falls %d - relief, not a slab."),
 		RangeShards, TerrainCliffs, CliffFalls);
