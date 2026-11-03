@@ -328,6 +328,25 @@ void AVEILCharacter::BeginPlay()
 	Health = MaxHealth;
 	OnHealthChanged.Broadcast(Health, MaxHealth);
 
+	// PROVE THE BODY CAN MOVE WITHOUT A KEYPRESS. Five seconds in, the log prints
+	// what the movement component is set to: mode, allowed speed, whether input is
+	// ignored, which controller owns him and whether a story holds him.
+	{
+		FTimerHandle LocoDiag;
+		GetWorldTimerManager().SetTimer(LocoDiag, [this]()
+		{
+			const UCharacterMovementComponent* M = GetCharacterMovement();
+			UE_LOG(LogVEIL, Warning,
+				TEXT("PHI LOCO STATE: mode=%d maxWalk=%.0f ignored=%d controller=%s story=%d vel=%s loc=%s"),
+				M ? (int32)M->MovementMode : -1, M ? M->MaxWalkSpeed : -1.f,
+				IsMoveInputIgnored() ? 1 : 0,
+				Controller ? *Controller->GetClass()->GetName() : TEXT("none"),
+				IsStoryHoldingInput() ? 1 : 0,
+				M ? *M->Velocity.ToCompactString() : TEXT("-"),
+				*GetActorLocation().ToCompactString());
+		}, 5.f, false);
+	}
+
 	if (!DefaultMappingContext)
 	{
 		BuildFallbackInput();
@@ -658,6 +677,63 @@ void AVEILCharacter::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
 	++PhiTickEntryCount;
+
+	// STUCK DOCTOR: ACCELERATION WITHOUT VELOCITY MEANS THE CAPSULE IS INSIDE
+	// GEOMETRY. Measured, not guessed: "axis=(0.00,0.80) mode=1 maxWalk=450
+	// ignored=0 story=0 accel=V(484.21, -443.58) vel=V(0)" - the input arrives,
+	// the body builds acceleration, the world refuses to let it move, and no key
+	// on the machine will ever help. Held for phi seconds, the runner is moved to
+	// the first open ground the golden angle finds, and the log names both ends.
+	{
+		static float StuckClock = 0.f;
+		const UCharacterMovementComponent* StuckMove = GetCharacterMovement();
+		const bool bPushing = !MoveAxis.IsNearlyZero();
+		const bool bWedged = bPushing && StuckMove
+			&& StuckMove->Velocity.SizeSquared() < 4.f
+			&& StuckMove->GetCurrentAcceleration().SizeSquared() > 100.f;
+		if (!bWedged) { StuckClock = 0.f; }
+		else
+		{
+			StuckClock += DeltaSeconds;
+			if (StuckClock >= UPHIMito::Phi)
+			{
+				StuckClock = 0.f;
+				UWorld* StuckWorld = GetWorld();
+				const FVector From = GetActorLocation();
+				bool bMoved = false;
+				if (StuckWorld)
+				{
+					FCollisionQueryParams Probe(SCENE_QUERY_STAT(VEILUnstick), false, this);
+					for (int32 i = 1; i <= 34 && !bMoved; ++i)
+					{
+						const float Ang = FMath::DegreesToRadians(i * 137.50776405f);
+						const float Rad = 260.f * FMath::Sqrt((float)i);
+						const float PX = From.X + FMath::Cos(Ang) * Rad;
+						const float PY = From.Y + FMath::Sin(Ang) * Rad;
+						FHitResult Floor;
+						if (!StuckWorld->LineTraceSingleByChannel(Floor, FVector(PX, PY, From.Z + 400.f),
+							FVector(PX, PY, From.Z - 400.f), ECC_Visibility, Probe)) { continue; }
+						const FVector Stand(PX, PY, Floor.ImpactPoint.Z + 98.f);
+						FCollisionQueryParams Free = Probe;
+						Free.AddIgnoredActor(Floor.GetActor());
+						if (StuckWorld->OverlapBlockingTestByChannel(Stand, FQuat::Identity, ECC_Pawn,
+							FCollisionShape::MakeCapsule(38.f, 92.f), Free)) { continue; }
+						SetActorLocation(Stand, false, nullptr, ETeleportType::TeleportPhysics);
+						bMoved = true;
+						UE_LOG(LogVEIL, Warning,
+							TEXT("PHI UNSTICK: capsule was inside geometry at %s - moved to open ground at %s (%.0f cm out)."),
+							*From.ToCompactString(), *Stand.ToCompactString(), Rad);
+					}
+				}
+				if (!bMoved)
+				{
+					UE_LOG(LogVEIL, Warning,
+						TEXT("PHI UNSTICK: no open ground within 1500 cm of %s - the capsule is boxed in."),
+						*From.ToCompactString());
+				}
+			}
+		}
+	}
 	DriveBodyAnimation(DeltaSeconds);
 
 	// Flight and the +1 fuel run every frame, flying or not: ATP has to refill
@@ -810,7 +886,14 @@ bool AVEILCharacter::IsStoryHoldingInput() const
 	const UWorld* W = GetWorld();
 	if (!W) { return false; }
 	const UVEILDialogue* Dlg = W->GetSubsystem<UVEILDialogue>();
-	return Dlg && Dlg->IsActive();
+	// ONLY A WAITING ANSWER HOLDS THE BODY. This used to return true whenever ANY
+	// conversation was active - and the district plays ambient overheard lines at
+	// boot ("PHI LIVING: overheard - DAL ..."), so Move() zeroed its own axis and
+	// returned before the input ever reached the movement component. The runner
+	// stood still for a whole session with every key correctly bound: that is
+	// exactly "he cannot move". Walking away from a line is allowed; walking away
+	// from a question is not.
+	return Dlg && Dlg->IsChoosing();
 }
 
 void AVEILCharacter::JumpFromInput()
@@ -1016,6 +1099,24 @@ void AVEILCharacter::Move(const FInputActionValue& Value)
 		GetWorld() ? GetWorld()->GetDeltaSeconds() : 0.016f,
 		UPHIMito::Phi * UPHIMito::Phi);
 	const FVector2D Axis = MoveAxis;
+	// SAY WHAT THE BODY RECEIVED: axis, mode, allowed speed, ignored, story.
+	if (!Axis.IsNearlyZero() && GetWorld())
+	{
+		static float MoveDiagClock = 0.f;
+		MoveDiagClock += GetWorld()->GetDeltaSeconds();
+		if (MoveDiagClock >= 2.f)
+		{
+			MoveDiagClock = 0.f;
+			const UCharacterMovementComponent* Diag = GetCharacterMovement();
+			UE_LOG(LogVEIL, Warning,
+				TEXT("PHI MOVE DIAG: axis=(%.2f,%.2f) mode=%d maxWalk=%.0f ignored=%d story=%d accel=%s vel=%s"),
+				Axis.X, Axis.Y, Diag ? (int32)Diag->MovementMode : -1,
+				Diag ? Diag->MaxWalkSpeed : -1.f, IsMoveInputIgnored() ? 1 : 0,
+				IsStoryHoldingInput() ? 1 : 0,
+				Diag ? *Diag->GetCurrentAcceleration().ToCompactString() : TEXT("-"),
+				Diag ? *Diag->Velocity.ToCompactString() : TEXT("-"));
+		}
+	}
 	const FRotator YawRot(0.f, Controller->GetControlRotation().Yaw, 0.f);
 	const FVector Forward = FRotationMatrix(YawRot).GetUnitAxis(EAxis::X);
 	const FVector Right = FRotationMatrix(YawRot).GetUnitAxis(EAxis::Y);
