@@ -397,10 +397,6 @@ void AVEILGameMode::BeginPlay()
 			if (APlayerController* ViewPC = UGameplayStatics::GetPlayerController(GetWorld(), 0))
 			{
 				ViewPC->SetViewTargetWithBlend(Cam, 0.f);
-				// A PORTRAIT, NOT A SCREENSHOT OF THE HUD. The gold ribbon panels cover the left
-				// third of the frame, which is exactly where a wing sits; the overlay comes back
-				// on the next ordinary run.
-				ViewPC->ConsoleCommand(TEXT("ShowHUD"), true);
 			}
 			if (ADirectionalLight* Key = GetWorld()->SpawnActor<ADirectionalLight>(
 				ADirectionalLight::StaticClass(), FVector(0.f, 0.f, 4000.f), FRotator(-34.f, 120.f, 0.f)))
