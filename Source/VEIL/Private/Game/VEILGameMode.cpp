@@ -409,19 +409,9 @@ void AVEILGameMode::BeginPlay()
 			}
 			UE_LOG(LogVEIL, Warning, TEXT("PHI LINEUP PHOTO: runner at %s, camera at %s."),
 				*At.ToCompactString(), *Eye.ToCompactString());
-			FTimerHandle LineupShot2;
-			GetWorldTimerManager().SetTimer(LineupShot2, [this]()
-			{
-				// THE RENDERER TAKES THE PICTURE. RequestScreenshot from this timer stopped the
-				// game dead at the moment of capture - the log ends on the frame that should
-				// have been written - so the close-up uses the same HighResShot path the other
-				// proof frames use, which writes HighresScreenshot*.png under Saved/Screenshots.
-				if (APlayerController* ShotPC = UGameplayStatics::GetPlayerController(GetWorld(), 0))
-				{
-					ShotPC->ConsoleCommand(TEXT("HighResShot 1280x720"), true);
-					UE_LOG(LogVEIL, Warning, TEXT("PHI LINEUP PHOTO: frame written from the lineup camera."));
-				}
-			}, 6.f, false);
+			// The frame itself is requested from the player controller's tick, which is the
+			// path every other proof shot uses; a game-mode timer stalled at the moment of
+			// capture and HighResShot wrote nothing at all. See AVEILPlayerController::Tick.
 		}, 5.f, false);
 	}
 
@@ -4268,6 +4258,26 @@ void AVEILPlayerController::Tick(float DeltaSeconds)
 	// SNAPSHOT (-phisnap): frames of the real game, saved to disk so the look can
 	// be seen instead of argued about. Three of them, spaced, after the world is
 	// dressed.
+	// PHI LINEUP SHOT. Same tick, same call as the snapshot pass - the only path that has
+	// reliably written a frame in this project. The close-up camera is placed by the game
+	// mode at five seconds; this waits for it to settle, then writes once.
+	if (FParse::Param(FCommandLine::Get(), TEXT("philineup")))
+	{
+		static float LineupClock = 0.f;
+		static bool LineupDone = false;
+		LineupClock += DeltaSeconds;
+		if (!LineupDone && LineupClock >= 12.f)
+		{
+			LineupDone = true;
+			if (GEngine)
+			{
+				const FString Shot = FPaths::ProjectDir() / TEXT("Saved/Screenshots/lineup.png");
+				FScreenshotRequest::RequestScreenshot(Shot, false, false);
+				UE_LOG(LogVEIL, Warning, TEXT("PHI LINEUP SHOT: close-up frame requested from the player tick."));
+			}
+		}
+	}
+
 	if (FParse::Param(FCommandLine::Get(), TEXT("phisnap")))
 	{
 		static float SnapClock = 0.f;
