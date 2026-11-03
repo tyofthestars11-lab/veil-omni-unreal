@@ -1277,6 +1277,51 @@ void AVEILCharacter::Tick(float DeltaSeconds)
 			}
 		}
 
+		// STAND ON THE GROUND THE PROJECT ACTUALLY LAID.
+		// The seat probe reported the lowest solid at z=500 while the district lays nine
+		// SM_Floor1_Big tiles tagged PhiGround with their top face at z=0, so the runner
+		// is being stood on a shelf by something else - and that shelf is what fills the
+		// camera. This stands him on the PhiGround tile under the authority seat and says
+		// where he was before.
+		{
+			static bool bOnPhiGround = false;
+			static float PhiGroundClock = 0.f;
+			if (!bOnPhiGround)
+			{
+				PhiGroundClock += DeltaSeconds;
+				if (PhiGroundClock >= 3.0f)
+				{
+					bOnPhiGround = true;
+					if (UWorld* GW = GetWorld())
+					{
+						const FVector Seat(0.f, -1500.f, 0.f);
+						const float HalfH = GetCapsuleComponent() ? GetCapsuleComponent()->GetScaledCapsuleHalfHeight() : 96.f;
+						AActor* BestTile = nullptr;
+						float BestDist = 1.0e9f, TopZ = 0.f;
+						for (TActorIterator<AActor> T(GW); T; ++T)
+						{
+							if (!T->ActorHasTag(FName(TEXT("PhiGround")))) { continue; }
+							const FBox B = T->GetComponentsBoundingBox(true);
+							if (!B.IsValid) { continue; }
+							const float D = FVector::Dist2D(B.GetCenter(), Seat);
+							if (D < BestDist) { BestDist = D; BestTile = *T; TopZ = B.Max.Z; }
+						}
+						const float WasZ = GetActorLocation().Z;
+						if (BestTile)
+						{
+							SetActorLocation(FVector(Seat.X, Seat.Y, TopZ + HalfH + 2.f), false, nullptr, ETeleportType::TeleportPhysics);
+							UE_LOG(LogVEIL, Warning, TEXT("PHI GROUND STAND: standing on %s (top %.0f) - was Z=%.0f, now Z=%.0f."),
+								*BestTile->GetName(), TopZ, WasZ, TopZ + HalfH + 2.f);
+						}
+						else
+						{
+							UE_LOG(LogVEIL, Warning, TEXT("PHI GROUND STAND: no actor tagged PhiGround exists to stand on (runner at Z=%.0f)."), WasZ);
+						}
+					}
+				}
+			}
+		}
+
 		static float StuckClock = 0.f;
 		const UCharacterMovementComponent* StuckMove = GetCharacterMovement();
 		const bool bPushing = !MoveAxis.IsNearlyZero();
