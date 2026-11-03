@@ -2452,7 +2452,7 @@ void AVEILPlayerController::BeginPlay()
 				}
 			}
 
-			int32 Probed = 0, Low = 0;
+			int32 Probed = 0, Low = 0, Parapets = 0;
 			float MinClear = 1.0e9f;
 			for (TActorIterator<AStaticMeshActor> It(W); It; ++It)
 			{
@@ -2470,7 +2470,10 @@ void AVEILPlayerController::BeginPlay()
 				if (!W->LineTraceSingleByChannel(FloorHit, FVector(At.X, At.Y, Down),
 					FVector(At.X, At.Y, Down - 3000.f), ECC_Visibility, Q)) { continue; }
 				const float Gap = Down - FloorHit.ImpactPoint.Z;
-				if (Gap <= 0.f || Gap > 2000.f) { continue; }
+				if (Gap <= 0.f || Gap > 2000.f) { continue; }
+				// A plate sitting under 200 cm over the thing beneath it is a parapet cap or a
+				// door head, not a room ceiling - counting it as an interior hid the real number.
+				if (Gap < 200.f) { ++Parapets; continue; }
 				MinClear = FMath::Min(MinClear, Gap);
 				++Probed;
 				if (Gap < 300.f) { ++Low; }
@@ -2478,8 +2481,8 @@ void AVEILPlayerController::BeginPlay()
 			if (Probed > 0)
 			{
 				UE_LOG(LogVEIL, Warning,
-					TEXT("PHI INTERIOR: %d roof(s) lifted with %d wall(s) stretched to follow; %d probed, min clear %.0f cm, %d under 300 cm - verdict %s."),
-					Lifted, Grown, Probed, MinClear, Low,
+					TEXT("PHI INTERIOR: %d roof(s) lifted with %d wall(s) stretched to follow; %d room(s) probed (%d caps skipped), min clear %.0f cm, %d under 300 cm - verdict %s."),
+					Lifted, Grown, Probed, Parapets, MinClear, Low,
 					Low == 0 ? TEXT("EVERY INTERIOR CLEARS A BODY") : TEXT("STILL CRAMPED"));
 			}
 			else
