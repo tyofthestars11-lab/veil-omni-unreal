@@ -41,6 +41,9 @@ for name, (x, y) in auth.items():
     pair = f"{int(x)},{int(y)}"
     # Compare numbers, not source spelling: the builder writes -2000.f and (600.f, -2100.f).
     flat = re.sub(r"\.0*f", "", src["builder"])
+    # The authority table writes TEXT("809"), TEXT("-309"); strip the quotes so a pair of
+    # numbers can be compared as a pair instead of two separate string literals.
+    flat = flat.replace('TEXT("', "").replace('")', "")
     flat = flat.replace(", ", ",").replace(" ", "")
     present = pair in flat
     check(f"authority/{name}", present, f"builder mentions {pair}")
