@@ -3760,6 +3760,76 @@ void AVEILWorldBuilder::BuildPhiForms()
 			}
 		}
 	}
+	// A CRYSTAL MOUNTAIN, NOT FIFTEEN SHARDS. The vision's right flank is a peak. Shards
+	// climb a slope, tallest at the crown, each turned off-axis so the faces catch light
+	// instead of reading as one flat plane. 42 pieces, height 3 m to 18 m by phi.
+	int32 RangeShards = 0;
+	if (CrystalMesh)
+	{
+		FVector CrystalCm(100.f, 100.f, 100.f);
+		{
+			UStaticMeshComponent* Probe = SpawnBlock(FVector(0.f, 0.f, -80000.f), FVector(1.f, 1.f, 1.f), CrystalMesh, Blue, 0.f);
+			if (Probe)
+			{
+				const FVector B = Probe->Bounds.BoxExtent * 2.f;
+				if (B.Z > 1.f) { CrystalCm = B; }
+				if (Probe->GetOwner()) { Probe->GetOwner()->Destroy(); }
+			}
+		}
+		for (int32 k = 0; k < 42; ++k)
+		{
+			const double A1 = (double)k * 137.5077640500378 * 3.14159265358979323846 / 180.0;
+			const float RR = (float)(FMath::Sqrt((double)(k + 1)) * 240.0);
+			const float H = 300.f * FMath::Pow(1.618033988749895f, (float)((k % 6) + 1));
+			const float W = 260.f + RR * 0.08f;
+			Tag(SpawnBlockRot(
+				FVector(6200.f + (float)(FMath::Cos(A1) * RR), -1200.f + (float)(FMath::Sin(A1) * RR), H * 0.5f),
+				FVector(W / CrystalCm.X, W / CrystalCm.Y, H / CrystalCm.Z), CrystalMesh, Blue, 1.1f,
+				FRotator(8.f * (float)(k % 5), (float)FMath::RadiansToDegrees(A1), 12.f * (float)(k % 4))));
+			++RangeShards;
+		}
+	}
+
+	// A TERRACE EDGE WITH WATER COMING OFF IT. A change of level with no face is a painted
+	// line: 28 cliff pieces make a wall around the market, heights stepping by phi so the
+	// skyline is ragged, and every third piece carries a fall from its lip.
+	int32 TerrainCliffs = 0, CliffFalls = 0;
+	if (CliffMesh)
+	{
+		// Cliff faces take a stone grey, not the floor MESH: the tint argument is a colour.
+		const FLinearColor CliffTint(0.42f, 0.40f, 0.36f);
+		FVector CliffCm(100.f, 100.f, 100.f);
+		{
+			UStaticMeshComponent* Probe = SpawnBlock(FVector(0.f, 0.f, -90000.f), FVector(1.f, 1.f, 1.f), CliffMesh, CliffTint, 0.f);
+			if (Probe)
+			{
+				const FVector B = Probe->Bounds.BoxExtent * 2.f;
+				if (B.Z > 1.f) { CliffCm = B; }
+				if (Probe->GetOwner()) { Probe->GetOwner()->Destroy(); }
+			}
+		}
+		const float R2 = 3600.f;
+		for (int32 k = 0; k < 28; ++k)
+		{
+			const double A1 = (double)k * (2.0 * 3.14159265358979323846 / 28.0);
+			const float H = 700.f * FMath::Pow(1.618033988749895f, (float)(k % 3));
+			const FVector At((float)(FMath::Cos(A1) * R2), (float)(FMath::Sin(A1) * R2), H * 0.5f);
+			Tag(SpawnBlockRot(At, FVector(1400.f / CliffCm.X, 600.f / CliffCm.Y, H / CliffCm.Z),
+				CliffMesh, CliffTint, 0.f, FRotator(0.f, (float)FMath::RadiansToDegrees(A1) + 90.f, 0.f)));
+			++TerrainCliffs;
+			if (k % 3 == 0)
+			{
+				Tag(SpawnBlockRot(FVector(At.X, At.Y, H + 300.f), FVector(3.f, 0.4f, 7.f),
+					Water, WaterBlue, 0.9f,
+					FRotator(0.f, (float)FMath::RadiansToDegrees(A1) + 90.f, 0.f)));
+				++CliffFalls;
+			}
+		}
+	}
+	UE_LOG(LogVEIL, Warning,
+		TEXT("PHI TERRAIN: crystal range %d shard(s), terrace cliffs %d, cliff falls %d - relief, not a slab."),
+		RangeShards, TerrainCliffs, CliffFalls);
+
 	UE_LOG(LogVEIL, Warning,
 		TEXT("PHI FORM EXTRA: blue-gold city %d piece(s), runner wings %d attached to the body."),
 		CityPieces, Wings);
