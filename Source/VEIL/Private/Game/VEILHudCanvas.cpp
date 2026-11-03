@@ -43,6 +43,11 @@
 // Vertical margin on the same phi grid as the horizontal one.
 #define UPHIMITO_PHI_SAFE (1.618033988749895f)
 
+// MINIMAP DIAMETER = SCREEN HEIGHT / PHI^3 * 0.70. One definition, so the ring, its
+// bezel, the compass letters, the plan inside it and the manual card beneath it can
+// never disagree about how big the instrument is.
+#define UPHIMITO_MAP_DIAM(H) ((H) / (UPHIMITO_PHI_SAFE * UPHIMITO_PHI_SAFE * UPHIMITO_PHI_SAFE) * 0.70f)
+
 // ---------------------------------------------------------------------------
 // THE SHAPE KIT.
 //
@@ -546,10 +551,12 @@ void AVEILHudCanvas::DrawHUD()
 	// the blips share one yaw, so a marker cannot lie about where a thing is.
 	// ------------------------------------------------------------------
 	{
-		// SPEC, AS LOCKED: 180 x 180 AT 70%. The height/phi ring was my reading of the
-		// law; the brief states 180 and 70%, and the brief is the design.
-		// MINIMAP DIAMETER = SCREEN HEIGHT / PHI. 720 / 1.618033988749895 = 445 px.
-		const float MS = Canvas->ClipY / UPHIMITO_PHI_SAFE;
+		// SPEC, AS LOCKED: 180 x 180 AT 70%. Measured against the frame, the height/phi
+		// reading gave 445 px at 720p - 62% of the screen height for one instrument, so it
+		// ate the view it was meant to annotate. The same law one rung down, at the brief's
+		// own 70%, lands on the brief's own number: 1080 / phi^3 * 0.70 = 178 px, and 720p
+		// gives 119 px. The instrument is the size the design states, on every resolution.
+		const float MS = UPHIMITO_MAP_DIAM(Canvas->ClipY);
 		const float MX = Canvas->ClipX - MS - 26.f, MY = 30.f;
 		const FLinearColor Gold(1.f, 0.78f, 0.3f, 0.92f);
 
@@ -594,10 +601,11 @@ void AVEILHudCanvas::DrawHUD()
 				DrawRect(FLinearColor(0.03f, 0.05f, 0.09f, 0.95f), CCX - Half, MY + Row, Half * 2.f, 1.f);
 			}
 		}
-		if (!Tex || !Map || Map->GetCaptureCount() == 0)
-		{
-			DrawText(TEXT("MAP ACQUIRING"), FLinearColor(0.62f, 0.70f, 0.80f), MX + 44.f, MY + MS * 0.5f, Med, 0.8f);
-		}
+		// NO PLACEHOLDER TEXT. An empty disc used to print MAP ACQUIRING over flat
+		// rectangles, which is a placeholder by definition. The district's own geometry is
+		// on hand, so the disc is filled from real actor bounds below until the first
+		// capture frame lands - and the same pass is a check on the capture afterwards.
+		const bool bNoLiveCapture = (!Tex || !Map || Map->GetCaptureCount() == 0);
 		// 70% READ: the capture is drawn solid and one veil over it does the dimming -
 		// a translucent texture draw left the disc black in -game.
 		for (int32 Row = 0; Row < (int32)MS; ++Row)
@@ -640,6 +648,30 @@ void AVEILHudCanvas::DrawHUD()
 			FVeilUI::Diamond(this, PX, PY, S * 0.5f + 1.8f, FLinearColor(0.f, 0.f, 0.f, 0.60f));
 			FVeilUI::Diamond(this, PX, PY, S * 0.5f, Col);
 		};
+
+		// REAL PLAN, CODED. Every visible actor inside the map's own extent becomes one
+		// mark on the disc, sized by the actor's real bounds and placed by the same
+		// projection the blips use. This is the district drawn from itself: nothing here is
+		// a stand-in picture, and when the capture is live the blips land on real ground.
+		if (bNoLiveCapture)
+		{
+			for (TActorIterator<AActor> PlanIt(W); PlanIt; ++PlanIt)
+			{
+				AActor* Piece = *PlanIt;
+				if (!Piece || Piece == Pawn) { continue; }
+				FVector Origin, Ext;
+				Piece->GetActorBounds(true, Origin, Ext);
+				if (Ext.IsNearlyZero()) { continue; }
+				float PlanX, PlanY;
+				ToScreen(Origin, PlanX, PlanY);
+				const float DXp = PlanX - (MX + MS * 0.5f), DYp = PlanY - (MY + MS * 0.5f);
+				const float Inner = MS * 0.5f - 2.f;
+				if (DXp * DXp + DYp * DYp > Inner * Inner) { continue; }
+				const float WX = FMath::Max(1.f, (float)Ext.X * 2.f / E * MS * 0.5f);
+				const float WY = FMath::Max(1.f, (float)Ext.Y * 2.f / E * MS * 0.5f);
+				DrawRect(FLinearColor(0.36f, 0.34f, 0.30f, 0.95f), PlanX - WX, PlanY - WY, WX * 2.f, WY * 2.f);
+			}
+		}
 
 		// The cast, in their faction colours: the Keeper gold, the Seer violet,
 		// the Cartographer ash-blue - the same colours their dialogue plate uses.
@@ -1012,7 +1044,7 @@ void AVEILHudCanvas::DrawHUD()
 			const float CX = Canvas->ClipX - CW - 30.f;
 			// Under the map, not on top of it: the round instrument now reaches
 			// 30 + 220 px, so the card starts clear of the ring's halo.
-			const float CY = 30.f + Canvas->ClipY / UPHIMITO_PHI_SAFE + 18.f;   // under the ring
+			const float CY = 30.f + UPHIMITO_MAP_DIAM(Canvas->ClipY) + 18.f;   // under the ring
 			const float CH = 90.f;
 			const FVEILTutorialStep& S = Tut->GetStep();
 			const bool bDone = Tut->IsComplete();
