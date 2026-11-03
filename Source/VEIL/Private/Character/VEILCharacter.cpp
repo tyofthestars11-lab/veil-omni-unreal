@@ -502,6 +502,19 @@ void AVEILCharacter::BeginPlay()
 						TEXT("PHI WATER ID: surface at z=%.0f is %s (%s), component %s."),
 						WetHit.ImpactPoint.Z, *WetName, *WetClass, *WetMesh);
 
+					// THE SURFACE IS THE WATER, WHATEVER IT IS CALLED. The filter below only
+					// matched actors whose class or name says Ocean/Water/Lake, and this one is
+					// Actor_1 with a BoxComponent: a sheet at z=400 over ground at z=0, which is
+					// what floods the district in the aerial frame. So drop the actor the trace
+					// actually hit, then still sweep anything else that names itself water.
+					if (Wet && WetHit.ImpactPoint.Z > 50.f)
+					{
+						Wet->SetActorLocation(Wet->GetActorLocation() - FVector(0.f, 0.f, 500.f));
+						UE_LOG(LogVEIL, Warning,
+							TEXT("PHI SEA: identified surface %s (%s) dropped 500 cm, it was at z=%.0f."),
+							*WetName, *WetClass, WetHit.ImpactPoint.Z);
+					}
+
 					// Anything holding a surface over the plaza that is not the tagged
 					// floor is the sea. Five metres down puts it under the city.
 					int32 Drowned = 0;

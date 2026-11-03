@@ -1,4 +1,5 @@
 // VEIL: THE LAST SIGNAL - game mode + player controller implementation.
+#include "Camera/CameraActor.h"
 #include "Components/MeshComponent.h"
 #include "Misc/Paths.h"
 #include "UnrealClient.h"
@@ -4179,6 +4180,103 @@ void AVEILPlayerController::Tick(float DeltaSeconds)
 			int32 Killed = 0;
 			for (TActorIterator<AVEILConceptWorld> It(GetWorld()); It; ++It) { It->Destroy(); ++Killed; }
 			UE_LOG(LogVEIL, Warning, TEXT("PHI CONCEPT: %d concept actor(s) removed for this comparison run."), Killed);
+		}
+	}
+
+	// -phiaerial: photograph the layout from above, so composition is seen rather
+	// than inferred from a first-person frame. Plan view at 180 m, then an oblique
+	// over the market.
+	if (FParse::Param(FCommandLine::Get(), TEXT("phiaerial")))
+	{
+		static TWeakObjectPtr<ACameraActor> AerialCam;
+		static float AirClock = 0.f;
+		static int32 AirStep = 0;
+		AirClock += DeltaSeconds;
+		ACameraActor* Cam = AerialCam.Get();
+		if (!Cam)
+		{
+			FActorSpawnParameters SP;
+			SP.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+			Cam = GetWorld()->SpawnActor<ACameraActor>(ACameraActor::StaticClass(),
+				FVector(0.f, 0.f, 18000.f), FRotator(-89.f, 90.f, 0.f), SP);
+			AerialCam = Cam;
+			if (Cam && Cam->GetCameraComponent()) { Cam->GetCameraComponent()->SetFieldOfView(90.f); }
+		}
+		if (Cam)
+		{
+			SetViewTarget(Cam);
+			if (AirStep == 0 && AirClock >= 7.f)
+			{
+				AirStep = 1;
+				FScreenshotRequest::RequestScreenshot(TEXT("phisnap_air"), false, false);
+				UE_LOG(LogVEIL, Warning, TEXT("PHI AERIAL: plan view from Z=18000 requested."));
+			}
+			else if (AirStep == 1 && AirClock >= 16.f)
+			{
+				AirStep = 2;
+				Cam->SetActorLocation(FVector(9000.f, -9000.f, 4500.f));
+				Cam->SetActorRotation((FVector(0.f, 0.f, 300.f) - Cam->GetActorLocation()).Rotation());
+				UE_LOG(LogVEIL, Warning, TEXT("PHI AERIAL: oblique over the market requested."));
+			}
+			else if (AirStep == 2 && AirClock >= 20.f)
+			{
+				AirStep = 3;
+				FScreenshotRequest::RequestScreenshot(TEXT("phisnap_oblique"), false, false);
+			}
+		}
+	}
+
+	// PHI STRATA: the aerial frame shows geometry hanging in the air, so this counts
+	// what sits at each height and how much of it has no ground under it at all.
+	{
+		static bool bStrata = false;
+		static float StrataClock = 0.f;
+		if (!bStrata)
+		{
+			StrataClock += DeltaSeconds;
+			if (StrataClock >= 8.f)
+			{
+				bStrata = true;
+				UWorld* SW = GetWorld();
+				if (SW)
+				{
+					TMap<int32, int32> Bands;
+					TMap<int32, FString> Sample;
+					int32 Floating = 0, Total = 0;
+					FString FloatSample;
+					for (TActorIterator<AActor> It(SW); It; ++It)
+					{
+						AActor* A = *It;
+						if (!A || A->IsA(APawn::StaticClass())) { continue; }
+						const FBox B = A->GetComponentsBoundingBox(true);
+						if (!B.IsValid) { continue; }
+						++Total;
+						const int32 Band = FMath::RoundToInt(B.GetCenter().Z / 200.f) * 200;
+						Bands.FindOrAdd(Band)++;
+						if (!Sample.Contains(Band)) { Sample.Add(Band, A->GetName()); }
+						// Supported? Trace from just under the bounds; 12000 cm of nothing counts as air.
+						FCollisionQueryParams P(SCENE_QUERY_STAT(VEILStrata), false, A);
+						FHitResult H;
+						const bool bGround = SW->LineTraceSingleByChannel(H,
+							FVector(B.GetCenter().X, B.GetCenter().Y, B.Min.Z - 5.f),
+							FVector(B.GetCenter().X, B.GetCenter().Y, B.Min.Z - 12000.f), ECC_Visibility, P);
+						if (!bGround && B.GetCenter().Z > 150.f)
+						{
+							++Floating;
+							if (FloatSample.Len() < 160) { FloatSample += A->GetName() + TEXT(" "); }
+						}
+					}
+					TArray<int32> Keys; Bands.GetKeys(Keys);
+					Keys.Sort();
+					UE_LOG(LogVEIL, Warning, TEXT("PHI STRATA: %d actor(s) with bounds, %d above 150 cm with no ground within 120 m under them."), Total, Floating);
+					for (int32 K : Keys)
+					{
+						UE_LOG(LogVEIL, Warning, TEXT("PHI STRATA: z~%d -> %d actor(s), e.g. %s"),
+							K, Bands.FindRef(K), *Sample.FindRef(K));
+					}
+					UE_LOG(LogVEIL, Warning, TEXT("PHI STRATA: floating e.g. %s"), *FloatSample);
+				}
+			}
 		}
 	}
 
