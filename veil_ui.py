@@ -160,11 +160,12 @@ def draw_hud(b, st, dlg=None, zone_name="HUB", runner=None):
     # 1. player status, top-left, 330x130
     frame(b, 14, 12, 330, 130)
     b.text(28, 20, "PLAYER STATUS", fill=GOLD_DEEP, size=8, bold=True)
-    b.text(28, 34, "HP %d/%d" % (st.hp, st.hp_max), fill=PALE, size=12, bold=True)
+    b.text(28, 34, "VIT %d/%d" % (st.hp, st.hp_max), fill=PALE, size=12, bold=True)
     bar(b, 28, 52, 240, 9, st.hp / st.hp_max, RED)
-    b.text(28, 66, "SHIELD %d/%d" % (st.shield, st.shield_max), fill=PALE, size=12, bold=True)
+    b.text(28, 66, "STM %d/%d" % (st.shield, st.shield_max), fill=PALE, size=12, bold=True)
     bar(b, 28, 84, 240, 9, st.shield / st.shield_max, BLUE, back="#16202e")
-    b.text(28, 98, "LEVEL %d  -  %s" % (st.level, st.cls), fill=GOLD, size=11, bold=True)
+    diamond(b, 34, 104, 6, GOLD)
+    b.text(46, 98, "LV %d  -  %s" % (st.level, st.cls), fill=GOLD, size=11, bold=True)
     b.text(28, 114, "TACTICAL %s   CREDITS %s" % (st.cls, format(st.credits, ",")),
            fill=GOLD_DEEP, size=8)
 
@@ -172,9 +173,9 @@ def draw_hud(b, st, dlg=None, zone_name="HUB", runner=None):
     ribbon(b, W / 2 - 160, 10, 320, 46, "VEIL OMNI", 19)
 
     # 3. compass minimap, top-right, 168 across
-    cx, cy, r = W - 96, 100, 84
+    cx, cy, r = W - 104, 104, 90
     b.oval(cx - r, cy - r, cx + r, cy + r, fill="#0a1424", outline=GOLD, width=3)
-    b.oval(cx - r + 12, cy - r + 12, cx + r - 12, cy + r - 12, outline=GOLD_DEEP)
+    b.oval(cx - r * 0.7, cy - r * 0.7, cx + r * 0.7, cy + r * 0.7, outline=GOLD_DEEP)
     for i in range(24):
         a = math.radians(i * 15)
         b.line([(cx + math.cos(a) * (r - 8), cy + math.sin(a) * (r - 8)),
@@ -188,13 +189,13 @@ def draw_hud(b, st, dlg=None, zone_name="HUB", runner=None):
     b.text(cx, cy + r + 6, "MINIMAP - %s" % zone_name, fill=GOLD_DEEP, size=8, anchor="center")
 
     # 4. quest panel, right, under the minimap
-    qx, qy, qw, qh = W - 344, 196, 328, 92
+    qx, qy, qw, qh = W - 496, 196, 480, 92
     frame(b, qx, qy, qw, qh)
     b.text(qx + 14, qy + 8, "QUEST: %s" % st.quest, fill=GOLD, size=10, bold=True)
     b.text(qx + 14, qy + 28, st.objective, fill=PALE, size=8)
     done, total = st.progress
     b.text(qx + 14, qy + 50, "PROGRESS %d/%d" % (done, total), fill=GOLD_DEEP, size=8, bold=True)
-    bar(b, qx + 14, qy + 64, 220, 7, done / max(1, total), GOLD)
+    bar(b, qx + 14, qy + 64, 320, 7, done / max(1, total), GOLD)
     b.text(qx + qw - 14, qy + 60, "%d%%" % int(100 * done / max(1, total)),
            fill=GOLD, size=10, anchor="e")
 
@@ -251,8 +252,8 @@ def draw_hud(b, st, dlg=None, zone_name="HUB", runner=None):
 
     # 9. dialogue, centred and above the wheel when a line is open
     if dlg is not None and dlg.active():
-        pw, ph = 600, 132
-        px, py = (W - pw) / 2, 236
+        pw, ph = 600, 114
+        px, py = (W - pw) / 2, 292
         frame(b, px, py, pw, ph)
         b.text(px + 18, py + 12, dlg.npc.name, fill=GOLD, size=12, bold=True)
         b.text(px + 18, py + 30, dlg.npc.title, fill=GOLD_DEEP, size=8)
