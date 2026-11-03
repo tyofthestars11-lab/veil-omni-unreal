@@ -33,6 +33,9 @@ namespace
 	 *  actually carries the colour; a missing palette must never stop the world. */
 	const TCHAR* GoldMaterialPath = TEXT("/Game/PHI/Palette/M_PHI_Gold.M_PHI_Gold");
 	const TCHAR* BlueMaterialPath = TEXT("/Game/PHI/Palette/M_PHI_DeepBlue.M_PHI_DeepBlue");
+	// STONE FOR MASS, GOLD FOR LIGHT, BLUE ONLY FOR CRYSTAL. Every fab piece used to
+	// fall through to the blue palette, which is why a cliff read as a placeholder box.
+	const TCHAR* StoneMaterialPath = TEXT("/Game/StarterContent/Materials/M_Brick_Cut_Stone.M_Brick_Cut_Stone");
 
 	/** Fab geometry, already on disk. Sicka's ancient kit is what the district is
 	 *  built from; the same meshes dress the five places here. */
@@ -990,12 +993,16 @@ AStaticMeshActor* UVEILOmniAll::PlaceAt(const FVector& At, const TCHAR* MeshPath
 	const float Scale = (HalfExtent > 1.f && WantHalf > 1.f) ? WantHalf / HalfExtent : 1.f;
 	Actor->SetActorScale3D(FVector(FMath::Clamp(Scale, 0.01f, 200.f)));
 
-	if (UMaterialInterface* Base = LoadObject<UMaterialInterface>(nullptr, bGold ? GoldMaterialPath : BlueMaterialPath))
+	const bool bCrystal = Mesh->GetName().Contains(TEXT("Crystal"));
+	if (UMaterialInterface* Base = LoadObject<UMaterialInterface>(nullptr,
+		bGold ? GoldMaterialPath : (bCrystal ? BlueMaterialPath : StoneMaterialPath)))
 	{
 		if (UMaterialInstanceDynamic* MID = UMaterialInstanceDynamic::Create(Base, Comp))
 		{
-			MID->SetVectorParameterValue(TEXT("Color"), bGold ? FLinearColor(1.f, 0.77f, 0.23f) : FLinearColor(0.35f, 0.66f, 1.f));
-			MID->SetVectorParameterValue(TEXT("BaseColor"), bGold ? FLinearColor(1.f, 0.77f, 0.23f) : FLinearColor(0.35f, 0.66f, 1.f));
+			const FLinearColor Tint = bGold ? FLinearColor(1.f, 0.77f, 0.23f)
+				: (bCrystal ? FLinearColor(0.35f, 0.66f, 1.f) : FLinearColor(0.82f, 0.78f, 0.70f));
+			MID->SetVectorParameterValue(TEXT("Color"), Tint);
+			MID->SetVectorParameterValue(TEXT("BaseColor"), Tint);
 			Comp->SetMaterial(0, MID);
 		}
 		else
