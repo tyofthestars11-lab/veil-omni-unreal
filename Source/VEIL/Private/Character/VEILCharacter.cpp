@@ -331,6 +331,17 @@ void AVEILCharacter::BeginPlay()
 	if (!DefaultMappingContext)
 	{
 		BuildFallbackInput();
+
+		// BIND AGAIN, BECAUSE BINDING RAN FIRST. SetupPlayerInputComponent fires at
+		// possession, before BeginPlay - measured in a packaged run: "PHI INPUT BIND:
+		// 0 of 9 enhanced actions bound" at frame 0, with the built-in map not built
+		// until 0.78 s later. The runner was then holding a mapping context and ZERO
+		// bound actions: no walking, no mouse-look, no noclip, no keys at all. The
+		// actions are real now, so bind them again on the component the pawn owns.
+		if (InputComponent)
+		{
+			SetupPlayerInputComponent(InputComponent);
+		}
 	}
 
 	if (APlayerController* PC = Cast<APlayerController>(Controller))
@@ -557,12 +568,13 @@ void AVEILCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 
 	if (UEnhancedInputComponent* EIC = CastChecked<UEnhancedInputComponent>(PlayerInputComponent))
 	{
-	// THE CHART OWNS THE WHEEL WHILE IT IS OPEN. Zooming the map also stepped the
-	// camera ring, so every map zoom silently changed the shot behind the panel.
-	if (const AVEILPlayerController* PC = Cast<AVEILPlayerController>(GetController()))
-	{
-		if (PC->bShowChart) { return; }
-	}
+		// NOTHING MAY RETURN FROM HERE. This block used to open with "if the chart is
+		// open, return" - a guard meant to stop the map's wheel from stepping the
+		// camera ring, wrapped around the BINDINGS instead of around the wheel. If the
+		// chart happened to be open when input was set up, Move, Look, Jump, Fire and
+		// every other action were never connected: the runner could not walk, the mouse
+		// did nothing and no key reached the game, for the whole session. The wheel is
+		// filtered where it fires, in CameraRingOut / CameraRingIn, not here.
 		if (MoveAction)   EIC->BindAction(MoveAction, ETriggerEvent::Triggered, this, &AVEILCharacter::Move);
 		if (LookAction)   EIC->BindAction(LookAction, ETriggerEvent::Triggered, this, &AVEILCharacter::Look);
 		if (JumpAction)
@@ -584,6 +596,15 @@ void AVEILCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 		if (FireAction)   EIC->BindAction(FireAction, ETriggerEvent::Started, this, &AVEILCharacter::Fire);
 		if (InteractAction) EIC->BindAction(InteractAction, ETriggerEvent::Started, this, &AVEILCharacter::Interact);
 		if (SwingAction)  EIC->BindAction(SwingAction, ETriggerEvent::Started, this, &AVEILCharacter::OnSwingInput);
+
+		// SAY IT IN NUMBERS. A pawn with zero actions looks exactly like a dead game,
+		// so the log names how many exist and were bound; 9 is a runner that can move.
+		const int32 Present = (MoveAction ? 1 : 0) + (LookAction ? 1 : 0) + (JumpAction ? 1 : 0)
+			+ (SprintAction ? 1 : 0) + (DodgeAction ? 1 : 0) + (AimAction ? 1 : 0)
+			+ (FireAction ? 1 : 0) + (InteractAction ? 1 : 0) + (SwingAction ? 1 : 0);
+		UE_LOG(LogVEIL, Warning,
+			TEXT("PHI INPUT BIND: %d of 9 enhanced actions bound to the runner (0 = no walking, no mouse-look)."),
+			Present);
 	}
 
 	LogInputAudit();
@@ -1592,8 +1613,28 @@ void AVEILCharacter::StepCameraRing(int32 Direction)
 	}
 }
 
-void AVEILCharacter::CameraRingIn() { StepCameraRing(-1); }
-void AVEILCharacter::CameraRingOut() { StepCameraRing(1); }
+// THE CHART OWNS THE WHEEL WHILE IT IS OPEN. Zooming the map also stepped the
+// camera ring, so every map zoom silently changed the shot behind the panel. That
+// filter belongs here, at the action that fires, NOT around the input bindings -
+// wrapped around the bindings it skipped Move and Look entirely and left the
+// runner unable to walk for a whole session.
+void AVEILCharacter::CameraRingIn()
+{
+	if (const AVEILPlayerController* PC = Cast<AVEILPlayerController>(GetController()))
+	{
+		if (PC->bShowChart) { return; }
+	}
+	StepCameraRing(-1);
+}
+
+void AVEILCharacter::CameraRingOut()
+{
+	if (const AVEILPlayerController* PC = Cast<AVEILPlayerController>(GetController()))
+	{
+		if (PC->bShowChart) { return; }
+	}
+	StepCameraRing(1);
+}
 
 void AVEILCharacter::ToggleCameraMode()
 {
