@@ -3826,6 +3826,61 @@ void AVEILWorldBuilder::BuildPhiForms()
 			}
 		}
 	}
+	// THE RIVER, WHOLE, FROM THE VISION'S OWN LAW: Nest (-2000, 2000) -> Hub (0, 0) ->
+	// Omni District (2800, 500). Water laid as short strips along each leg so it BENDS
+	// instead of being one straight beam, with gold posts and stone spans where the
+	// golden cut of each leg falls - a river is a path, not a disc.
+	int32 RiverPieces = 0, RiverBridges = 0;
+	{
+		const FVector2D Leg[3] = { FVector2D(-2000.f, 2000.f), FVector2D(0.f, 0.f), FVector2D(2800.f, 500.f) };
+		for (int32 Leg_i = 0; Leg_i < 2; ++Leg_i)
+		{
+			const FVector2D AV = Leg[Leg_i];
+			const FVector2D BV = Leg[Leg_i + 1];
+			const FVector2D DV = (BV - AV).GetSafeNormal();
+			const float YawDeg = (float)FMath::RadiansToDegrees(FMath::Atan2((float)DV.Y, (float)DV.X));
+			const int32 Pieces = 12;
+			const float LenCm2 = FVector2D::Distance(AV, BV) / (float)Pieces * 1.15f;
+			for (int32 i2 = 0; i2 < Pieces; ++i2)
+			{
+				const FVector2D PV = AV + (BV - AV) * (((float)i2 + 0.5f) / (float)Pieces);
+				Tag(SpawnBlockRot(FVector((float)PV.X, (float)PV.Y, 6.f),
+					FVector(LenCm2 / 100.f, 4.f, 0.06f), Water, WaterBlue, 0.8f,
+					FRotator(0.f, YawDeg, 0.f)));
+				++RiverPieces;
+			}
+			const FVector2D Nrm(-DV.Y, DV.X);
+			for (int32 b = 0; b < 2; ++b)
+			{
+				const FVector2D PV = AV + (BV - AV) * (b == 0 ? 0.382f : 0.618f);
+				for (int32 pl = -1; pl <= 1; pl += 2)
+				{
+					const FVector2D Post = PV + Nrm * 300.f * (float)pl;
+					Tag(SpawnBlockRot(FVector((float)Post.X, (float)Post.Y, 220.f),
+						FVector(0.5f, 0.5f, 4.4f), Col, Gold, 0.5f, FRotator::ZeroRotator));
+				}
+				Tag(SpawnBlockRot(FVector((float)PV.X, (float)PV.Y, 430.f),
+					FVector(7.f, 0.5f, 0.1f), Stone, Gold, 0.2f, FRotator(0.f, YawDeg + 90.f, 0.f)));
+				++RiverBridges;
+			}
+		}
+	}
+
+	// THE DEEP: five platforms descending under the south edge, each 1/phi the last, so the
+	// bottom is a lit point instead of a hole in the ground - the vision's Megastructure.
+	int32 DeepSteps = 0;
+	for (int32 k = 0; k < 5; ++k)
+	{
+		const float R3 = 1400.f * FMath::Pow(0.618033988749895f, (float)k);
+		Tag(SpawnBlockRot(FVector(0.f, -5000.f, -250.f * (float)k),
+			FVector(2.f * R3 / 100.f, 2.f * R3 / 100.f, 0.3f), Stone, Gold,
+			0.15f + 0.15f * (float)k, FRotator(0.f, (float)k * 137.5077640500378f, 0.f)));
+		++DeepSteps;
+	}
+	UE_LOG(LogVEIL, Warning,
+		TEXT("PHI RIVER: %d water piece(s), %d bridge(s); PHI DEEP: %d step(s) descending."),
+		RiverPieces, RiverBridges, DeepSteps);
+
 	UE_LOG(LogVEIL, Warning,
 		TEXT("PHI TERRAIN: crystal range %d shard(s), terrace cliffs %d, cliff falls %d - relief, not a slab."),
 		RangeShards, TerrainCliffs, CliffFalls);
