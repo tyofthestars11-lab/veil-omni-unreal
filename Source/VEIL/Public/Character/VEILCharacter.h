@@ -39,6 +39,9 @@ public:
 	 *  interact key makes, so veil.claim can prove what a player can actually do. */
 	void ClaimNearestSeam(float ReachCm = 700.f);
 
+	/** Print the whole control scheme, so what the keys do can be read, not guessed. */
+	void LogInputAudit() const;
+
 	/** Keep trying to claim for a moment. A press that lands a frame before the
 	 *  world has spawned its seams is not a wasted press, and a run can exercise
 	 *  the same path from the command line. */
@@ -402,6 +405,9 @@ private:
 	TArray<TObjectPtr<UInputAction>> BuiltActions;
 
 	bool bSprinting = false;
+
+	/** Last tap of the jump button: a second one inside 0.382 s takes off. */
+	float LastJumpTapAt = -100.f;
 	bool bAiming = false;
 	float LastFireTime = -100.f;
 	float LastDodgeTime = -100.f;

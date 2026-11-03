@@ -2908,6 +2908,47 @@ void AVEILPlayerController::ToggleOS()
 	}
 }
 
+// ONE D-PAD, ONE ACTION.
+// Up on the pad used to be map-zoom, chart-previous and respawn at the same time,
+// so a player reaching for the map could quietly kill and respawn the runner. The
+// page on screen decides now, and with no page open the d-pad does nothing that
+// can hurt: up and down are the chart and the map, left is the field manual,
+// right switches the lead.
+void AVEILPlayerController::PadUp()
+{
+	if (bPauseOpen) { return; }
+	if (bGodMenuOpen) { GodMenuUp(); return; }
+	if (bShowChart) { if (ChartPage == 2) { OptionsMove(-1); } else { MapZoomIn(); } return; }
+	if (bShowFieldManual) { ToggleFieldManual(); return; }
+	UE_LOG(LogVEIL, Log, TEXT("PHI PAD: up - nothing open; the chart is on VIEW, not here."));
+}
+
+void AVEILPlayerController::PadDown()
+{
+	if (bPauseOpen) { return; }
+	if (bGodMenuOpen) { GodMenuDown(); return; }
+	if (bShowChart) { if (ChartPage == 2) { OptionsMove(1); } else { MapZoomOut(); } return; }
+	ToggleTips();
+}
+
+void AVEILPlayerController::PadLeft()
+{
+	if (bPauseOpen) { return; }
+	if (bGodMenuOpen) { GodMenuLeft(); return; }
+	if (bShowChart && ChartPage == 2) { OptionsAdjust(-1); return; }
+	if (bShowChart) { return; }
+	ToggleFieldManual();
+}
+
+void AVEILPlayerController::PadRight()
+{
+	if (bPauseOpen) { return; }
+	if (bGodMenuOpen) { GodMenuRight(); return; }
+	if (bShowChart && ChartPage == 2) { OptionsAdjust(1); return; }
+	if (bShowChart) { return; }
+	SwitchLead();
+}
+
 void AVEILPlayerController::SetupInputComponent()
 {
 	Super::SetupInputComponent();
@@ -2931,13 +2972,9 @@ void AVEILPlayerController::SetupInputComponent()
 		// Two columns: left / right jump a column, up / down walk the rows.
 		InputComponent->BindKey(EKeys::Left, IE_Pressed, this, &AVEILPlayerController::GodMenuLeft);
 		InputComponent->BindKey(EKeys::Right, IE_Pressed, this, &AVEILPlayerController::GodMenuRight);
-		InputComponent->BindKey(EKeys::Gamepad_DPad_Left, IE_Pressed, this, &AVEILPlayerController::GodMenuLeft);
-		InputComponent->BindKey(EKeys::Gamepad_DPad_Right, IE_Pressed, this, &AVEILPlayerController::GodMenuRight);
 		// The living map: wheel on a mouse, D-pad up/down on a pad.
 		InputComponent->BindKey(EKeys::MouseScrollUp, IE_Pressed, this, &AVEILPlayerController::MapZoomIn);
 		InputComponent->BindKey(EKeys::MouseScrollDown, IE_Pressed, this, &AVEILPlayerController::MapZoomOut);
-		InputComponent->BindKey(EKeys::Gamepad_DPad_Up, IE_Pressed, this, &AVEILPlayerController::MapZoomIn);
-		InputComponent->BindKey(EKeys::Gamepad_DPad_Down, IE_Pressed, this, &AVEILPlayerController::MapZoomOut);
 		InputComponent->BindKey(EKeys::SpaceBar, IE_Pressed, this, &AVEILPlayerController::TravelOrAdvance);
 		InputComponent->BindKey(EKeys::Escape, IE_Pressed, this, &AVEILPlayerController::TogglePauseMenu);
 		InputComponent->BindKey(EKeys::Gamepad_Special_Right, IE_Pressed, this, &AVEILPlayerController::TogglePauseMenu);
@@ -2967,12 +3004,8 @@ void AVEILPlayerController::SetupInputComponent()
 		// Options: the same d-pad / arrows, left and right to change a value.
 		InputComponent->BindKey(EKeys::Left, IE_Pressed, this, &AVEILPlayerController::OptionsDown);
 		InputComponent->BindKey(EKeys::Right, IE_Pressed, this, &AVEILPlayerController::OptionsUp);
-		InputComponent->BindKey(EKeys::Gamepad_DPad_Left, IE_Pressed, this, &AVEILPlayerController::OptionsDown);
-		InputComponent->BindKey(EKeys::Gamepad_DPad_Right, IE_Pressed, this, &AVEILPlayerController::OptionsUp);
 		// O jumps straight to the options page from anywhere.
 		InputComponent->BindKey(EKeys::O, IE_Pressed, this, &AVEILPlayerController::OpenOptions);
-		InputComponent->BindKey(EKeys::Gamepad_DPad_Up, IE_Pressed, this, &AVEILPlayerController::ChartMovePrev);
-		InputComponent->BindKey(EKeys::Gamepad_DPad_Down, IE_Pressed, this, &AVEILPlayerController::ChartMoveNext);
 		InputComponent->BindKey(EKeys::Enter, IE_Pressed, this, &AVEILPlayerController::ChartTravel);
 		// Field manual: H (safe), the pad's left d-pad, and F1 handled in InputKey
 		// because the engine owns F1 and must be intercepted first.
@@ -2980,18 +3013,21 @@ void AVEILPlayerController::SetupInputComponent()
 		// F10: the debug strips. Off by default - normal play shows the game, not the
 		// instrumentation. The Bible names F10 for exactly this.
 		InputComponent->BindKey(EKeys::F10, IE_Pressed, this, &AVEILPlayerController::ToggleDebugStrips);
-		InputComponent->BindKey(EKeys::Gamepad_DPad_Left, IE_Pressed, this, &AVEILPlayerController::ToggleFieldManual);
 		// Respawn
 		InputComponent->BindKey(EKeys::R, IE_Pressed, this, &AVEILPlayerController::RespawnRunner);
-		InputComponent->BindKey(EKeys::Gamepad_DPad_Up, IE_Pressed, this, &AVEILPlayerController::RespawnRunner);
 		// Switch lead
 		InputComponent->BindKey(EKeys::C, IE_Pressed, this, &AVEILPlayerController::SwitchLead);
-		InputComponent->BindKey(EKeys::Gamepad_DPad_Right, IE_Pressed, this, &AVEILPlayerController::SwitchLead);
 		// Narrator mute
 		InputComponent->BindKey(EKeys::M, IE_Pressed, this, &AVEILPlayerController::ToggleMuteNarrator);
-		InputComponent->BindKey(EKeys::Gamepad_DPad_Down, IE_Pressed, this, &AVEILPlayerController::ToggleMuteNarrator);
 		// Hide tips. Not F2: the engine still answers F2 with "viewmode unlit".
 		InputComponent->BindKey(EKeys::T, IE_Pressed, this, &AVEILPlayerController::ToggleTips);
+
+		// THE D-PAD, ROUTED. One press, one action, decided by the page in front of
+		// the player - not by which of three bindings happened to pass its guard.
+		InputComponent->BindKey(EKeys::Gamepad_DPad_Up, IE_Pressed, this, &AVEILPlayerController::PadUp);
+		InputComponent->BindKey(EKeys::Gamepad_DPad_Down, IE_Pressed, this, &AVEILPlayerController::PadDown);
+		InputComponent->BindKey(EKeys::Gamepad_DPad_Left, IE_Pressed, this, &AVEILPlayerController::PadLeft);
+		InputComponent->BindKey(EKeys::Gamepad_DPad_Right, IE_Pressed, this, &AVEILPlayerController::PadRight);
 
 		// Story verbs on the pad: X speaks, A advances (and jumps when nobody talks).
 		InputComponent->BindKey(EKeys::Gamepad_FaceButton_Left, IE_Pressed, this, &AVEILPlayerController::TalkToNearest);
@@ -3221,6 +3257,8 @@ void AVEILPlayerController::OptionsMove(int32 Delta)
 
 void AVEILPlayerController::OptionsAdjust(int32 Delta)
 {
+	// OptionsAdjust behaves: nothing to adjust unless the options page is the page.
+	if (!bShowChart || ChartPage != 2) { return; }
 	// The arrows and the d-pad only mean "change this" while the page is open.
 	if (!bShowChart || ChartPage != 2) { return; }
 	UVEILPerf* Perf = GetWorld() ? GetWorld()->GetSubsystem<UVEILPerf>() : nullptr;

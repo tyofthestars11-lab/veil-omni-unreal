@@ -271,6 +271,15 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "VEIL|Dialogue") void PadReply2();
 	UFUNCTION(BlueprintCallable, Category = "VEIL|Dialogue") void PadReply3();
 
+	// ---- ONE D-PAD, ONE ACTION ----
+	// Every direction used to carry three bindings at once (Up was map zoom, chart
+	// previous AND respawn), so a pad press did whatever happened to be unguarded.
+	// These four route the press to exactly one thing, by what is on screen.
+	void PadUp();
+	void PadDown();
+	void PadLeft();
+	void PadRight();
+
 	UFUNCTION(BlueprintCallable, Category = "VEIL|Cheats") void ToggleGodMenu();
 
 	/** [F1] The one OS: screen, voice, map and controls over the engine's own

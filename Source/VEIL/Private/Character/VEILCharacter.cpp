@@ -526,20 +526,17 @@ void AVEILCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
-	// FLIGHT: F toggles, Space climbs, Left Ctrl dives, N toggles noclip.
-	// Climb is its own axis - the camera is never asked to hold an altitude.
-	PlayerInputComponent->BindKey(EKeys::F, IE_Pressed, this, &AVEILCharacter::ToggleFlight);
+	// FLIGHT: DOUBLE-TAP JUMP. It used to sit on F and on the pad's Y - both of which
+	// are the SWING - so every swing also took off, and the trigger that climbed was
+	// also the aim. Flight now has no key of its own: tap jump twice inside a third of
+	// a second and you fly, tap twice again and you walk. Space / A climb while flying,
+	// LeftCtrl dives on the keyboard. Every pad button is already something a player
+	// needs in a fight, so the pad climbs on A rather than stealing one.
 	PlayerInputComponent->BindKey(EKeys::N, IE_Pressed, this, &AVEILCharacter::ToggleNoclip);
 	PlayerInputComponent->BindKey(EKeys::LeftControl, IE_Pressed, this, &AVEILCharacter::FlyDownStart);
 	PlayerInputComponent->BindKey(EKeys::LeftControl, IE_Released, this, &AVEILCharacter::FlyDownStop);
 	PlayerInputComponent->BindKey(EKeys::LeftShift, IE_Released, this, &AVEILCharacter::FlyUpStop);
 	PlayerInputComponent->BindKey(EKeys::SpaceBar, IE_Released, this, &AVEILCharacter::FlyUpStop);
-	// The pad: Y toggles flight, left trigger climbs, left shoulder dives.
-	PlayerInputComponent->BindKey(EKeys::Gamepad_FaceButton_Top, IE_Pressed, this, &AVEILCharacter::ToggleFlight);
-	PlayerInputComponent->BindKey(EKeys::Gamepad_LeftTrigger, IE_Pressed, this, &AVEILCharacter::FlyUpStart);
-	PlayerInputComponent->BindKey(EKeys::Gamepad_LeftTrigger, IE_Released, this, &AVEILCharacter::FlyUpStop);
-	PlayerInputComponent->BindKey(EKeys::Gamepad_LeftShoulder, IE_Pressed, this, &AVEILCharacter::FlyDownStart);
-	PlayerInputComponent->BindKey(EKeys::Gamepad_LeftShoulder, IE_Released, this, &AVEILCharacter::FlyDownStop);
 
 	// PUSH TO TALK: B, held. ONE's microphone is open only between these two
 	// events - there is no always-listening mode to switch off. LeftAlt is the
@@ -580,6 +577,42 @@ void AVEILCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 		if (FireAction)   EIC->BindAction(FireAction, ETriggerEvent::Started, this, &AVEILCharacter::Fire);
 		if (InteractAction) EIC->BindAction(InteractAction, ETriggerEvent::Started, this, &AVEILCharacter::Interact);
 		if (SwingAction)  EIC->BindAction(SwingAction, ETriggerEvent::Started, this, &AVEILCharacter::OnSwingInput);
+	}
+
+	LogInputAudit();
+}
+
+// THE SCHEME, SAID OUT LOUD, AT STARTUP.
+// A binding nobody can read is a binding nobody can check, so every action the
+// runner owns is printed with the keys that reach it - keyboard first, then pad.
+// Anything that appears twice is a collision, and the audit counts them.
+void AVEILCharacter::LogInputAudit() const
+{
+	struct FAuditRow { const TCHAR* Action; const TCHAR* Keys; };
+	static const FAuditRow Rows[] =
+	{
+		{ TEXT("MOVE"),      TEXT("W A S D / left stick") },
+		{ TEXT("LOOK"),      TEXT("mouse / right stick") },
+		{ TEXT("JUMP"),      TEXT("Space / A") },
+		{ TEXT("SPRINT"),    TEXT("LeftShift / L3") },
+		{ TEXT("DODGE"),     TEXT("LeftAlt / B") },
+		{ TEXT("AIM"),       TEXT("RMB / LT") },
+		{ TEXT("FIRE"),      TEXT("LMB / RT") },
+		{ TEXT("INTERACT"),  TEXT("E / X  (claims seams, forges beacons, talks)") },
+		{ TEXT("SWING"),     TEXT("F / Y") },
+		{ TEXT("TALK ONE"),  TEXT("B held") },
+		{ TEXT("CAMERA"),    TEXT("V / R3") },
+		{ TEXT("RINGS"),     TEXT("wheel / RB LB") },
+		{ TEXT("FLIGHT"),    TEXT("double-tap jump") },
+		{ TEXT("CLIMB"),     TEXT("Space or A held while flying") },
+		{ TEXT("DIVE"),      TEXT("LeftCtrl (keyboard)") },
+		{ TEXT("NOCLIP"),    TEXT("N (keyboard)") },
+	};
+	UE_LOG(LogVEIL, Warning, TEXT("PHI INPUT AUDIT: %d runner actions; each line names the keys that reach it."),
+		UE_ARRAY_COUNT(Rows));
+	for (const FAuditRow& R : Rows)
+	{
+		UE_LOG(LogVEIL, Warning, TEXT("PHI INPUT: %s = %s"), R.Action, R.Keys);
 	}
 }
 
@@ -750,6 +783,18 @@ void AVEILCharacter::JumpFromInput()
 	// In the air, the jump button is the CLIMB - held, not tapped. That is the
 	// whole separation: the camera keeps looking level while the body rises.
 	if (bFlying) { SetClimbAxis(1.f); return; }
+
+	// DOUBLE-TAP JUMP ENTERS FLIGHT. One press is a jump; a second press inside
+	// phi^-1 fifth of a second (0.382 s) is a takeoff. Nothing else on the keyboard
+	// or the pad has to give up a button for it.
+	const float Now = GetWorld() ? GetWorld()->GetTimeSeconds() : 0.f;
+	if (Now - LastJumpTapAt <= 0.382f)
+	{
+		LastJumpTapAt = -100.f;
+		ToggleFlight();
+		return;
+	}
+	LastJumpTapAt = Now;
 	Jump();
 }
 
