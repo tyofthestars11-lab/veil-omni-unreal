@@ -46,7 +46,9 @@ void APhiGear::BeginPlay()
 	}
 	else if (Stat == EPHIGearStat::Health)
 	{
-		MatPath = TEXT("/Game/PHI/Palette/M_PHI_DeepBlue.M_PHI_DeepBlue");
+		// GEAR IS METAL, NOT BLUE PLASTIC: blue here was a placeholder tint on a physical
+		// object the player picks up and wears.
+		MatPath = TEXT("/Game/PHI/Palette/M_PHI_Gold.M_PHI_Gold");
 		LightCol = FLinearColor(0.3f, 0.5f, 1.f);
 	}
 	if (UMaterialInterface* M = LoadObject<UMaterialInterface>(nullptr, MatPath))

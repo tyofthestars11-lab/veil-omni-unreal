@@ -277,6 +277,71 @@ void AVEILCharacter::BeginPlay()
 	UE_LOG(LogVEIL, Log, TEXT("PHI BODY CHECK: mesh=%s anim=%s"),
 		GetMesh()->GetSkeletalMeshAsset() ? *GetMesh()->GetSkeletalMeshAsset()->GetName() : TEXT("none"),
 		GetMesh()->GetAnimInstance() ? *GetMesh()->GetAnimInstance()->GetClass()->GetName() : TEXT("none"));
+	// THE BLUE SWEEP, WHERE IT CANNOT BE SKIPPED. A flat blue box is a cube or plane
+	// carrying M_PHI_DeepBlue: not a crystal cone, not water. Called here (the path that
+	// prints PHI BODY CHECK) and again at 4 s, after the composition and the fab dressing
+	// have spawned, so both the map's actors and the freshly built ones are covered.
+	{
+		auto SweepBlue = [this]()
+		{
+			UWorld* SweepWorld = GetWorld();
+			if (!SweepWorld) { return; }
+			UStaticMesh* KitFloor = LoadObject<UStaticMesh>(nullptr,
+				TEXT("/Game/Sicka_EnvPack2/Sicka_Ancient_Kit/Mesh/Modular/SM_Floor1_Big.SM_Floor1_Big"));
+			UMaterialInterface* Stone = LoadObject<UMaterialInterface>(nullptr,
+				TEXT("/Game/StarterContent/Materials/M_Brick_Cut_Stone.M_Brick_Cut_Stone"));
+			int32 Touched = 0, Rebuilt = 0, KeptCrystal = 0;
+			// EVERY ACTOR, NOT JUST AStaticMeshActor. The composition and the fab dresser
+			// spawn their own actor classes and hang static mesh components on them, so the
+			// earlier sweeps found nothing at all - which is why the frames stayed blue.
+			for (TActorIterator<AActor> It(SweepWorld); It; ++It)
+			{
+				TInlineComponentArray<UStaticMeshComponent*> Comps;
+				It->GetComponents(Comps);
+				for (UStaticMeshComponent* Comp : Comps)
+				{
+					if (!Comp || !Comp->GetStaticMesh()) { continue; }
+					bool bBlue = false;
+					for (int32 Slot = 0; Slot < Comp->GetNumMaterials(); ++Slot)
+					{
+						const UMaterialInterface* Mat = Comp->GetMaterial(Slot);
+						if (Mat && Mat->GetName().Contains(TEXT("DeepBlue"))) { bBlue = true; break; }
+					}
+					if (!bBlue) { continue; }
+					const FString MeshName = Comp->GetStaticMesh()->GetName();
+					if (MeshName.Contains(TEXT("Cone")) || MeshName.Contains(TEXT("Crystal")))
+					{
+						++KeptCrystal;
+						continue;
+					}
+					const bool bFlatBox = MeshName.Contains(TEXT("Cube")) || MeshName.Contains(TEXT("Plane"));
+					if (bFlatBox && KitFloor) { Comp->SetStaticMesh(KitFloor); ++Rebuilt; }
+					if (Stone)
+					{
+						for (int32 Slot = 0; Slot < Comp->GetNumMaterials(); ++Slot) { Comp->SetMaterial(Slot, Stone); }
+					}
+					++Touched;
+					if (Touched <= 12)
+					{
+						UE_LOG(LogTemp, Display, TEXT("PHI BLUE FIX: %s mesh=%s -> stone"),
+							*It->GetName(), *MeshName);
+					}
+				}
+			}
+			UE_LOG(LogTemp, Display,
+				TEXT("PHI BLUE FIX TOTAL: %d slab(s) re-dressed, %d rebuilt as kit art, %d crystal(s) kept blue."),
+				Touched, Rebuilt, KeptCrystal);
+		};
+		SweepBlue();
+		if (UWorld* SweepWorld = GetWorld())
+		{
+			FTimerHandle SweepAgain;
+			SweepWorld->GetTimerManager().SetTimer(SweepAgain, FTimerDelegate::CreateWeakLambda(this, [SweepBlue]()
+			{
+				SweepBlue();
+			}), 4.f, false);
+		}
+	}
 	// THE VIEW STARTS WHERE THE BODY FACES. The game mode turns the runner
 	// toward his own anchor at spawn, but the camera follows the CONTROLLER's
 	// rotation, which spawns at the default yaw 0 - so Play opened looking at

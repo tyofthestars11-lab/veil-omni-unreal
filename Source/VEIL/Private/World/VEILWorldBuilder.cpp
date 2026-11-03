@@ -2116,8 +2116,12 @@ void AVEILWorldBuilder::DressPhiPalette()
 	// Assets already on disk, no placeholders, no editor step.
 	UMaterialInterface* Gold = LoadObject<UMaterialInterface>(nullptr,
 		TEXT("/Game/PHI/Palette/M_PHI_Gold.M_PHI_Gold"));
+	// STONE, NOT BLUE. This handle reached columns, roofs and shells as flat blue
+	// slabs. It keeps its name so every call site is untouched; the material it
+	// loads is the stone the district is built from. Crystal and water keep their
+	// own blue in their own files.
 	UMaterialInterface* Blue = LoadObject<UMaterialInterface>(nullptr,
-		TEXT("/Game/PHI/Palette/M_PHI_DeepBlue.M_PHI_DeepBlue"));
+		TEXT("/Game/StarterContent/Materials/M_Brick_Cut_Stone.M_Brick_Cut_Stone"));
 	UMaterialInterface* Glow = LoadObject<UMaterialInterface>(nullptr,
 		TEXT("/Game/PHI/Palette/M_PHI_WhiteEmissive.M_PHI_WhiteEmissive"));
 	// THE PILLAR BODIES ARE STONE. Three passes of changing GoldTint numbers proved the
@@ -2495,8 +2499,12 @@ void AVEILWorldBuilder::DressRegions()
 {
 	UMaterialInterface* Gold = LoadObject<UMaterialInterface>(nullptr,
 		TEXT("/Game/PHI/Palette/M_PHI_Gold.M_PHI_Gold"));
+	// STONE, NOT BLUE. This handle reached columns, roofs and shells as flat blue
+	// slabs. It keeps its name so every call site is untouched; the material it
+	// loads is the stone the district is built from. Crystal and water keep their
+	// own blue in their own files.
 	UMaterialInterface* Blue = LoadObject<UMaterialInterface>(nullptr,
-		TEXT("/Game/PHI/Palette/M_PHI_DeepBlue.M_PHI_DeepBlue"));
+		TEXT("/Game/StarterContent/Materials/M_Brick_Cut_Stone.M_Brick_Cut_Stone"));
 	UMaterialInterface* Glow = LoadObject<UMaterialInterface>(nullptr,
 		TEXT("/Game/PHI/Palette/M_PHI_WhiteEmissive.M_PHI_WhiteEmissive"));
 	// THE PILLAR BODIES ARE STONE. Three passes of changing GoldTint numbers proved the

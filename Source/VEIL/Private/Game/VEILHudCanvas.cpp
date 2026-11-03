@@ -709,7 +709,10 @@ void AVEILHudCanvas::DrawHUD()
 		const FString Line = Clock->ClockLine();
 		float LW = 0.f, LH = 0.f;
 		Canvas->StrLen(Med, Line, LW, LH);
-		const float LX = Canvas->ClipX - 30.f - LW;
+		// TOP CENTRE, NOT OVER THE RING. Anchored to ClipX-30 the clock sat on the
+		// minimap's crown - two instruments in one zone. Centred, it keeps the phi
+		// safe margin from the top edge and clears both the ring and the left plate.
+		const float LX = FMath::Max(24.f, (Canvas->ClipX - LW) * 0.5f);
 		FVeilUI::Chip(this, FLinearColor(0.05f, 0.06f, 0.10f, 0.66f), LX - 10.f, 5.f, LW + 20.f, 21.f);
 		DrawText(Line, FLinearColor(1.f, 0.87f, 0.42f), LX, 8.f, Med, 0.8f);
 
