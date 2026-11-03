@@ -587,7 +587,7 @@ void AVEILHudCanvas::DrawHUD()
 			{
 				DrawTexture(Tex, CCX - Half, MY + Row, Half * 2.f, 1.f,
 					(CR - Half) / MS, (Row + 0.5f) / MS, (Half * 2.f) / MS, 1.f / MS,
-					FLinearColor(1.f, 1.f, 1.f, 0.70f), BLEND_Translucent);
+					FLinearColor::White, BLEND_Opaque);   // the capture draws solid; the veil below gives 70%
 			}
 			else
 			{
@@ -597,6 +597,15 @@ void AVEILHudCanvas::DrawHUD()
 		if (!Tex || !Map || Map->GetCaptureCount() == 0)
 		{
 			DrawText(TEXT("MAP ACQUIRING"), FLinearColor(0.62f, 0.70f, 0.80f), MX + 44.f, MY + MS * 0.5f, Med, 0.8f);
+		}
+		// 70% READ: the capture is drawn solid and one veil over it does the dimming -
+		// a translucent texture draw left the disc black in -game.
+		for (int32 Row = 0; Row < (int32)MS; ++Row)
+		{
+			const float DY = Row + 0.5f - CR;
+			const float Half = FMath::Sqrt(FMath::Max(0.f, CR * CR - DY * DY));
+			if (Half < 0.5f) { continue; }
+			DrawRect(FLinearColor(0.02f, 0.03f, 0.06f, 0.30f), CCX - Half, MY + Row, Half * 2.f, 1.f);
 		}
 		// Gold ring with a halo under it: the instrument's bezel.
 		FVeilUI::Ring(this, CCX, CCY, CR + 5.f, FLinearColor(Gold.R, Gold.G, Gold.B, 0.10f), 5.f, 64);
