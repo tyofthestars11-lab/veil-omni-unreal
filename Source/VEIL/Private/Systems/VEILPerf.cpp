@@ -177,6 +177,16 @@ float UVEILPerf::GetLightMs() const
 	return Target / Phi;
 }
 
+// A MEASUREMENT SWITCH, NOT A SHIPPING MODE. The governor rewrites r.ScreenPercentage
+// every 1/phi seconds, so any outside test that sets a resolution is overwritten within
+// a frame or two - two measurements of 20 %% and 100 %% both came back reading the value
+// the loop had chosen. With this at 0 the loop freezes and a frame cost can be measured
+// at a resolution the tester actually asked for.
+static TAutoConsoleVariable<int32> CVarVeilGovernor(
+	TEXT("veil.Governor"), 1,
+	TEXT("1: the frame governor runs and owns the render scale. 0: frozen for measurement."),
+	ECVF_Default);
+
 void UVEILPerf::LogReport()
 {
 	UE_LOG(LogVEIL, Log, TEXT("PHI PERF: avg=%.2f ms  p95=%.2f ms  fps=%.1f  resolution=%d%%  preset=%d  adaptive=%d  cap=%d"),
@@ -227,6 +237,21 @@ FString UVEILPerf::OmniLine() const
 
 void UVEILPerf::PhaseLockTick(float DeltaSeconds, float TargetMs)
 {
+	if (CVarVeilGovernor.GetValueOnGameThread() == 0)
+	{
+		// The report timer lives further down this function, so freezing the governor also
+		// silences the PERF line. A frozen run logs its own line instead of looking dead.
+		static double NextFrozenLog = 0.0;
+		const double FrozenNow = FApp::GetCurrentTime();
+		if (FrozenNow >= NextFrozenLog)
+		{
+			NextFrozenLog = FrozenNow + 5.0;
+			UE_LOG(LogVEIL, Display, TEXT("PHI PERF (frozen governor): last avg %.2f ms p95 %.2f ms fps %.1f screen %.0f%%"),
+				AvgMs, P95Ms, GetFps(), LockScale);
+		}
+		return;	// frozen: nothing here may rewrite the render scale
+	}
+
 	const double Now = FApp::GetCurrentTime();
 
 	// One phase reference for the whole game: 1/phi of a second per turn, so it is
