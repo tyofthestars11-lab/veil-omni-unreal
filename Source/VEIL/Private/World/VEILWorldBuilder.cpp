@@ -3265,7 +3265,7 @@ void AVEILWorldBuilder::BuildPhiDistrict()
 	{
 		const float Rad = FMath::DegreesToRadians(AngDeg);
 		UStaticMeshComponent* St = SpawnBlockRot(FVector(FMath::Cos(Rad) * MidR, FMath::Sin(Rad) * MidR, 4.f),
-			FVector(LenCm / GUnit.X, WidthCm / GUnit.Y, 0.08f), Ground, Stone, 0.f, FRotator(0.f, AngDeg, 0.f));
+			FVector(LenCm / GUnit.X, WidthCm / GUnit.Y, 0.03f), Ground, Stone, 0.f, FRotator(0.f, AngDeg, 0.f));
 		TagCity(St);
 		if (St && StreetStone) { St->SetMaterial(0, StreetStone); }
 		if (St && !bSizedOnce)
@@ -3293,7 +3293,10 @@ void AVEILWorldBuilder::BuildPhiDistrict()
 	for (int32 k = 0; k < RingR.Num(); ++k)
 	{
 		const float R = RingR[k];
-		const int32 Seg = 24;
+		// SEGMENT COUNT FOLLOWS CIRCUMFERENCE. A fixed 24 pieces made ring 6 a set of
+		// kilometre-long slabs that read as black bars from the air. 12 m segments keep
+		// every ring a road at every radius - density follows the packing, not a constant.
+		const int32 Seg = FMath::Max(8, (int32)FMath::CeilToFloat((float)(2.0 * PI * (double)R / 1200.0)));
 		for (int32 i = 0; i < Seg; ++i)
 		{
 			const float Ang = (float)i * (360.f / (float)Seg) + 7.5f;
@@ -3347,9 +3350,14 @@ void AVEILWorldBuilder::BuildPhiDistrict()
 		}
 	}
 
+	int32 SegTotal = 0;
+	for (const float RR : RingR)
+	{
+		SegTotal += FMath::Max(8, (int32)FMath::CeilToFloat((float)(2.0 * PI * (double)RR / 1200.0)));
+	}
 	UE_LOG(LogVEIL, Warning,
 		TEXT("PHI DISTRICT: %d of %d lot(s) placed, %d rejected, %d clamped, %d ring(s), 13 streets, %d road segment(s)."),
-		Built, Lots, 0, 0, RingR.Num(), RingR.Num() * 24);
+		Built, Lots, 0, 0, RingR.Num(), SegTotal);
 	UE_LOG(LogVEIL, Warning, TEXT("PHI CONSTRAINTS: 0 - no keep-out, no cutoff, no clamp, no rejection in this pass."));
 
 	// MEASURE THE PLAN, THEN SETTLE IT. Six seconds in: trace a golden spiral through the
@@ -3681,18 +3689,36 @@ void AVEILWorldBuilder::BuildPhiForms()
 
 	// THE SPIRE: nine sections, each one phi wider than the last below it, turning on the
 	// golden angle so the silhouette is covered rather than stacked. Top lands at ~6 km.
-	int32 SpirePieces = 0;
-	float Z = 500.f, W = 900.f, H = 900.f;
-	for (int32 k = 0; k < 9; ++k)
+	// SIZED FROM THE MESH, NOT FROM A GUESS. A mesh's size at scale 1 is not 100 cm: the
+	// floor piece measured 100 x 56 x 2, and the street at scale 1.11 came out 1001 cm. So
+	// the column is probed once and the spire is built in centimetres from that measurement -
+	// the same class of error that opened the 18 m floor channels.
+	FVector ColCm(100.f, 100.f, 100.f);
 	{
-		Tag(SpawnBlockRot(FVector(0.f, 0.f, Z + H * 0.5f),
-			FVector(W / 100.f, W / 100.f, H / 100.f), Col, Gold, 2.2f,
+		UStaticMeshComponent* Probe = SpawnBlock(FVector(0.f, 0.f, -60000.f), FVector(1.f, 1.f, 1.f), Col, Gold, 0.f);
+		if (Probe)
+		{
+			const FVector B = Probe->Bounds.BoxExtent * 2.f;
+			if (B.Z > 1.f) { ColCm = B; }
+			if (Probe->GetOwner()) { Probe->GetOwner()->Destroy(); }
+		}
+	}
+	int32 SpirePieces = 0;
+	float Z = 500.f;
+	float SectionH = 500.f;
+	float SectionW = 1400.f;
+	for (int32 k = 0; k < 10; ++k)
+	{
+		Tag(SpawnBlockRot(FVector(0.f, 0.f, Z + SectionH * 0.5f),
+			FVector(SectionW / ColCm.X, SectionW / ColCm.Y, SectionH / ColCm.Z), Col, Gold, 2.2f,
 			FRotator(0.f, (float)k * 137.5077640500378f, 0.f)));
-		Z += H;
-		W /= 1.618033988749895f;
-		H *= 1.618033988749895f;
+		Z += SectionH;
+		SectionW /= 1.618033988749895f;
+		SectionH *= 1.618033988749895f;
 		++SpirePieces;
 	}
+	UE_LOG(LogVEIL, Warning, TEXT("PHI SPIRE: column unit %.0f x %.0f x %.0f cm, %d section(s), top at %.0f cm."),
+		ColCm.X, ColCm.Y, ColCm.Z, SpirePieces, Z);
 
 	int32 Falls = 0;
 	for (int32 k = 0; k < 4; ++k)
