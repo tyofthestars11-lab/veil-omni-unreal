@@ -838,7 +838,7 @@ void AVEILHudCanvas::DrawHUD()
 		const bool bPageUp = LegendPC && (LegendPC->bShowChart || LegendPC->bShowFieldManual);
 		if ((!Talking || !Talking->IsActive()) && !bPageUp)
 		{
-			DrawMapLegend(Canvas, Med, 30.f, Canvas->ClipY - 118.f, false);
+			DrawMapLegend(Canvas, Med, 30.f, Canvas->ClipY - 124.f, false);   // band 1: legend
 
 			// QUEST BANNER, bottom left, in gold cloth: the side objective the vision
 			// carries above the legend, so the screen always names the work in progress.
@@ -850,9 +850,9 @@ void AVEILHudCanvas::DrawHUD()
 				if (const UVEILCampaignSubsystem* Camp = W->GetSubsystem<UVEILCampaignSubsystem>())
 				{
 					DrawText(Camp->ActivityLine(), FLinearColor(0.788f, 0.635f, 0.290f, 0.95f),
-						30.f, Canvas->ClipY - 146.f - 26.f, Med, 0.56f);
+						30.f, Canvas->ClipY - 94.f, Med, 0.56f);   // band 2: activities
 				}
-				const float QY = Canvas->ClipY - 146.f;
+				const float QY = Canvas->ClipY - 70.f;      // band 3: the quest ribbon
 				float QW = 0.f, QH = 0.f;
 				Canvas->StrLen(Med, FString(TEXT("THE GOLDEN MIDST")), QW, QH);
 				FVeilUI::Ribbon(this, FLinearColor(0.16f, 0.11f, 0.03f, 0.88f), 30.f, QY, QW * 0.86f + 46.f, 15.f, true);
@@ -992,7 +992,7 @@ void AVEILHudCanvas::DrawHUD()
 			const float CX = Canvas->ClipX - CW - 30.f;
 			// Under the map, not on top of it: the round instrument now reaches
 			// 30 + 220 px, so the card starts clear of the ring's halo.
-			const float CY = 30.f + 244.f;
+			const float CY = 30.f + Canvas->ClipY / UPHIMITO_PHI_SAFE + 18.f;   // under the ring
 			const float CH = 90.f;
 			const FVEILTutorialStep& S = Tut->GetStep();
 			const bool bDone = Tut->IsComplete();
