@@ -23,6 +23,13 @@ APhiOcean::APhiOcean()
 void APhiOcean::BeginPlay()
 {
 	Super::BeginPlay();
+
+	// THE SEA WAS OVER THE CITY. The water surface sat above the plaza, so every frame
+	// from the market was shot along the underside of the sea - a flat purple wash with
+	// glowing shapes in it, which reads as "floating geometry" from inside. Four metres
+	// down puts the surface below the plaza the runner stands on.
+	SetActorLocation(GetActorLocation() - FVector(0.f, 0.f, 400.f));
+	UE_LOG(LogTemp, Warning, TEXT("PHI SEA: ocean dropped 400 cm, surface now below the plaza."));
 	Water->SetBoxExtent(FVector(WaterSize.X / 2, WaterSize.Y / 2, WaterSize.Z / 2));
 	if (UStaticMesh* Cube = LoadObject<UStaticMesh>(nullptr, TEXT("/Engine/BasicShapes/Cube.Cube")))
 	{

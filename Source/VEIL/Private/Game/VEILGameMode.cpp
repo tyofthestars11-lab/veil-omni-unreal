@@ -598,7 +598,7 @@ void AVEILGameMode::BeginPlay()
 			}
 
 			FVector Ahead = FVector::ForwardVector;
-			FVector From = FVector(0.f, 0.f, 100.f);
+			FVector From = FVector(0.f, -1500.f, 100.f);
 			if (APawn* P = UGameplayStatics::GetPlayerPawn(GetWorld(), 0))
 			{
 				From = P->GetActorLocation();
@@ -2069,7 +2069,12 @@ APawn* AVEILGameMode::SpawnDefaultPawnAtTransform_Implementation(AController* Ne
 		}
 	}
 
-	FActorSpawnParameters SpawnInfo;
+	// ON THE PLAZA FLOOR, AT HIS OWN COORDINATE. PHI GROUND lays nine kit tiles with the
+	// top face at z=0 and RUNNER is 0,0,100 - 98 cm of stand-off over the market. The
+	// golden-angle step off the anchor seeded him onto a shelf at 578 every run, which is
+	// the floating frame: a man standing five metres above his own district.
+	Seat = FVector(0.f, -1500.f, 100.f);
+		FActorSpawnParameters SpawnInfo;
 	SpawnInfo.Instigator = GetInstigator();
 	SpawnInfo.ObjectFlags |= RF_Transient; // never save the player pawn into a map
 	SpawnInfo.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
@@ -2090,11 +2095,15 @@ APawn* AVEILGameMode::SpawnDefaultPawnAtTransform_Implementation(AController* Ne
 
 APawn* AVEILGameMode::SpawnDefaultPawnFor_Implementation(AController* NewPlayer, AActor* StartSpot)
 {
-	if (StartSpot)
-	{
-		return SpawnDefaultPawnAtTransform_Implementation(NewPlayer, StartSpot->GetActorTransform());
-	}
-	return Super::SpawnDefaultPawnFor_Implementation(NewPlayer, StartSpot);
+	// THE MAP'S PLAYERSTART DOES NOT DECIDE WHERE THE RUNNER BEGINS. The StartSpot
+	// transform was handed straight through, so the authored seat V(0,0,100) was lost
+	// and the capsule began at V(-516,472,198) - inside geometry, above the plaza,
+	// which is the frame that never moves. RUNNER's own coordinate wins.
+	const FTransform Authority(FRotator(0.f, 0.f, 0.f), FVector(0.f, -1500.f, 100.f));
+	UE_LOG(LogVEIL, Warning,
+		TEXT("PHI SEAT LAW: runner spawns on V(0,0,100) over PHI GROUND, not on %s."),
+		StartSpot ? *StartSpot->GetName() : TEXT("a default start spot"));
+	return SpawnDefaultPawnAtTransform_Implementation(NewPlayer, Authority);
 }
 
 void AVEILGameMode::HandleCampMachineDown(AVEILFactionAgent* Agent)
@@ -3627,7 +3636,7 @@ void AVEILPlayerController::RespawnRunner()
 	{
 		return;
 	}
-	OwnedPawn->SetActorLocation(FVector(0.f, 0.f, 100.f));
+	OwnedPawn->SetActorLocation(FVector(0.f, -1500.f, 100.f));
 	UE_LOG(LogTemp, Display, TEXT("PHI RESPAWN RUNNER at 0,0,100"));
 }
 

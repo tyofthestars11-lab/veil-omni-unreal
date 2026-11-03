@@ -334,6 +334,187 @@ void AVEILCharacter::BeginPlay()
 				Touched, Rebuilt, KeptCrystal);
 		};
 		SweepBlue();
+		// THE PLAZA HAS A FLOOR. Nine kit tiles, top face at z=0, blocking collision -
+		// the market the vision shows is a market you can stand on, and every "floating"
+		// frame was the runner being held five metres above it by a shelf.
+		if (UWorld* GroundWorld = GetWorld())
+		{
+			UStaticMesh* FloorMesh = LoadObject<UStaticMesh>(nullptr,
+				TEXT("/Game/Sicka_EnvPack2/Sicka_Ancient_Kit/Mesh/Modular/SM_Floor1_Big.SM_Floor1_Big"));
+			UMaterialInterface* FloorStone = LoadObject<UMaterialInterface>(nullptr,
+				TEXT("/Game/StarterContent/Materials/M_Brick_Cut_Stone.M_Brick_Cut_Stone"));
+			int32 Tiles = 0;
+			if (FloorMesh)
+			{
+				const FVector Extent = FloorMesh->GetBounds().BoxExtent;
+				const float Half = FMath::Max(1.f, Extent.GetMax());
+				const float Scale = 4000.f / Half;                 // 80 m across per tile
+				const float Step = 8000.f;
+				for (int32 GX = -1; GX <= 1; ++GX)
+				{
+					for (int32 GY = -1; GY <= 1; ++GY)
+					{
+						const FVector At(GX * Step, GY * Step, -Extent.Z * Scale);
+						FActorSpawnParameters Params;
+						Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+						if (AStaticMeshActor* Tile = GroundWorld->SpawnActor<AStaticMeshActor>(
+							AStaticMeshActor::StaticClass(), At, FRotator::ZeroRotator, Params))
+						{
+							if (UStaticMeshComponent* Comp = Tile->GetStaticMeshComponent())
+							{
+								Comp->SetMobility(EComponentMobility::Static);
+								Comp->SetStaticMesh(FloorMesh);
+								Tile->SetActorScale3D(FVector(Scale));
+								Comp->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+								Comp->SetCollisionProfileName(TEXT("BlockAll"));
+								if (FloorStone) { Comp->SetMaterial(0, FloorStone); }
+								Tile->Tags.Add(FName(TEXT("PhiGround")));
+								++Tiles;
+							}
+						}
+					}
+				}
+			}
+			UE_LOG(LogVEIL, Warning,
+				TEXT("PHI GROUND: %d kit tile(s) laid, top face at z=0, collision blocking."), Tiles);
+			// ON THE FLOOR, AT HIS OWN COORDINATE. RUNNER is 0,0,100: 98 cm of stand-off
+			// over the new ground, which is where the vision's market is.
+			SetActorLocation(FVector(0.f, -1500.f, 100.f), false, nullptr, ETeleportType::TeleportPhysics);
+			UE_LOG(LogVEIL, Warning,
+				TEXT("PHI AUTHORITY SEAT: runner stands on V(0,0,100) over real ground."));
+			// CLEAR THE SPAWN COLUMN. Duplicated shells stand where the market is, so the
+			// capsule begins inside geometry and nothing can move it. Anything solid within
+			// 700 cm of the spawn and below 400 cm up is scenery over the plaza; the tagged
+			// PHI GROUND tiles are the floor and stay.
+			{
+				const FVector Plaza(0.f, -1500.f, 100.f);
+				int32 Cleared = 0;
+				for (TActorIterator<AActor> ShellIt(GroundWorld); ShellIt; ++ShellIt)
+				{
+					AActor* Shell = *ShellIt;
+					if (!Shell || Shell == this) { continue; }
+					if (Shell->Tags.Contains(FName(TEXT("PhiGround")))) { continue; }
+					if (Shell->IsA(APawn::StaticClass())) { continue; }
+					// MESH ART ONLY. Actor_1 has no static mesh and its top face at 500 IS
+					// the market deck - deleting it deleted the city and left the runner
+					// floating over open sea. Only worn meshes are cleared.
+					{
+						TInlineComponentArray<UStaticMeshComponent*> MeshComps;
+						Shell->GetComponents(MeshComps);
+						if (MeshComps.Num() == 0) { continue; }
+					}
+					// ANY COLLIDING PRIMITIVE. Actor_1 is a collision slab with no static
+					// mesh; a static-mesh sweep cannot see it, and its top face is 500 cm of
+					// floor standing where the plaza is.
+					TInlineComponentArray<UPrimitiveComponent*> ShellComps;
+					Shell->GetComponents(ShellComps);
+					bool bOverPlaza = false;
+					for (UPrimitiveComponent* ShellComp : ShellComps)
+					{
+						if (!ShellComp) { continue; }
+						if (ShellComp->GetCollisionEnabled() == ECollisionEnabled::NoCollision) { continue; }
+						const FBoxSphereBounds B = ShellComp->Bounds;
+						// THE COLUMN, NOT THE ORIGIN. Actor_1 spans the whole district: its
+						// bounds origin is the map centre, kilometres away, so distance
+						// tests skipped it while its top face at 500 cm stood the runner up
+						// at 598.15 every single run. Box against box finds it however big
+						// it is. The tagged floor tiles stay.
+						const FBox Column(Plaza - FVector(320.f, 320.f, 320.f),
+							Plaza + FVector(320.f, 320.f, 1900.f));
+						const FBox Box = B.GetBox();
+						// THE EYE COUNTS TOO. A sheet can sit above the column and still
+						// fill the camera; if the box holds the eye point, it is covering
+						// the view and it goes.
+						if (Box.Intersect(Column) || Box.IsInside(Plaza + FVector(0.f, 0.f, 160.f)))
+						{
+							bOverPlaza = true;
+							UE_LOG(LogVEIL, Warning,
+								TEXT("PHI PLAZA CLEAR: removing %s (%s) at %s, extent %s."),
+								*Shell->GetName(), *Shell->GetClass()->GetName(),
+								*Box.GetCenter().ToCompactString(), *Box.GetExtent().ToCompactString());
+						}
+						break;
+						break;
+					}
+					if (bOverPlaza) { Shell->Destroy(); ++Cleared; }
+				}
+				UE_LOG(LogVEIL, Warning, TEXT("PHI PLAZA CLEAR: %d shell(s) removed from the spawn column."), Cleared);
+			}
+			// WHO IS THE WATER. The plaza reads as a flat purple sea: a surface sits at
+			// z=7 over the ground the tiles laid at 0, and the camera at 1.8 m looks
+			// straight across it. Name it here, then drop it under the city.
+			{
+				FHitResult WetHit;
+				FCollisionQueryParams WetParams(SCENE_QUERY_STAT(VeilWaterId), false, this);
+				const FVector WetFrom(0.f, -1500.f, 400.f);
+				const FVector WetTo(0.f, -1500.f, -200.f);
+				if (GroundWorld->LineTraceSingleByChannel(WetHit, WetFrom, WetTo, ECC_Visibility, WetParams))
+				{
+					AActor* Wet = WetHit.GetActor();
+					const FString WetName = Wet ? Wet->GetName() : TEXT("none");
+					const FString WetClass = Wet ? Wet->GetClass()->GetName() : TEXT("none");
+					const FString WetMesh = WetHit.GetComponent() ? WetHit.GetComponent()->GetName() : TEXT("none");
+					UE_LOG(LogVEIL, Warning,
+						TEXT("PHI WATER ID: surface at z=%.0f is %s (%s), component %s."),
+						WetHit.ImpactPoint.Z, *WetName, *WetClass, *WetMesh);
+
+					// Anything holding a surface over the plaza that is not the tagged
+					// floor is the sea. Five metres down puts it under the city.
+					int32 Drowned = 0;
+					for (TActorIterator<AActor> WetIt(GroundWorld); WetIt; ++WetIt)
+					{
+						AActor* W = *WetIt;
+						if (!W || W == this) { continue; }
+						const FString Cls = W->GetClass()->GetName();
+						if (!Cls.Contains(TEXT("Ocean")) && !Cls.Contains(TEXT("Water")) &&
+							!Cls.Contains(TEXT("Lake")) && !W->GetName().Contains(TEXT("Water")))
+						{
+							continue;
+						}
+						W->SetActorLocation(W->GetActorLocation() - FVector(0.f, 0.f, 500.f));
+						++Drowned;
+						UE_LOG(LogVEIL, Warning, TEXT("PHI SEA: %s (%s) lowered 500 cm under the city."),
+							*W->GetName(), *Cls);
+					}
+					UE_LOG(LogVEIL, Warning, TEXT("PHI SEA: %d water actor(s) lowered."), Drowned);
+				}
+			}
+			// SETTLE ON THE FLOOR. Whatever lifts him - a shelf outside the clear radius, a
+			// ground snap, the unstick - cannot survive this: six seconds in, above two
+			// metres means he is not standing on the plaza, and he is put back on it.
+			{
+				FTimerHandle SettleTimer;
+				GroundWorld->GetTimerManager().SetTimer(SettleTimer, FTimerDelegate::CreateWeakLambda(this, [this, GroundWorld]()
+				{
+					// AROUND THE RUNNER, NOT A FIXED POINT. The seat search wakes him at
+					// V(-831,-138,105); a clear anchored at V(0,-1500) never touches that
+					// spot, and the purple sheet crossing his eye there is what fills the
+					// frame. This sweeps the column he is actually in.
+					// SEAT HIM ON FLOOR, AND TOUCH NOTHING. The destructive version of this
+					// took the whole market with it and left an empty blue void; the sea was
+					// what filled the frame, and that is fixed in the ocean itself.
+					const FVector Me = GetActorLocation();
+					FHitResult FloorHit;
+					FCollisionQueryParams Sp(SCENE_QUERY_STAT(VeilSettle), false, this);
+					if (GroundWorld->LineTraceSingleByChannel(FloorHit, Me + FVector(0.f, 0.f, 1500.f),
+						Me - FVector(0.f, 0.f, 3000.f), ECC_Visibility, Sp))
+					{
+						// THE MARKET IS THE DECK, NOT THE SEA. The first thing under the
+						// runner's column is the market deck at ~500 cm; the purple water
+						// is at 7 and he was being pushed down into it, which is the flat
+						// purple wash in every frame. Stand him on the deck he was on.
+						if (FloorHit.ImpactPoint.Z <= 900.f)
+						{
+							SetActorLocation(FVector(Me.X, Me.Y, FloorHit.ImpactPoint.Z + 98.f),
+								false, nullptr, ETeleportType::TeleportPhysics);
+						}
+					}
+					UE_LOG(LogVEIL, Warning, TEXT("PHI EYE CLEAR: runner seated at %s, floor z=%.0f."),
+						*Me.ToCompactString(), FloorHit.ImpactPoint.Z);
+				}), 6.f, false);
+			}
+			// (the one-second floor hold is gone: it was dragging him into the sea)
+		}
 		if (UWorld* SweepWorld = GetWorld())
 		{
 			FTimerHandle SweepAgain;
@@ -989,7 +1170,13 @@ void AVEILCharacter::Tick(float DeltaSeconds)
 							bFoundFloor = true;
 							Down = FVector(PX, PY, FloorZ - 5.f);
 						}
-						if (!bFoundFloor) { continue; }
+						// A SURFACE ABOVE TWO METRES IS A ROOF. PHI GROUND puts the plaza at
+						// z=0, so a shelf at 500 is no longer the only thing that answers.
+						// THE DECK IS AT 500. The city's market stands on a slab whose
+						// top face is 500 cm, so a 200 cm ceiling rejected the only real
+						// ground and called the plaza "boxed in". Everything up to 900 is
+						// deck; the roof is above that.
+						if (!bFoundFloor || FloorZ > 900.f) { continue; }
 						const FVector Stand(PX, PY, FloorZ + 98.f);
 						FCollisionQueryParams Free = Probe;
 						Free.AddIgnoredActor(FloorActor);
@@ -1007,6 +1194,16 @@ void AVEILCharacter::Tick(float DeltaSeconds)
 					UE_LOG(LogVEIL, Warning,
 						TEXT("PHI UNSTICK: no open ground within 1500 cm of %s - the capsule is boxed in."),
 						*From.ToCompactString());
+					// BOXED IN MEANS THE PLAZA, ONCE. He was left inside the PlayerStart's
+					// corner every run, which is the stand-still frame; one teleport to his
+					// own coordinate puts him on the floor PHI GROUND laid.
+					static bool bPlazaRescue = false;
+					if (!bPlazaRescue)
+					{
+						bPlazaRescue = true;
+						SetActorLocation(FVector(0.f, -1500.f, 100.f), false, nullptr, ETeleportType::TeleportPhysics);
+						UE_LOG(LogVEIL, Warning, TEXT("PHI SEAT LAW: boxed in, so the runner stands on V(0,0,100)."));
+					}
 				}
 			}
 		}
