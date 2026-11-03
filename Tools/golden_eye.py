@@ -138,7 +138,7 @@ pillar("LOOP: load, claim, save, reload", [
     ("save loads", "PHI HUD LOAD: loaded=1" in LOG, "no loaded=1 in the newest run"),
     ("claim works", "PHI CLAIM:" in LOG, "no seam claimed in the newest run"),
     ("autosave writes", "PHI AUTOSAVE: wrote=1" in LOG, "autosave did not write"),
-    ("tetra chain places", "PHI TETRA: chain placed" in LOG, "chain not placed"),
+    ("content ring builds", "PHI CONTENT: crystals=" in LOG, "content pass did not run"),
     ("24 of 24 mines on their ground", "PHI MINE CLAIMS: 24 of 24" in LOG, "mine claims not all proven"),
     ("input audit prints", "PHI INPUT AUDIT" in LOG, "no scheme audit"),
 ])

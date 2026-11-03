@@ -179,7 +179,7 @@ else:
 
 # tetra + species, measured rather than assumed
 for label, needle, where in (
-    ("tetra chain places", "TETRA: chain placed", "log"),
+    ("content ring builds", "PHI CONTENT: crystals=", "log"),
     ("ONE is reachable", "PHI ONE", "log"),
 ):
     text = read(logs[0]) if logs else ""

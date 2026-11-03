@@ -640,8 +640,12 @@ void AVEILGameMode::BeginPlay()
 			// on the plaza, and in the Play frame they read as white pyramids and triangles
 			// dropped on the ground. The switch stays so the art can be turned back on
 			// deliberately; the district no longer places them.
-			static const bool bPlaceTetraChain = true;
-			if (bPlaceTetraChain && TetraExisting == 0)
+		// OFF IN A SHIPPING RUN. Six white Paragon travel-FX pyramids on the plaza read
+		// as exactly what they are - foreign test art dropped in a district - and the
+		// first thing a player saw was a scatter of them at their feet. The chain still
+		// proves the phi scale under -phigolden, alongside the 34-cube spiral.
+		static const bool bPlaceTetraChain = false;
+			if ((bPlaceTetraChain || bGoldenProof) && TetraExisting == 0)
 			{
 				const FVector Right = FVector::CrossProduct(Ahead, FVector::UpVector).GetSafeNormal();
 				FCollisionQueryParams GroundParams(SCENE_QUERY_STAT(VEILGoldenPlacement), false);

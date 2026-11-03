@@ -4,6 +4,8 @@
 #include "Components/StaticMeshComponent.h"
 #include "Engine/StaticMesh.h"
 #include "Engine/World.h"
+#include "GameFramework/Pawn.h"
+#include "Kismet/GameplayStatics.h"
 #include "Materials/MaterialInterface.h"
 #include "VEIL.h"
 
@@ -40,17 +42,55 @@ UStaticMeshComponent* AVEILContentPass::Part(UStaticMesh* Mesh, const FVector& L
 	return C;
 }
 
-bool AVEILContentPass::GroundAt(float X, float Y, float& OutZ) const
+bool AVEILContentPass::FindSpot(const FVector& Anchor, float Radius, float AngleDeg,
+	float MinSpacing, FVector& Out)
 {
 	UWorld* W = GetWorld();
 	if (!W) { return false; }
-	FHitResult Hit;
-	FCollisionQueryParams P(SCENE_QUERY_STAT(VEILContentGround), false, this);
-	if (!W->LineTraceSingleByChannel(Hit, FVector(X, Y, 60000.f), FVector(X, Y, -20000.f), ECC_Visibility, P))
+
+	const float Ang = FMath::DegreesToRadians(AngleDeg);
+	const FVector2D P2(Anchor.X + FMath::Cos(Ang) * Radius, Anchor.Y + FMath::Sin(Ang) * Radius);
+
+	// THE FLOOR THE RUNNER IS STANDING ON, not the top of the skyline. A window of
+	// 300 cm up and 300 cm down keeps every piece on his level: a crystal on a
+	// roof ten storeys above him is not world, it is debris.
+	FCollisionQueryParams Params(SCENE_QUERY_STAT(VEILContentSpot), false, this);
+	FHitResult Ground;
+	if (!W->LineTraceSingleByChannel(Ground,
+		FVector(P2.X, P2.Y, Anchor.Z + 300.f), FVector(P2.X, P2.Y, Anchor.Z - 300.f),
+		ECC_Visibility, Params))
 	{
 		return false;
 	}
-	OutZ = Hit.ImpactPoint.Z;
+	const float Z = Ground.ImpactPoint.Z;
+	if (FMath::Abs(Z - Anchor.Z) > 120.f) { return false; }
+
+	// ROOM TO EXIST: a 220 cm sphere whose bottom clears the pavement must be
+	// empty. This is what refuses the inside of a wall or a parked machine.
+	if (W->OverlapAnyTestByChannel(FVector(P2.X, P2.Y, Z + 300.f), FQuat::Identity,
+		ECC_WorldStatic, FCollisionShape::MakeSphere(220.f), Params))
+	{
+		return false;
+	}
+
+	// OPEN SKY: anything overhead within six metres means we are under a building,
+	// a bridge deck or an awning, where a tree has no business growing.
+	FHitResult Above;
+	if (W->LineTraceSingleByChannel(Above, FVector(P2.X, P2.Y, Z + 100.f),
+		FVector(P2.X, P2.Y, Z + 600.f), ECC_Visibility, Params))
+	{
+		return false;
+	}
+
+	// SPACING: the ring has to read as a district, not a heap.
+	const FVector Here(P2.X, P2.Y, Z);
+	for (const FVector& T : Taken)
+	{
+		if (FVector::Dist2D(T, Here) < MinSpacing) { return false; }
+	}
+
+	Out = Here;
+	Taken.Add(Here);
 	return true;
 }
 
@@ -90,8 +130,8 @@ void AVEILContentPass::BuildTree(const FVector& At)
 
 void AVEILContentPass::BuildStall(const FVector& At, float YawDeg)
 {
-	// A COUNTER, FOUR POSTS, AN AWNING AND A LAMP. A market stall is a silhouette,
-	// not an asset: this one is walk-around and can be stood behind.
+	// A COUNTER, FOUR POSTS, AN AWNING. A market stall is a silhouette, not an
+	// asset: this one is walk-around and can be stood behind.
 	const FRotator Yaw(0.f, YawDeg, 0.f);
 	const FVector Fwd = Yaw.Vector();
 	const FVector Right = FVector::CrossProduct(FVector::UpVector, Fwd);
@@ -133,8 +173,8 @@ void AVEILContentPass::BuildTent(const FVector& At, float YawDeg)
 
 void AVEILContentPass::BuildBridge(const FVector& A, const FVector& B)
 {
-	// PLANKS AND TWO ROPES, laid between two pieces of ground that exist. Each plank
-	// sits on the sag line, so the deck dips instead of running dead flat.
+	// PLANKS AND TWO ROPES, laid between two spots that both have real ground. Each
+	// plank sits on the sag line, so the deck dips instead of running dead flat.
 	const FVector Delta = B - A;
 	const float Len = Delta.Size2D();
 	if (Len < 200.f) { return; }
@@ -171,60 +211,88 @@ void AVEILContentPass::Populate()
 	DeepBlue = LoadObject<UMaterialInterface>(nullptr, BluePath);
 	if (!Cube || !Cylinder || !Cone) { return; }
 
-	// CRYSTALS: fourteen clusters on the golden spiral, 900 cm out and climbing.
-	for (int32 c = 0; c < 14; ++c)
+	// ANCHOR IS THE RUNNER, NOT THE WORLD ORIGIN. This is the correction that
+	// matters: origin is 2,200 cm from where he wakes, inside the city.
+	FVector Anchor(0.f, 0.f, 100.f);
+	if (const APawn* P = UGameplayStatics::GetPlayerPawn(W, 0)) { Anchor = P->GetActorLocation(); }
+
+	// His floor: the first ground within 3 m up and 15 m down of his feet. The seat
+	// code has already moved him off roofs, so this is the pavement he may walk on.
 	{
-		const float Ang = FMath::DegreesToRadians(c * ContentGoldenDeg + 37.f);
-		const float R = 900.f + 120.f * c;
-		float Z = 0.f;
-		if (!GroundAt(FMath::Cos(Ang) * R, FMath::Sin(Ang) * R, Z)) { continue; }
-		BuildCrystal(FVector(FMath::Cos(Ang) * R, FMath::Sin(Ang) * R, Z));
+		FCollisionQueryParams Params(SCENE_QUERY_STAT(VEILContentFloor), false, this);
+		FHitResult Floor;
+		if (W->LineTraceSingleByChannel(Floor, Anchor + FVector(0.f, 0.f, 300.f),
+			Anchor - FVector(0.f, 0.f, 1500.f), ECC_Visibility, Params))
+		{
+			Anchor.Z = Floor.ImpactPoint.Z;
+		}
 	}
 
-	// TREES: eighteen, further out, on the same law.
-	for (int32 i = 0; i < 18; ++i)
-	{
-		const float Ang = FMath::DegreesToRadians(i * ContentGoldenDeg + 101.f);
-		const float R = 1400.f + 160.f * i;
-		float Z = 0.f;
-		if (!GroundAt(FMath::Cos(Ang) * R, FMath::Sin(Ang) * R, Z)) { continue; }
-		BuildTree(FVector(FMath::Cos(Ang) * R, FMath::Sin(Ang) * R, Z));
-	}
+	Taken.Reset();
+	int32 Tried = 0;
+	int32 Refused = 0;
 
-	// STALLS: eight round the plaza, each facing the centre it sells to.
-	for (int32 s = 0; s < 8; ++s)
+	// The sweep itself: golden angle per candidate, a bounded ring per family, and
+	// every refusal counted rather than papered over.
+	auto Sweep = [&](const TCHAR* Family, int32 Wanted, float BaseR, float StepR,
+		float MinSpacing, float SeedDeg, TFunctionRef<void(const FVector&, float)> Place)
 	{
-		const float Ang = FMath::DegreesToRadians(s * ContentGoldenDeg);
-		const float R = 760.f;
-		float Z = 0.f;
-		if (!GroundAt(FMath::Cos(Ang) * R, FMath::Sin(Ang) * R, Z)) { continue; }
-		BuildStall(FVector(FMath::Cos(Ang) * R, FMath::Sin(Ang) * R, Z),
-			FMath::RadiansToDegrees(Ang) + 180.f);
-	}
+		int32 Placed = 0;
+		for (int32 i = 0; i < Wanted * 4 && Placed < Wanted; ++i)
+		{
+			const float Ang = SeedDeg + i * ContentGoldenDeg;
+			const float R = BaseR + StepR * (float)(i % 6);
+			FVector Spot;
+			++Tried;
+			if (!FindSpot(Anchor, R, Ang, MinSpacing, Spot)) { ++Refused; continue; }
+			Place(Spot, Ang);
+			++Placed;
+			UE_LOG(LogVEIL, Display,
+				TEXT("PHI CONTENT PLACE: %s %d at %s, %.0f cm from the runner."),
+				Family, Placed, *Spot.ToCompactString(), FVector::Dist2D(Spot, Anchor));
+		}
+		if (Placed < Wanted)
+		{
+			UE_LOG(LogVEIL, Warning, TEXT("PHI CONTENT SHORT: %s placed %d of %d - no more open ground on that ring."),
+				Family, Placed, Wanted);
+		}
+	};
 
-	// TENTS: eight market canopies on the ring between the stalls and the trees.
-	for (int32 t = 0; t < 8; ++t)
+	// STALLS ring the runner at 9-12 m, facing him.
+	Sweep(TEXT("stall"), 8, 900.f, 60.f, 760.f, 0.f, [this](const FVector& Spot, float Ang)
 	{
-		const float Ang = FMath::DegreesToRadians(t * ContentGoldenDeg + 137.f);
-		const float R = 620.f;
-		float Z = 0.f;
-		if (!GroundAt(FMath::Cos(Ang) * R, FMath::Sin(Ang) * R, Z)) { continue; }
-		BuildTent(FVector(FMath::Cos(Ang) * R, FMath::Sin(Ang) * R, Z),
-			FMath::RadiansToDegrees(Ang) + 180.f);
-	}
-
-	// BRIDGES: three, between two points that both have real ground under them.
+		BuildStall(Spot, FMath::RadiansToDegrees(Ang) + 180.f);
+	});
+	// TENTS one ring further out, between the stalls and the trees.
+	Sweep(TEXT("tent"), 8, 1500.f, 60.f, 760.f, 137.f, [this](const FVector& Spot, float Ang)
+	{
+		BuildTent(Spot, FMath::RadiansToDegrees(Ang) + 180.f);
+	});
+	// CRYSTALS on the golden sweep at 23-29 m.
+	Sweep(TEXT("crystal"), 14, 2300.f, 110.f, 700.f, 37.f, [this](const FVector& Spot, float)
+	{
+		BuildCrystal(Spot);
+	});
+	// TREES at 32-40 m, the edge of the open ground.
+	Sweep(TEXT("tree"), 18, 3200.f, 130.f, 700.f, 101.f, [this](const FVector& Spot, float)
+	{
+		BuildTree(Spot);
+	});
+	// BRIDGES: pairs of open spots on the outer ring, joined across what the market
+	// does not already fill.
 	for (int32 b = 0; b < 3; ++b)
 	{
-		const float Ang = FMath::DegreesToRadians(b * ContentGoldenDeg + 240.f);
-		const FVector2D A2(FMath::Cos(Ang) * 2000.f, FMath::Sin(Ang) * 2000.f);
-		const FVector2D B2(FMath::Cos(Ang) * 3200.f, FMath::Sin(Ang) * 3200.f);
-		float ZA = 0.f, ZB = 0.f;
-		if (!GroundAt(A2.X, A2.Y, ZA) || !GroundAt(B2.X, B2.Y, ZB)) { continue; }
-		BuildBridge(FVector(A2.X, A2.Y, ZA), FVector(B2.X, B2.Y, ZB));
+		FVector PA, PB;
+		const float A1 = 240.f + b * ContentGoldenDeg;
+		const float A2 = A1 + 46.f;
+		if (!FindSpot(Anchor, 4200.f, A1, 300.f, PA)) { ++Refused; continue; }
+		if (!FindSpot(Anchor, 4200.f, A2, 300.f, PB)) { ++Refused; continue; }
+		BuildBridge(PA, PB);
+		UE_LOG(LogVEIL, Display, TEXT("PHI CONTENT PLACE: bridge %d from %s to %s over %.0f cm."),
+			Bridges, *PA.ToCompactString(), *PB.ToCompactString(), FVector::Dist2D(PA, PB));
 	}
 
 	UE_LOG(LogVEIL, Warning,
-		TEXT("PHI CONTENT: crystals=%d trees=%d stalls=%d tents=%d bridges=%d built by phi rule, %d parts total."),
-		Crystals, Trees, Stalls, Tents, Bridges, Parts.Num());
+		TEXT("PHI CONTENT: crystals=%d trees=%d stalls=%d tents=%d bridges=%d built by phi rule around the runner at %s, %d parts total (tried=%d, refused=%d)."),
+		Crystals, Trees, Stalls, Tents, Bridges, *Anchor.ToCompactString(), Parts.Num(), Tried, Refused);
 }
