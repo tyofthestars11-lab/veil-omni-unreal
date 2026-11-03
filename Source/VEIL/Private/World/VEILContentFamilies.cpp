@@ -259,12 +259,12 @@ void AVEILContentPass::Populate()
 	};
 
 	// STALLS ring the runner at 9-12 m, facing him.
-	Sweep(TEXT("stall"), 8, 900.f, 60.f, 760.f, 0.f, [this](const FVector& Spot, float Ang)
+	Sweep(TEXT("stall"), 8, 900.f, 90.f, 620.f, 0.f, [this](const FVector& Spot, float Ang)
 	{
 		BuildStall(Spot, FMath::RadiansToDegrees(Ang) + 180.f);
 	});
 	// TENTS one ring further out, between the stalls and the trees.
-	Sweep(TEXT("tent"), 8, 1500.f, 60.f, 760.f, 137.f, [this](const FVector& Spot, float Ang)
+	Sweep(TEXT("tent"), 8, 1500.f, 90.f, 620.f, 137.f, [this](const FVector& Spot, float Ang)
 	{
 		BuildTent(Spot, FMath::RadiansToDegrees(Ang) + 180.f);
 	});
@@ -280,16 +280,23 @@ void AVEILContentPass::Populate()
 	});
 	// BRIDGES: pairs of open spots on the outer ring, joined across what the market
 	// does not already fill.
+	// A BRIDGE NEEDS TWO OPEN SPOTS, so it walks outward instead of demanding the
+	// one ring the city may have already filled: the first radius where both ends
+	// answer is the radius the deck is built at.
 	for (int32 b = 0; b < 3; ++b)
 	{
-		FVector PA, PB;
 		const float A1 = 240.f + b * ContentGoldenDeg;
 		const float A2 = A1 + 46.f;
-		if (!FindSpot(Anchor, 4200.f, A1, 300.f, PA)) { ++Refused; continue; }
-		if (!FindSpot(Anchor, 4200.f, A2, 300.f, PB)) { ++Refused; continue; }
-		BuildBridge(PA, PB);
-		UE_LOG(LogVEIL, Display, TEXT("PHI CONTENT PLACE: bridge %d from %s to %s over %.0f cm."),
-			Bridges, *PA.ToCompactString(), *PB.ToCompactString(), FVector::Dist2D(PA, PB));
+		for (float R = 1800.f; R <= 5200.f; R += 350.f)
+		{
+			FVector PA, PB;
+			if (!FindSpot(Anchor, R, A1, 300.f, PA)) { ++Refused; continue; }
+			if (!FindSpot(Anchor, R, A2, 300.f, PB)) { ++Refused; continue; }
+			BuildBridge(PA, PB);
+			UE_LOG(LogVEIL, Display, TEXT("PHI CONTENT PLACE: bridge %d from %s to %s over %.0f cm."),
+				Bridges, *PA.ToCompactString(), *PB.ToCompactString(), FVector::Dist2D(PA, PB));
+			break;
+		}
 	}
 
 	UE_LOG(LogVEIL, Warning,

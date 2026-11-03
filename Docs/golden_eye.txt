@@ -1,19 +1,19 @@
 ==============================================================================
 THE GOLDEN EYE - completeness by rung (phi^2 - phi - 1 = 0.000e+00)
-source: 1355354 chars, content: 8858 assets, run: run.log
+source: 1355625 chars, content: 8858 assets, run: run.log
 ==============================================================================
 
 PILLAR                              SCORE    RUNG  WHAT IS MISSING
 WORLD: one streaming world            20%   -3.34  World Partition is not on: no grid cells, no streaming; no HLOD, so the Spire cannot be seen from the Hub; no data layers, so the Deep's floors cannot stack; no level instances for packed content
 SCREEN: the HUD of section 3          60%   -1.06  no floating damage numbers; no hotbar
 SCALE: 60-100 hours                   67%   -0.84  50-activity budget only simulated
-CONTENT: the painted world            71%   -0.70  no bridges (0 strict, 0 built); no Niagara asset at all: no glow, no waterfall FX
 BODIES: who the people are            75%   -0.60  six species share one Paragon body mesh
+CONTENT: the painted world            86%   -0.32  no Niagara asset at all: no glow, no waterfall FX
 AUDIO: the world is heard            100%    0.00  nothing measurable
 LOOP: load, claim, save, reload      100%    0.00  nothing measurable
 MIND: phi AI and inhabitants         100%    0.00  nothing measurable
 
-MEAN RUNG -0.82  (rung 0 = whole, -1 = 0.618 of the way, -2 = 0.382)
+MEAN RUNG -0.77  (rung 0 = whole, -1 = 0.618 of the way, -2 = 0.382)
 DEEPEST GAP: WORLD: one streaming world at rung -3.34
 
 READING THE EYE
@@ -22,5 +22,5 @@ READING THE EYE
     rung -3.34  WORLD: one streaming world         World Partition is not on: no grid cells, no streaming
     rung -1.06  SCREEN: the HUD of section 3       no floating damage numbers
     rung -0.84  SCALE: 60-100 hours                50-activity budget only simulated
-- A pillar is only complete at rung 0; the mean is -0.82.
+- A pillar is only complete at rung 0; the mean is -0.77.
 - The eye counts what EXISTS; it cannot see whether it looks like the painting.
