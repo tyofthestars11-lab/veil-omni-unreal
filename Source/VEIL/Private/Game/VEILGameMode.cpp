@@ -4188,8 +4188,10 @@ void AVEILPlayerController::Tick(float DeltaSeconds)
 	// -phiaerial: photograph the layout from above, so composition is seen rather
 	// than inferred from a first-person frame. Plan view at 180 m, then an oblique
 	// over the market.
+	static float PhiAerialClock = 0.f;
+	PhiAerialClock += DeltaSeconds;
 	if (FParse::Param(FCommandLine::Get(), TEXT("phiaerial")))
-	{
+	if (PhiAerialClock >= 14.f) {
 		static TWeakObjectPtr<ACameraActor> AerialCam;
 		static float AirClock = 0.f;
 		static int32 AirStep = 0;
@@ -4279,6 +4281,53 @@ void AVEILPlayerController::Tick(float DeltaSeconds)
 					UE_LOG(LogVEIL, Warning, TEXT("PHI STRATA: floating e.g. %s"), *FloatSample);
 				}
 			}
+		}
+	}
+
+	// PHI WORLD HASH. "It is random every time" is a checkable claim: hash every piece the
+	// district pass built - names and rounded locations - and print it. The same number on
+	// two boots means the world is a fixed object, not a lottery.
+	// THE PLAZA IS CLEARED. Loose dressing lying on the square is what reads as rubble, and
+	// the square is the one place the player stands and looks around.
+	{
+		static bool bWorldLocked = false;
+		static float WorldLockClock = 0.f;
+		WorldLockClock += DeltaSeconds;
+		if (!bWorldLocked && WorldLockClock >= 8.f)
+		{
+			bWorldLocked = true;
+			const FName CityTag(TEXT("PhiCity"));
+			const FName GroundTag(TEXT("PhiGround"));
+			int32 Cleared = 0;
+			for (TActorIterator<AActor> ItLock(GetWorld()); ItLock; ++ItLock)
+			{
+				AActor* A = *ItLock;
+				if (!A || A->IsA(APawn::StaticClass()) || A->IsA(ALight::StaticClass())) { continue; }
+				if (A->ActorHasTag(CityTag) || A->ActorHasTag(GroundTag)) { continue; }
+				const FVector L = A->GetActorLocation();
+				if (FVector2D(L.X, L.Y).Size() > 1500.f) { continue; }
+				const FString Nm = A->GetName();
+				if (Nm.Contains(TEXT("PlayerStart")) || Nm.Contains(TEXT("Keeper"))
+					|| Nm.Contains(TEXT("Beacon")) || Nm.Contains(TEXT("Builder"))) { continue; }
+				const FBox B = A->GetComponentsBoundingBox(true);
+				if (!B.IsValid || B.Min.Z > 500.f) { continue; }
+				A->Destroy();
+				++Cleared;
+			}
+			uint32 Hash = 2166136261u;
+			int32 Counted = 0;
+			for (TActorIterator<AActor> ItH(GetWorld()); ItH; ++ItH)
+			{
+				AActor* A = *ItH;
+				if (!A || !(A->ActorHasTag(CityTag) || A->ActorHasTag(GroundTag))) { continue; }
+				const FVector L = A->GetActorLocation();
+				Hash = (Hash ^ GetTypeHash(A->GetName())) * 16777619u;
+				const int32 Packed = FMath::RoundToInt(L.X) * 31 + FMath::RoundToInt(L.Y) * 17 + FMath::RoundToInt(L.Z);
+				Hash = (Hash ^ GetTypeHash(Packed)) * 16777619u;
+				++Counted;
+			}
+			UE_LOG(LogVEIL, Warning, TEXT("PHI WORLD HASH: %08x over %d district piece(s); plaza cleared of %d loose actor(s)."),
+				Hash, Counted, Cleared);
 		}
 	}
 
