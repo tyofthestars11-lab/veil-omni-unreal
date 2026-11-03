@@ -928,7 +928,7 @@ void AVEILWorldBuilder::BuildDistrict()
 	const float GoldenAngleDeg = 137.50776405f;
 	const float RoadClear = 620.f;       // nothing within this of a road centre
 	const float PlotBase = 1250.f;       // first plot out from the plaza
-	int32 Shops = 0, Homes = 0, Camps = 0, Shrines = 0, Towers = 0;
+	int32 Shops = 0, Homes = 0, Camps = 0, Shrines = 0, Towers = 0, Stalls = 0;
 
 	// Road zero points at the Keeper, so the landmark a new runner is told to
 	// find is the first thing standing on the first street.
@@ -988,6 +988,48 @@ void AVEILWorldBuilder::BuildDistrict()
 				{
 					SpawnBlock(FVector(Setback.X, Setback.Y, H + 40.f),
 						FVector(0.7f, 0.7f, 0.7f), Menhir ? Menhir : ShrineProp, GoldTint, 0.f);
+				}
+				// A MARKET, NOT A SHOPFRONT ALONE. Every shop gets a stall beside it: a counter, four
+				// posts and a canopy cut from the pack's own wall and floor meshes. The sizes are in
+				// centimetres through ScaleForCm, because placement scale means "100 cm on the largest
+				// axis" and a counter asked for in metres came out as a wafer in the terraces before.
+				// It stands to the SIDE of the building, 250 cm toward the street and 700 cm along it,
+				// so the doorway stays clear and the stall stays out of the road's 620 cm centre line.
+				{
+					UStaticMesh* StallCounter = WallAt(Road * 3 + N + 1);
+					UStaticMesh* StallPost = Col;
+					UStaticMesh* StallCanopy = FloorAt(N + 1);
+					const FRotator StallRot(0.f, FMath::RadiansToDegrees(FMath::Atan2(ToRoad.Y, ToRoad.X)), 0.f);
+					const FVector Side(-ToRoad.Y, ToRoad.X, 0.f);
+					const FVector StallAt = FVector(Setback.X, Setback.Y, 0.f) + Side * 700.f + ToRoad * 250.f;
+					int32 Parts = 0;
+					if (StallCounter)
+					{
+						const FVector SCm = ScaleForCm(StallCounter, FVector(320.f, 90.f, 115.f));
+						if (!SCm.IsZero() && SpawnBlockRot(StallAt + FVector(0.f, 0.f, 58.f), SCm,
+							StallCounter, TowerTintWarm, 0.f, StallRot)) { ++Parts; }
+					}
+					if (StallPost)
+					{
+						const FVector SCm = ScaleForCm(StallPost, FVector(26.f, 26.f, 300.f));
+						if (!SCm.IsZero())
+						{
+							for (int32 C2 = 0; C2 < 4; ++C2)
+							{
+								const FVector Off = StallRot.RotateVector(FVector(
+									(C2 & 1) ? 150.f : -150.f, (C2 & 2) ? 120.f : -120.f, 0.f));
+								if (SpawnBlockRot(StallAt + Off + FVector(0.f, 0.f, 150.f), SCm,
+									StallPost, TowerTintWarm, 0.f, StallRot)) { ++Parts; }
+							}
+						}
+					}
+					if (StallCanopy)
+					{
+						const FVector SCm = ScaleForCm(StallCanopy, FVector(420.f, 340.f, 14.f));
+						if (!SCm.IsZero() && SpawnBlockRot(StallAt + FVector(0.f, 0.f, 312.f), SCm,
+							StallCanopy, TowerTintWarm, 0.f, StallRot)) { ++Parts; }
+					}
+					if (Parts > 0) { ++Stalls; }
 				}
 				++Shops;
 			}
@@ -1054,6 +1096,13 @@ void AVEILWorldBuilder::BuildDistrict()
 				++Towers;
 			}
 		}
+	}
+
+	if (Stalls > 0)
+	{
+		UE_LOG(LogVEIL, Warning,
+			TEXT("PHI MARKET: %d stall(s) standing beside the shopfronts - counter, four posts and a canopy each, so the square has somewhere to trade."),
+			Stalls);
 	}
 
 	// THE KEEPER'S LANDMARK: a column of light on the first road, at the end of
