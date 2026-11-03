@@ -368,7 +368,7 @@ void AVEILHudCanvas::DrawHUD()
 	const float BARW = 170.f;
 
 	// NAVY GLASS, GOLD LINE - the mockup's plate. #0E1424 under #C9A24A.
-	FVeilUI::Glass(this, FLinearColor(0.055f, 0.078f, 0.141f, 0.85f), PX, PY, PW, PH, 11.f);
+	FVeilUI::Glass(this, FLinearColor(0.055f, 0.078f, 0.141f, 0.55f), PX, PY, PW, PH, 11.f);
 	FVeilUI::RoundRect(this, FLinearColor(0.788f, 0.635f, 0.290f, 0.62f), PX + 8.f, PY + 1.f, PW - 16.f, 2.4f, 1.2f);
 	FVeilUI::RoundRect(this, FLinearColor(0.788f, 0.635f, 0.290f, 0.95f), PX + 1.f, PY + 10.f, 2.6f * UPHIMito::Phi, PH - 20.f, 1.3f * UPHIMito::Phi);
 
@@ -546,9 +546,9 @@ void AVEILHudCanvas::DrawHUD()
 	// the blips share one yaw, so a marker cannot lie about where a thing is.
 	// ------------------------------------------------------------------
 	{
-		// MINIMAP DIAMETER = SCREEN HEIGHT / PHI. 1080 / 1.618033988749895 = 667 px,
-		// 720 / phi = 445 px - the ring is sized by the law, not by a guess.
-		const float MS = Canvas->ClipY / UPHIMITO_PHI_SAFE;
+		// SPEC, AS LOCKED: 180 x 180 AT 70%. The height/phi ring was my reading of the
+		// law; the brief states 180 and 70%, and the brief is the design.
+		const float MS = 180.f;
 		const float MX = Canvas->ClipX - MS - 26.f, MY = 30.f;
 		const FLinearColor Gold(1.f, 0.78f, 0.3f, 0.92f);
 
@@ -586,7 +586,7 @@ void AVEILHudCanvas::DrawHUD()
 			{
 				DrawTexture(Tex, CCX - Half, MY + Row, Half * 2.f, 1.f,
 					(CR - Half) / MS, (Row + 0.5f) / MS, (Half * 2.f) / MS, 1.f / MS,
-					FLinearColor::White, BLEND_Opaque);
+					FLinearColor(1.f, 1.f, 1.f, 0.70f), BLEND_Translucent);
 			}
 			else
 			{
@@ -637,13 +637,15 @@ void AVEILHudCanvas::DrawHUD()
 		{
 			Blip(It->GetActorLocation(), FLinearColor(1.f, 0.82f, 0.32f), 8.f);
 		}
-		for (TActorIterator<AOMNIFragment> It(W); It; ++It) { Blip(It->GetActorLocation(), FLinearColor(0.35f, 0.95f, 1.f), 6.f); }
+		// FRAGMENTS ARE GOLD PHI SHARDS, NOT CYAN BLOBS. The blue marker read as a
+		// placeholder on a gold instrument.
+		for (TActorIterator<AOMNIFragment> It(W); It; ++It) { Blip(It->GetActorLocation(), FLinearColor(1.f, 0.78f, 0.30f), 6.f); }
 		for (TActorIterator<AOMNICache> It(W); It; ++It) { Blip(It->GetActorLocation(), FLinearColor(0.3f, 1.f, 0.45f), 9.f); }
 		for (TActorIterator<AOMNIWardenPrime> It(W); It; ++It) { Blip(It->GetActorLocation(), FLinearColor(1.f, 0.22f, 0.18f), 11.f); }
 		for (TActorIterator<AVEILFactionAgent> It(W); It; ++It)
 		{
 			Blip(It->GetActorLocation(), It->Faction == EVEILFaction::Guardian ? FLinearColor(0.55f, 1.f, 0.55f)
-				: It->Faction == EVEILFaction::Remnant ? FLinearColor(0.75f, 0.75f, 1.f)
+				: It->Faction == EVEILFaction::Remnant ? FLinearColor(1.f, 0.70f, 0.35f)
 				: FLinearColor(1.f, 0.45f, 0.35f), 5.f);
 		}
 
@@ -855,7 +857,8 @@ void AVEILHudCanvas::DrawHUD()
 				const float QY = Canvas->ClipY - 70.f;      // band 3: the quest ribbon
 				float QW = 0.f, QH = 0.f;
 				Canvas->StrLen(Med, FString(TEXT("THE GOLDEN MIDST")), QW, QH);
-				FVeilUI::Ribbon(this, FLinearColor(0.16f, 0.11f, 0.03f, 0.88f), 30.f, QY, QW * 0.86f + 46.f, 15.f, true);
+				// ONE LINE, 480 PX. The band is the specification, not the text length.
+				FVeilUI::Ribbon(this, FLinearColor(0.16f, 0.11f, 0.03f, 0.88f), 30.f, QY, 480.f, 21.f, true);
 				DrawText(TEXT("QUEST"), FLinearColor(0.62f, 0.47f, 0.20f), 38.f, QY + 2.f, Med, 0.5f);
 				DrawText(TEXT("THE GOLDEN MIDST"), FLinearColor(1.f, 0.88f, 0.50f), 76.f, QY + 2.f, Med, 0.58f);
 				// The step rides on the same line, dimmer: two lines of banner was a block.
@@ -982,7 +985,14 @@ void AVEILHudCanvas::DrawHUD()
 		// step card stands down while somebody is speaking and comes back after.
 		const bool bTalking = W->GetSubsystem<UVEILDialogue>()
 			&& W->GetSubsystem<UVEILDialogue>()->IsActive();
-		if (!Tut->IsHidden() && !bPageOpen && !bTalking)
+		// SIX SECONDS, THEN IT STANDS DOWN. The card teaches one gesture and then
+		// stops being a window on the world; it used to sit there all run.
+		static int32 CardStep = -1;
+		static float CardClock = 0.f;
+		if (Tut->GetStepIndex() != CardStep) { CardStep = Tut->GetStepIndex(); CardClock = 0.f; }
+		CardClock += W->GetDeltaSeconds();
+		const float CardA = CardClock < 6.f ? 1.f : FMath::Max(0.f, 1.f - (CardClock - 6.f) / 1.5f);
+		if (!Tut->IsHidden() && !bPageOpen && !bTalking && CardA > 0.02f)
 		{
 			// THE CARD IS A CARD, NOT A PANEL. 360 x 138 covered the lower right of the
 			// district; 252 x 104 still teaches the gesture without hiding the world.
@@ -992,7 +1002,7 @@ void AVEILHudCanvas::DrawHUD()
 			const float CX = Canvas->ClipX - CW - 30.f;
 			// Under the map, not on top of it: the round instrument now reaches
 			// 30 + 220 px, so the card starts clear of the ring's halo.
-			const float CY = 30.f + Canvas->ClipY / UPHIMITO_PHI_SAFE + 18.f;   // under the ring
+			const float CY = 30.f + 180.f + 18.f;   // under the 180 px ring
 			const float CH = 90.f;
 			const FVEILTutorialStep& S = Tut->GetStep();
 			const bool bDone = Tut->IsComplete();
@@ -1002,7 +1012,7 @@ void AVEILHudCanvas::DrawHUD()
 			// at 85% opacity" (Docs/VEIL_Bible.md:48). The Bible wins: one number, stated
 			// once, and every panel reads the same. This card was the one panel that had
 			// drifted to 82%, so it is the one line changed.
-			FVeilUI::Glass(this, FLinearColor(0.022f, 0.030f, 0.056f, 0.85f), CX, CY, CW, CH, 12.f);
+			FVeilUI::Glass(this, FLinearColor(0.022f, 0.030f, 0.056f, 0.55f * CardA), CX, CY, CW, CH, 12.f);
 			FVeilUI::RoundRect(this, FLinearColor(1.f, 0.80f, 0.32f, 0.92f), CX + 1.f, CY + 12.f, 3.f, CH - 24.f, 1.5f);
 
 			DrawText(bDone ? FString(TEXT("FIELD MANUAL"))
@@ -1086,6 +1096,10 @@ void AVEILHudCanvas::DrawHUD()
 				// The directive column owns the top-left corner. A world label
 				// printed through it does not read as a name - it reads as a bug.
 				if (S.X < Canvas->ClipX * 0.46f && S.Y < Canvas->ClipY * 0.46f) { return; }
+				// THE CENTRE 60% IS THE WORLD'S. A name plate in the middle of the shot is
+				// the one thing the brief forbids outright.
+				if (S.X > Canvas->ClipX * 0.20f && S.X < Canvas->ClipX * 0.80f
+					&& S.Y > Canvas->ClipY * 0.20f && S.Y < Canvas->ClipY * 0.80f) { return; }
 				const float A = FMath::Clamp((Far - D) / FMath::Max(1.f, Far - Near), 0.f, 1.f);
 				if (A < 0.08f) { return; }
 				float XL = 0.f, YL = 0.f;
