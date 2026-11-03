@@ -577,13 +577,12 @@ void AVEILGameMode::BeginPlay()
 		// Boot pass, before the first frame is lit.
 		PhiLightPass(FVector::ZeroVector);
 
-		// Second pass, once the runner exists, to keep shadows near the camera.
-		FTimerHandle LightTimer;
-		GetWorldTimerManager().SetTimer(LightTimer, [this, PhiLightPass]()
-		{
-			const APawn* P = UGameplayStatics::GetPlayerPawn(GetWorld(), 0);
-			PhiLightPass(P ? P->GetActorLocation() : FVector::ZeroVector);
-		}, 2.7f, false);
+		// NO SECOND PASS. The boot pass above already clamps every light before the first frame is
+		// lit. Re-running it 2.7 s later changed shadow casting and radius on lights that GPUScene
+		// was already holding, and that restage is what raised "Data for Id = 163 in GPU Scene
+		// Lights is stale" around frame 24 in three verified runs. Nothing about those four shadow
+		// flags is worth an engine error every boot, so the late pass is gone rather than guarded:
+		// a light is set once, at boot, and then left alone.
 	}
 
 	// PHI GOLDEN: place Hark's spiral in the district if the level does not already
