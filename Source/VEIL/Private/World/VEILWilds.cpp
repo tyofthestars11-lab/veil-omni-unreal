@@ -10,6 +10,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Materials/MaterialInterface.h"
 #include "Systems/OMNIQuestSystem.h"
+#include "Systems/VEILProgression.h"
 #include "Systems/VEILEnemy.h"
 #include "VEIL.h"
 
@@ -567,6 +568,25 @@ void AVEILWildsPopulation::Tick(float DeltaSeconds)
 	if (UWorld* World = GetWorld())
 	{
 		TrackClock += DeltaSeconds;
+		SaveClock += DeltaSeconds;
+		if (SaveClock >= 15.f)
+		{
+			SaveClock = 0.f;
+			if (UVEILProgression* Book = World->GetSubsystem<UVEILProgression>())
+			{
+				if (const UOMNIQuestSystem* Quest = World->GetSubsystem<UOMNIQuestSystem>())
+				{
+					Book->Level = Quest->Level;
+					Book->XP = Quest->XP;
+					Book->Gold = Quest->Gold;
+					Book->Fragments = Quest->Fragments;
+					Book->ClaimedMines = Quest->ClaimedMines;
+				}
+				const bool bWrote = Book->SaveGame();
+				UE_LOG(LogVEIL, Log, TEXT("PHI AUTOSAVE: wrote=%d level=%d gold=%d seams=%d."),
+					bWrote ? 1 : 0, Book->Level, Book->Gold, Book->ClaimedMines.Num());
+			}
+		}
 		if (TrackClock >= 1.f)
 		{
 			TrackClock = 0.f;

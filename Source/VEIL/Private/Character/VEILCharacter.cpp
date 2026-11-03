@@ -12,6 +12,7 @@
 #include "Misc/Parse.h"
 #include "Systems/PHIMito.h"
 #include "EngineUtils.h"
+#include "HAL/IConsoleManager.h"
 #include "Systems/OMNIQuestSystem.h"
 #include "World/VEILWilds.h"
 #include "Systems/VEILBurstFX.h"
@@ -596,6 +597,13 @@ void AVEILCharacter::Tick(float DeltaSeconds)
 	// The grace clock always runs, from the first frame on.
 	GraceClock += DeltaSeconds;
 
+	// A press that arrives before the seams exist is held for a moment rather than
+	// thrown away: this is what makes the E key feel like it worked.
+	if (ClaimArmUntil > 0.f && GetWorld() && GetWorld()->GetTimeSeconds() < ClaimArmUntil)
+	{
+		ClaimNearestSeam(ClaimArmReach);
+	}
+
 	// INFINITE RESPAWN: one phi second on the floor (1.618), then he stands
 	// again. No counter is consulted - falling is a set-back, not an ending.
 	if (!IsAlive())
@@ -1085,23 +1093,8 @@ void AVEILCharacter::Interact()
 {
 	if (!IsAlive() || IsStoryHoldingInput()) return;
 
-	// A SEAM IS CLAIMED BY PRESSING THE KEY, not by walking near it. The nearest
-	// unclaimed mine within arm's length is what this press is about; the quest book
-	// decides whether it was already taken, so the gold can never be paid twice.
-	if (UWorld* World = GetWorld())
-	{
-		for (TActorIterator<AVEILWildsPopulation> It(World); It; ++It)
-		{
-			AVEILMineNode* Mine = It->NearestUnclaimedMine(GetActorLocation(), 700.f);
-			if (!Mine) { break; }
-			UOMNIQuestSystem* Quest = World->GetSubsystem<UOMNIQuestSystem>();
-			if (Quest && Quest->ClaimMine(FName(*Mine->MineName()), Mine->MineOwner(), Mine->ClaimValue(), 24))
-			{
-				Mine->Claim(this);
-			}
-			break;
-		}
-	}
+	// A SEAM IS CLAIMED BY PRESSING THE KEY, not by walking near it.
+	ClaimNearestSeam();
 
 	// A BEACON IS FORGED BY STANDING AT IT AND PRESSING THE INTERACT KEY, which is
 	// the same key that talks, loots and opens doors. Tried before the trace so a
@@ -1126,6 +1119,72 @@ void AVEILCharacter::Interact()
 		}
 	}
 }
+
+void AVEILCharacter::ClaimNearestSeam(float ReachCm)
+{
+	UWorld* World = GetWorld();
+	if (!World || !IsAlive()) { return; }
+
+	// THE NEAREST SEAM IN THE WORLD, not the first actor that happens to have one.
+	// The first version stopped at the first population actor with nothing in it and
+	// reported "no named seam within 50 m" with a seam 2.8 m away - the lookup was
+	// asking one building whether it had mines instead of asking the district.
+	AVEILMineNode* Best = nullptr;
+	float BestD = ReachCm;
+	for (TActorIterator<AVEILWildsPopulation> It(World); It; ++It)
+	{
+		AVEILMineNode* Mine = It->NearestUnclaimedMine(GetActorLocation(), BestD);
+		if (!Mine) { continue; }
+		const float D = FVector::Dist2D(Mine->GetActorLocation(), GetActorLocation());
+		if (D <= BestD) { BestD = D; Best = Mine; }
+	}
+
+	if (!Best)
+	{
+		// A held press is silent: it retries every frame until the world has its seams,
+		// or until the hold runs out. Only a press that finds nothing to say says it.
+		if (ClaimArmUntil < 0.f)
+		{
+			UE_LOG(LogVEIL, Warning, TEXT("PHI CLAIM: no named seam within %.0f m of %s - nothing to take."),
+				ReachCm / 100.f, *GetActorLocation().ToCompactString());
+		}
+		return;
+	}
+
+	ClaimArmUntil = -1.f;
+	UOMNIQuestSystem* Quest = World->GetSubsystem<UOMNIQuestSystem>();
+	if (Quest && Quest->ClaimMine(FName(*Best->MineName()), Best->MineOwner(), Best->ClaimValue(), 24))
+	{
+		Best->Claim(this);
+	}
+	else if (Quest)
+	{
+		UE_LOG(LogVEIL, Warning, TEXT("PHI CLAIM: %s is already the runner's - nothing paid."),
+			*Best->MineName());
+	}
+}
+
+void AVEILCharacter::RequestClaim(float ReachCm)
+{
+	ClaimArmReach = ReachCm;
+	ClaimArmUntil = (GetWorld() ? GetWorld()->GetTimeSeconds() : 0.f) + 12.f;
+	ClaimNearestSeam(ClaimArmReach);
+}
+
+// A KEYBOARD TEST THAT IS THE SAME CODE AS THE KEY. veil.claim runs the exact
+// function the interact key runs, so what a run proves here a player can do.
+static FAutoConsoleCommandWithWorldAndArgs GClaimSeam(
+	TEXT("veil.claim"),
+	TEXT("veil.claim [reach_cm] - claim the nearest named seam within reach (default 700), same code as pressing E."),
+	FConsoleCommandWithWorldAndArgsDelegate::CreateStatic([](const TArray<FString>& Args, UWorld* World)
+	{
+		if (!World) { return; }
+		const float Reach = Args.Num() > 0 ? FCString::Atof(*Args[0]) : 700.f;
+		if (APlayerController* PC = World->GetFirstPlayerController())
+		{
+			if (AVEILCharacter* Runner = Cast<AVEILCharacter>(PC->GetPawn())) { Runner->RequestClaim(Reach); }
+		}
+	}));
 
 void AVEILCharacter::ToggleGodMode()
 {

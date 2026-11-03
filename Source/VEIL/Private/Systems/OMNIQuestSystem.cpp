@@ -18,6 +18,7 @@
 // ReachCache (Cache at 0,-6200) -> WardenAwake -> Clear.
 // Anchors: Keeper (900,0), Seer (-450,780), Cache (0,-6200),
 // CacheEpic gear (300,-6200,80).
+#include "Misc/Paths.h"
 #include "Systems/OMNIQuestSystem.h"
 
 #include "AI/VEILFactionAI.h"
@@ -154,6 +155,19 @@ bool UOMNIQuestSystem::ClaimMine(const FName& MineName, const FString& Owner, in
 	LastClaimAt = GetWorld() ? GetWorld()->GetTimeSeconds() : 0.f;
 	AwardXP(60, TEXT("a named seam claimed"));
 	PersistToBook();
+
+	// A CLAIM IS WRITTEN NOW, not at exit. The book only reached the file when the
+	// world shut down cleanly, so a closed window lost every seam taken; and the
+	// path is printed, because "no save" and "saved somewhere else" look identical
+	// from the outside.
+	if (UVEILProgression* Book = GetWorld() ? GetWorld()->GetSubsystem<UVEILProgression>() : nullptr)
+	{
+		Book->PullFromQuest();
+		const bool bWrote = Book->SaveGame();
+		UE_LOG(LogVEIL, Warning, TEXT("PHI SAVE CLAIM: %s written=%d seams=%d gold=%d at %s."),
+			*MineName.ToString(), bWrote ? 1 : 0, ClaimedMines.Num(), Gold,
+			*FPaths::ConvertRelativePathToFull(FPaths::ProjectSavedDir()));
+	}
 	UE_LOG(LogVEIL, Warning, TEXT("PHI CLAIM: %s on %s ground is the runner's - %d of %d seams, +%d gold."),
 		*LastClaimName, *Owner, ClaimedMines.Num(), Total, MineGold);
 	return true;

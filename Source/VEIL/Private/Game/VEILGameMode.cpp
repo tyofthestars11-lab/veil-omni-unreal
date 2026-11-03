@@ -1231,6 +1231,29 @@ void AVEILGameMode::BeginPlay()
 						*Seat.ToCompactString(), FVector::Dist2D(Seat, FVector::ZeroVector));
 				}
 
+				{
+					// THE ADDRESS IS X,Y - THE FLOOR IS WHATEVER THE WORLD ACTUALLY HAS.
+					// The seat was pinned to the anchor's z (100) while the ground under the
+					// hub stands far higher, so the runner was born inside the terrain and the
+					// capsule was pushed out sideways: spawn logged (-200,0,92) and the first
+					// track a second later found him at (-516,473) having pressed nothing.
+					// X and Y are never moved here; only a seat BELOW the ground is lifted.
+					FHitResult Ground;
+					FCollisionQueryParams GroundParams(SCENE_QUERY_STAT(VEILSeatGround), false, Pawn);
+					const FVector From(Seat.X, Seat.Y, Seat.Z + 20000.f);
+					const FVector To(Seat.X, Seat.Y, Seat.Z - 20000.f);
+					if (Pawn->GetWorld()->LineTraceSingleByChannel(Ground, From, To, ECC_Visibility, GroundParams))
+					{
+						if (Ground.ImpactPoint.Z > Seat.Z + 50.f)
+						{
+							UE_LOG(LogVEIL, Warning,
+								TEXT("VEIL SEAT GROUND: anchor z=%.0f but the floor under the address is z=%.0f - standing on the floor, X,Y untouched (%.0f,%.0f)."),
+								Seat.Z, Ground.ImpactPoint.Z, Seat.X, Seat.Y);
+							Seat.Z = Ground.ImpactPoint.Z + 98.f;
+						}
+					}
+				}
+
 				Pawn->SetActorLocation(Seat, false, nullptr, ETeleportType::TeleportPhysics);
 
 				// THE FIRST FRAME POINTS AT THE FIRST OBJECTIVE. Waking with the Keeper
@@ -1923,6 +1946,27 @@ APawn* AVEILGameMode::SpawnDefaultPawnAtTransform_Implementation(AController* Ne
 	if (bSeated)
 	{
 		Seat.Z = FMath::Clamp(Seat.Z, Anchor.Z, Anchor.Z + 100.f);
+
+		// THE ADDRESS IS X,Y - THE FLOOR IS WHAT THE WORLD HAS THERE.
+		// The seat was pinned to the anchor's z, but the ground under the hub stands
+		// far above it, so the runner was born inside the terrain and the capsule was
+		// pushed out sideways: spawn logged (-200,0,92) and a second later he was at
+		// (-516,473) having pressed nothing. X and Y are never moved; a seat that is
+		// BELOW the floor is lifted onto it and the discrepancy is named in the log.
+		FHitResult RunnerGround;
+		FCollisionQueryParams RunnerSP(SCENE_QUERY_STAT(VEILRunnerGround), false);
+		const FVector GroundFrom(Seat.X, Seat.Y, Seat.Z + 20000.f);
+		const FVector GroundTo(Seat.X, Seat.Y, Seat.Z - 40000.f);
+		if (W->LineTraceSingleByChannel(RunnerGround, GroundFrom, GroundTo, ECC_Visibility, RunnerSP))
+		{
+			if (RunnerGround.ImpactPoint.Z > Seat.Z + 50.f)
+			{
+				UE_LOG(LogVEIL, Warning,
+					TEXT("PHI RUNNER GROUND: anchor z=%.0f but the floor under the address is z=%.0f - standing on the floor, X,Y untouched (%.0f,%.0f)."),
+					Seat.Z, RunnerGround.ImpactPoint.Z, Seat.X, Seat.Y);
+				Seat.Z = RunnerGround.ImpactPoint.Z + 98.f;
+			}
+		}
 	}
 
 	FActorSpawnParameters SpawnInfo;

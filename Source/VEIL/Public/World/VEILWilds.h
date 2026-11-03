@@ -150,5 +150,7 @@ private:
 	float DecideClock = 0.f;
 	/** One a second is enough to point at the next seam. */
 	float TrackClock = 0.f;
+	/** The run is written every fifteen seconds, so no session dies unwritten. */
+	float SaveClock = 0.f;
 	FString LastTrackedName;
 };

@@ -34,6 +34,21 @@ class VEIL_API AVEILCharacter : public ACharacter
 	GENERATED_BODY()
 
 public:
+
+	/** Claim the nearest named seam within arm's reach - the same call the
+	 *  interact key makes, so veil.claim can prove what a player can actually do. */
+	void ClaimNearestSeam(float ReachCm = 700.f);
+
+	/** Keep trying to claim for a moment. A press that lands a frame before the
+	 *  world has spawned its seams is not a wasted press, and a run can exercise
+	 *  the same path from the command line. */
+	void RequestClaim(float ReachCm = 700.f);
+
+private:
+	float ClaimArmUntil = -1.f;
+	float ClaimArmReach = 700.f;
+
+public:
 	AVEILCharacter();
 	/** Incremented as the first act of Tick - the controller reads it
 	 *  to prove whether Tick is ever entered. */
