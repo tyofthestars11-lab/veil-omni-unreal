@@ -529,12 +529,24 @@ void AVEILGameMode::BeginPlay()
 			struct FPhiLight { APointLight* Actor; float Dist; };
 			TArray<FPhiLight> Ordered;
 			int32 MadeMovable = 0;
+			// THE BOOT PASS MAY RESTAGE LIGHTS; THE SECOND PASS MAY NOT. Moving a point light
+			// to Movable after it is registered raises the engine's "GPU Scene Lights is stale"
+			// ensure, which dumped a render-thread breadcrumb at frame 25 in a verified run.
+			// At boot there is no GPU scene yet, so the same change is safe; later it is skipped
+			// and counted, so the log says how many lights kept their original mobility.
+			const bool bBootPass = Ref.IsNearlyZero();
+			int32 SkippedStatic = 0;
 			for (TActorIterator<APointLight> It(W); It; ++It)
 			{
 				UPointLightComponent* C = Cast<UPointLightComponent>(It->GetLightComponent());
 				if (!C) continue;
+				// AFTER BOOT, A LIGHT THAT IS NOT ALREADY MOVABLE IS LEFT COMPLETELY ALONE. Shadow and
+				// radius changes on a registered light restage it in the GPU scene just as mobility did,
+				// which is what raised the stale-data ensure at frame 19 in a verified run. The boot pass
+				// still restages everything, because at boot there is no GPU scene to go stale.
 				if (C->Mobility != EComponentMobility::Movable)
 				{
+					if (!bBootPass) { ++SkippedStatic; continue; }
 					C->SetMobility(EComponentMobility::Movable);
 					++MadeMovable;
 				}
