@@ -61,6 +61,19 @@ LOG = ""
 for _f in logs:
     LOG += io.open(_f, encoding="utf-8", errors="replace", newline=None).read()
 
+# WHAT THE GAME RAISES ITSELF. The asset library holds no crystal, tree, stall or
+# bridge, so those families are built in code by phi rule and the run log names
+# how many of each went up. Zero here means the pass did not run - a finding about
+# the loop, not a claim that the family is out of reach.
+BUILT = {"crystal": 0, "tree": 0, "stall": 0, "tent": 0, "bridge": 0}
+for _m in re.finditer(
+        r"PHI CONTENT: crystals=(\d+) trees=(\d+) stalls=(\d+) tents=(\d+) bridges=(\d+)", LOG):
+    BUILT["crystal"] = max(BUILT["crystal"], int(_m.group(1)))
+    BUILT["tree"] = max(BUILT["tree"], int(_m.group(2)))
+    BUILT["stall"] = max(BUILT["stall"], int(_m.group(3)))
+    BUILT["tent"] = max(BUILT["tent"], int(_m.group(4)))
+    BUILT["bridge"] = max(BUILT["bridge"], int(_m.group(5)))
+
 pillars = []
 
 
@@ -97,7 +110,17 @@ families = [
 checks = []
 for word, _n, miss in families:
     n = assets(word, mesh_only=(word not in ("niagara",)))
-    checks.append((word, n > 0, "%s (%d strict)" % (miss, n)))
+    # "crystal meshes" is a label, not a key: the family word is the first token.
+    built = BUILT.get(word.split()[0], 0)
+    if n > 0 or built > 0:
+        note = []
+        if built:
+            note.append("%d built by phi rule" % built)
+        if n:
+            note.append("%d assets" % n)
+        checks.append((word, True, "; ".join(note)))
+    else:
+        checks.append((word, False, "%s (%d strict, %d built)" % (miss, n, built)))
 checks.append(("niagara", assets("niagara", "ns") > 0, "no Niagara asset at all: no glow, no waterfall FX"))
 pillar("CONTENT: the painted world", checks)
 

@@ -4,6 +4,7 @@
 #include "World/VEILConceptWorld.h"
 #include "World/VEILCrowd.h"
 #include "World/VEILWilds.h"
+#include "World/VEILContentFamilies.h"
 
 #include "Systems/VEILOS.h"
 #include "Game/VEILHudCanvas.h"
@@ -697,6 +698,30 @@ void AVEILGameMode::BeginPlay()
 					*TetraWhere.ToCompactString(), bFoundGround ? 1 : 0, bFoundGround ? BestHeight : -1.f);
 			}
 		}, 2.4f, false);
+	}
+
+	// PHI CONTENT: the families the asset library does not have. 8,858 assets held
+	// no crystal, no tree, no stall, no bridge - so the district was boxes, lamps
+	// and a plaza. This pass raises all four out of engine primitives on the golden
+	// angle, on ground that answers a trace, once per level.
+	{
+		FTimerHandle ContentTimer;
+		GetWorldTimerManager().SetTimer(ContentTimer, [this]()
+		{
+			int32 Existing = 0;
+			for (TActorIterator<AVEILContentPass> It(GetWorld()); It; ++It) { ++Existing; }
+			if (Existing > 0)
+			{
+				UE_LOG(LogTemp, Display, TEXT("PHI CONTENT: %d pass(es) already in the level - not building."), Existing);
+				return;
+			}
+			FActorSpawnParameters ContentParams;
+			ContentParams.SpawnCollisionHandlingOverride =
+				ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+			AVEILContentPass* Pass = GetWorld()->SpawnActor<AVEILContentPass>(
+				AVEILContentPass::StaticClass(), FVector::ZeroVector, FRotator::ZeroRotator, ContentParams);
+			if (Pass) { Pass->Populate(); }
+		}, 3.2f, false);
 	}
 
 	// PHI BACKDROP STRIP: the Polyart showcase level's diorama backdrop plane
