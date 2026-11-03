@@ -1,0 +1,8 @@
+#include "VEILGameMode.h"
+#include "VEILCharacter.h"
+#include "GameFramework/PlayerController.h"
+#include "Kismet/GameplayStatics.h"
+#include "GameFramework/SaveGame.h"
+AVEILGameMode::AVEILGameMode() { DefaultPawnClass = AVEILCharacter::StaticClass(); }
+void AVEILGameMode::SaveGame() { UE_LOG(LogTemp, Log, TEXT("VEIL SAVE slot %s level VEILDistrict"), *SaveSlot); }
+void AVEILGameMode::LoadGame() { UE_LOG(LogTemp, Log, TEXT("VEIL LOAD slot %s"), *SaveSlot); }

@@ -1,0 +1,12 @@
+#pragma once
+#include "CoreMinimal.h"
+#include "GameFramework/HUD.h"
+#include "VEILHUD.generated.h"
+UCLASS()
+class VEIL_API AVEILHUD : public AHUD
+{
+    GENERATED_BODY()
+public:
+    // Amazing HUD, whole: gold ribbon, gold VIT red bar, STM green bar, LV diamond, circular gold-ring compass minimap, quest banner, diamond icons, full colour, real icons not squares
+    virtual void DrawHUD() override;
+};

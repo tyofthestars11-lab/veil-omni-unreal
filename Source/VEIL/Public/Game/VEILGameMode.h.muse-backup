@@ -1,0 +1,15 @@
+#pragma once
+#include "CoreMinimal.h"
+#include "GameFramework/GameModeBase.h"
+#include "VEILGameMode.generated.h"
+UCLASS()
+class VEIL_API AVEILGameMode : public AGameModeBase
+{
+    GENERATED_BODY()
+public:
+    AVEILGameMode();
+    UPROPERTY(BlueprintReadOnly, Category="VEIL") FString SaveSlot = TEXT("VEILOMNI_Omni0");
+    UPROPERTY(BlueprintReadOnly, Category="VEIL") FString MapPath = TEXT("/Game/Maps/VEILDistrict");
+    UFUNCTION(BlueprintCallable, Category="VEIL") void SaveGame();
+    UFUNCTION(BlueprintCallable, Category="VEIL") void LoadGame();
+};

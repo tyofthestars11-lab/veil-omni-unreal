@@ -145,8 +145,10 @@ void AVEILContentPass::BuildStall(const FVector& At, float YawDeg)
 		Part(Cylinder, At + Corner + FVector(0.f, 0.f, 135.f), FVector(0.12f, 0.12f, 2.7f),
 			FRotator::ZeroRotator, Gold, true);
 	}
+	// AWNING IS CLOTH-GOLD. It was a blue plate: the clearest "placeholder box"
+	// left in the market, and the one prop a player stands directly under.
 	Part(Cube, At + FVector(0.f, 0.f, 268.f), FVector(2.7f, 1.5f, 0.10f),
-		FRotator(-12.f, YawDeg, 0.f), DeepBlue, false);
+		FRotator(-12.f, YawDeg, 0.f), Gold, false);
 	++Stalls;
 }
 
@@ -165,7 +167,7 @@ void AVEILContentPass::BuildTent(const FVector& At, float YawDeg)
 		Part(Cylinder, At + Corner + FVector(0.f, 0.f, 130.f), FVector(0.10f, 0.10f, 2.6f),
 			FRotator::ZeroRotator, Gold, true);
 	}
-	Part(Cube, At + FVector(0.f, 0.f, 268.f), FVector(3.0f, 3.0f, 0.10f), Yaw, DeepBlue, false);
+	Part(Cube, At + FVector(0.f, 0.f, 268.f), FVector(3.0f, 3.0f, 0.10f), Yaw, Gold, false);
 	Part(Cube, At + FVector(0.f, 0.f, 232.f), FVector(3.1f, 3.1f, 0.06f),
 		FRotator(0.f, YawDeg + 45.f, 0.f), Gold, false);
 	++Tents;

@@ -579,8 +579,10 @@ void AVEILGameMode::BeginPlay()
 		// was a scatter of grey blocks at their feet - measured with phi.dump: dozens
 		// of 100 cm Cube actors within four metres of the pawn. A game does not ship
 		// its test rig; the flag keeps the proof possible and the world clean.
-		const bool bGoldenProof = FParse::Param(FCommandLine::Get(), TEXT("phigolden"))
-			|| FParse::Param(FCommandLine::Get(), TEXT("phishot"));
+		// A PHOTOGRAPH IS NOT A TEST RIG. -phishot used to imply -phigolden, so the
+		// 34-cube sunflower spawned into every frame meant to prove the district was
+		// free of placeholder boxes. The rig asks for its own flag now.
+		const bool bGoldenProof = FParse::Param(FCommandLine::Get(), TEXT("phigolden"));
 		FTimerHandle GoldenTimer;
 		// THE CHAIN SHIPS; THE SUNFLOWER DOES NOT. Both are placed by this one timer,
 		// so the switch now guards the 34-cube proof spiral alone and the six
@@ -730,6 +732,45 @@ void AVEILGameMode::BeginPlay()
 			int32 Composition = 0;
 			for (TActorIterator<AVEILConceptWorld> It(GetWorld()); It; ++It) { Composition += It->GetPieces(); }
 			if (Pass) { Pass->Populate(Composition > 0); }
+			// BLUE AUDIT: no placeholder box may survive a build. A cube wearing
+			// M_PHI_DeepBlue is what "blue placeholder box" means; a crystal cone in
+			// the same blue is the vision, so the mesh is part of the test.
+			// NO BLUE BOX SURVIVES THE BOOT. The district's placeholder blocks are
+			// engine Cubes wearing M_PHI_DeepBlue - in the saved map as well as in the
+			// composition, which is why changing materials in the builders alone left
+			// them in frame. Each one is rebuilt on the Sicka ancient kit's floor mesh
+			// (real modular art this project ships) and re-dressed in cut stone with a
+			// gold trim slot. Blue cones keep their blue: that is the vision's crystal,
+			// not a placeholder.
+			{
+				UStaticMesh* KitFloor = LoadObject<UStaticMesh>(nullptr,
+					TEXT("/Game/Sicka_EnvPack2/Sicka_Ancient_Kit/Mesh/Modular/SM_Floor1_Big.SM_Floor1_Big"));
+				UMaterialInterface* StoneMat = LoadObject<UMaterialInterface>(nullptr,
+					TEXT("/Game/StarterContent/Materials/M_Brick_Cut_Stone.M_Brick_Cut_Stone"));
+				UMaterialInterface* GoldMat = LoadObject<UMaterialInterface>(nullptr,
+					TEXT("/Game/PHI/Palette/M_PHI_Gold.M_PHI_Gold"));
+				int32 Rebuilt = 0, Resurfaced = 0, KeptBlue = 0;
+				for (TActorIterator<AStaticMeshActor> It(GetWorld()); It; ++It)
+				{
+					UStaticMeshComponent* Comp = It->GetStaticMeshComponent();
+					if (!Comp || !Comp->GetStaticMesh()) { continue; }
+					bool bBlue = false;
+					for (int32 Slot = 0; Slot < Comp->GetNumMaterials(); ++Slot)
+					{
+						const UMaterialInterface* Mat = Comp->GetMaterial(Slot);
+						if (Mat && Mat->GetName().Contains(TEXT("DeepBlue"))) { bBlue = true; break; }
+					}
+					if (!bBlue) { continue; }
+					if (!Comp->GetStaticMesh()->GetName().Contains(TEXT("Cube"))) { ++KeptBlue; continue; }
+					if (KitFloor) { Comp->SetStaticMesh(KitFloor); ++Rebuilt; }
+					if (StoneMat) { Comp->SetMaterial(0, StoneMat); }
+					if (GoldMat && Comp->GetNumMaterials() > 1) { Comp->SetMaterial(1, GoldMat); }
+					++Resurfaced;
+				}
+				UE_LOG(LogVEIL, Warning,
+					TEXT("PHI BLUE SWEEP: %d blue box(es) rebuilt as kit art, %d re-dressed stone+gold, %d blue non-box (vision) kept."),
+					Rebuilt, Resurfaced, KeptBlue);
+			}
 			UE_LOG(LogTemp, Display, TEXT("PHI CONTENT OWNER: concept composition holds %d piece(s)."), Composition);
 		}, 3.2f, false);
 	}

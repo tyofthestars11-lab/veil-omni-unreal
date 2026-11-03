@@ -62,7 +62,7 @@ private:
 		UStaticMesh* Sphere, UMaterialInterface* Stone, UMaterialInterface* Water,
 		UMaterialInterface* Gold);
 	void BuildDeep(UStaticMesh* Cube, UStaticMesh* Cylinder, UMaterialInterface* Water,
-		UMaterialInterface* Glow);
+		UMaterialInterface* Glow, UMaterialInterface* Stone, UMaterialInterface* Gold);
 	void BuildWings(UStaticMesh* Cube, UMaterialInterface* Gold);
 
 	UPROPERTY() TArray<TWeakObjectPtr<AActor>> Wings;

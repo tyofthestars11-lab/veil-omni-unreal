@@ -1,0 +1,15 @@
+#pragma once
+#include "CoreMinimal.h"
+#include "UObject/NoExportTypes.h"
+#include "VEILWorldBuilder.generated.h"
+UCLASS(Blueprintable)
+class VEIL_API UVEILWorldBuilder : public UObject
+{
+    GENERATED_BODY()
+public:
+    // Authority coords, whole, never moved without Tyree word: Vault 0,0,-80.9, Countess 809,-309,64.7, RUNNER 0,0,100, Keeper 900,0, Seer -450,780, Cartographer -4150,-780, Cache 0,-6200, Beacons 2800,500 / -2000,-900 / 600,-2100
+    UPROPERTY(BlueprintReadOnly, Category="VEIL") FVector Vault = FVector(0.f, 0.f, -80.9f);
+    UPROPERTY(BlueprintReadOnly, Category="VEIL") FVector Countess = FVector(809.f, -309.f, 64.7f);
+    UPROPERTY(BlueprintReadOnly, Category="VEIL") FVector RunnerStart = FVector(0.f, 0.f, 100.f);
+    UPROPERTY(BlueprintReadOnly, Category="VEIL") FVector Keeper = FVector(900.f, 0.f, 0.f);
+};

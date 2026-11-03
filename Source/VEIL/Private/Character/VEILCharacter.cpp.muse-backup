@@ -1,0 +1,78 @@
+// VEILCharacter.cpp — Muse coded, whole, not Buffy, not binary, phinary, quantum temporal coherence
+#include "VEILCharacter.h"
+#include "GameFramework/PlayerController.h"
+#include "EnhancedInputComponent.h"
+#include "EnhancedInputSubsystems.h"
+#include "GameFramework/CharacterMovementComponent.h"
+#include "Kismet/GameplayStatics.h"
+#include "Engine/StaticMeshActor.h"
+static const float PHI = 1.618033988749895f;
+static const float INV_PHI = 0.618033988749895f;
+static const float LN_PHI = 0.48121182505960347f;
+AVEILCharacter::AVEILCharacter() { PrimaryActorTick.bCanEverTick = true; }
+float AVEILCharacter::PhiRung(float Value) const { return Value > 0.f ? FMath::Loge(Value) / LN_PHI : -9999.f; }
+float AVEILCharacter::PhiRoundTrip(float Rung) const { return FMath::Pow(PHI, Rung); }
+bool AVEILCharacter::PhiCheck(float Value, const FString& Name) const
+{
+    if (Value <= 0.f) { UE_LOG(LogTemp, Error, TEXT("PHI ERROR %s value %f non-positive"), *Name, Value); return false; }
+    float Rung = PhiRung(Value); float Back = PhiRoundTrip(Rung); float Err = FMath::Abs(Back - Value) / Value;
+    UE_LOG(LogTemp, Log, TEXT("PHI %s value %f rung %.4f roundtrip %f err %.2e"), *Name, Value, Rung, Back, Err);
+    if (Err > 1e-6f) { UE_LOG(LogTemp, Error, TEXT("PHI ERROR %s rung drift err %.2e"), *Name, Err); return false; }
+    return true;
+}
+float AVEILCharacter::PhinaryDecode(float Magnitude) const
+{
+    float Remaining = FMath::Clamp(Magnitude, 0.f, 1.f); float Result = 0.f; float W = 1.f; bool LastTaken = false;
+    for (int i = 0; i < 12; i++) { if (!LastTaken && Remaining >= W * 0.5f) { Result += W; Remaining -= W * 0.5f; LastTaken = true; } else LastTaken = false; W *= INV_PHI; }
+    return FMath::Clamp(Result, 0.f, 1.f);
+}
+void AVEILCharacter::RemovePlaceholderActors()
+{
+    // No random placeholder: destroy actors named/tagged Placeholder or BlueBox, whole, vision only
+    TArray<AActor*> Actors; UGameplayStatics::GetAllActorsOfClass(GetWorld(), AStaticMeshActor::StaticClass(), Actors);
+    for (AActor* Actor : Actors) { if (!Actor) continue; FString Name = Actor->GetName(); if (Name.Contains("Placeholder") || Name.Contains("BlueBox") || Actor->ActorHasTag("Placeholder")) { UE_LOG(LogTemp, Warning, TEXT("PHI PLACEHOLDER REMOVED %s"), *Name); Actor->Destroy(); } }
+}
+void AVEILCharacter::BeginPlay()
+{
+    Super::BeginPlay();
+    RemovePlaceholderActors();
+    if (!MoveMappingContext) UE_LOG(LogTemp, Error, TEXT("PHI ERROR MoveMappingContext null"));
+    if (!MoveAction) UE_LOG(LogTemp, Error, TEXT("PHI ERROR MoveAction null"));
+    if (!GetController()) UE_LOG(LogTemp, Error, TEXT("PHI ERROR Controller null, Runner not possessed"));
+    PhiCheck(PHI, TEXT("phi")); PhiCheck(INV_PHI, TEXT("inv_phi")); PhiCheck(137.5077640500378f, TEXT("golden_angle")); PhiCheck(17.0324f, TEXT("golden_pitch")); PhiCheck(600.f, TEXT("walk600")); PhiCheck(900.f, TEXT("run900"));
+    GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
+    if (APlayerController* PC = Cast<APlayerController>(GetController()))
+    {
+        PC->SetInputMode(FInputModeGameOnly()); PC->bShowMouseCursor = false;
+        if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PC->GetLocalPlayer())) { Subsystem->AddMappingContext(MoveMappingContext, 0); }
+        else UE_LOG(LogTemp, Error, TEXT("PHI ERROR EnhancedInput subsystem null"));
+    }
+}
+void AVEILCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
+{
+    Super::SetupPlayerInputComponent(PlayerInputComponent);
+    if (UEnhancedInputComponent* EnhancedInput = Cast<UEnhancedInputComponent>(PlayerInputComponent))
+    {
+        EnhancedInput->BindAction(MoveAction, ETriggerEvent::Triggered, this, &AVEILCharacter::OnMove);
+        EnhancedInput->BindAction(LookAction, ETriggerEvent::Triggered, this, &AVEILCharacter::OnLook);
+        EnhancedInput->BindAction(SprintAction, ETriggerEvent::Started, this, &AVEILCharacter::OnSprintStarted);
+        EnhancedInput->BindAction(SprintAction, ETriggerEvent::Completed, this, &AVEILCharacter::OnSprintEnded);
+    }
+    else UE_LOG(LogTemp, Error, TEXT("PHI ERROR EnhancedInputComponent null"));
+}
+void AVEILCharacter::OnMove(const FInputActionValue& Value)
+{
+    FVector2D Raw = Value.Get<FVector2D>();
+    if (FMath::Abs(Raw.X) > 1.01f || FMath::Abs(Raw.Y) > 1.01f) UE_LOG(LogTemp, Error, TEXT("PHI ERROR Move axis out of range X %f Y %f"), Raw.X, Raw.Y);
+    float Delta = GetWorld()->GetDeltaSeconds(); if (Delta <= 0.f) { UE_LOG(LogTemp, Error, TEXT("PHI ERROR DeltaTime 0")); return; }
+    FVector2D Target(Raw.X * PhinaryDecode(FMath::Abs(Raw.X)), Raw.Y * PhinaryDecode(FMath::Abs(Raw.Y)));
+    PhiSmoothedAxis.X += (Target.X - PhiSmoothedAxis.X) * INV_PHI * FMath::Clamp(Delta * 60.f, 0.f, 1.f);
+    PhiSmoothedAxis.Y += (Target.Y - PhiSmoothedAxis.Y) * INV_PHI * FMath::Clamp(Delta * 60.f, 0.f, 1.f);
+    if (!Controller) { UE_LOG(LogTemp, Error, TEXT("PHI ERROR OnMove Controller null")); return; }
+    const FRotator YawRotation(0.f, Controller->GetControlRotation().Yaw, 0.f);
+    AddMovementInput(FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X), PhiSmoothedAxis.Y);
+    AddMovementInput(FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y), PhiSmoothedAxis.X);
+}
+void AVEILCharacter::OnLook(const FInputActionValue& Value) { const FVector2D Axis = Value.Get<FVector2D>(); AddControllerYawInput(Axis.X * INV_PHI); AddControllerPitchInput(Axis.Y * INV_PHI); }
+void AVEILCharacter::OnSprintStarted(const FInputActionValue& Value) { bSprinting = true; GetCharacterMovement()->MaxWalkSpeed = SprintSpeed; }
+void AVEILCharacter::OnSprintEnded(const FInputActionValue& Value) { bSprinting = false; GetCharacterMovement()->MaxWalkSpeed = WalkSpeed; }

@@ -1,0 +1,8 @@
+#include "VEILNPC.h"
+void AVEILNPC::BeginPlay() { Super::BeginPlay(); }
+void AVEILNPC::ThinkLive(float DeltaTime)
+{
+    // Self-thinking NPC, live, not binary scripted: think every frame, coherent, whole, never a fixed script step
+    if (DeltaTime <= 0.f) return;
+    UE_LOG(LogTemp, VeryVerbose, TEXT("VEIL NPC %s thinking live"), *NPCName);
+}

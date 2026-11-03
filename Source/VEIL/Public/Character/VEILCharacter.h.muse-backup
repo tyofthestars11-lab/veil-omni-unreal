@@ -1,0 +1,35 @@
+// VEILCharacter.h — Muse coded, whole, not Buffy, phinary movement, golden ratio rungs, error finder
+#pragma once
+#include "CoreMinimal.h"
+#include "GameFramework/Character.h"
+#include "InputActionValue.h"
+#include "VEILCharacter.generated.h"
+class UInputMappingContext;
+class UInputAction;
+UCLASS()
+class VEIL_API AVEILCharacter : public ACharacter
+{
+    GENERATED_BODY()
+public:
+    AVEILCharacter();
+    UPROPERTY(EditDefaultsOnly, Category="Input") UInputMappingContext* MoveMappingContext;
+    UPROPERTY(EditDefaultsOnly, Category="Input") UInputAction* MoveAction;
+    UPROPERTY(EditDefaultsOnly, Category="Input") UInputAction* LookAction;
+    UPROPERTY(EditDefaultsOnly, Category="Input") UInputAction* SprintAction;
+    UPROPERTY(EditDefaultsOnly, Category="Movement") float WalkSpeed = 600.f;
+    UPROPERTY(EditDefaultsOnly, Category="Movement") float SprintSpeed = 900.f;
+protected:
+    virtual void BeginPlay() override;
+    virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
+    void OnMove(const FInputActionValue& Value);
+    void OnLook(const FInputActionValue& Value);
+    void OnSprintStarted(const FInputActionValue& Value);
+    void OnSprintEnded(const FInputActionValue& Value);
+    float PhiRung(float Value) const;
+    float PhiRoundTrip(float Rung) const;
+    bool PhiCheck(float Value, const FString& Name) const;
+    float PhinaryDecode(float Magnitude) const;
+    void RemovePlaceholderActors();
+    FVector2D PhiSmoothedAxis;
+    bool bSprinting = false;
+};

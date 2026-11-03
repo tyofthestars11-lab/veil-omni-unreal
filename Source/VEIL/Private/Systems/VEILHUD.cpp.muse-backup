@@ -1,0 +1,2 @@
+#include "VEILHUD.h"
+void AVEILHUD::DrawHUD() { Super::DrawHUD(); }

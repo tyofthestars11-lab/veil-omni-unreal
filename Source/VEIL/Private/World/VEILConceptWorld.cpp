@@ -116,7 +116,7 @@ bool AVEILConceptWorld::Build()
 	BuildTerraces(Cube, Cylinder, Stone, Water, Gold);
 	BuildCrystalRange(Cone, Cylinder, Water, Glow);
 	BuildBiomes(Cube, Cone, Cylinder, Sphere, Stone, Water, Gold);
-	BuildDeep(Cube, Cylinder, Water, Glow);
+	BuildDeep(Cube, Cylinder, Water, Glow, Stone, Gold);
 	BuildWings(Cube, Gold);
 
 	bBuilt = true;
@@ -189,6 +189,21 @@ void AVEILConceptWorld::BuildMarket(UStaticMesh* Cube, UStaticMesh* Cone, UStati
 // three bridges that span them. The falls are emissive sheets - no particle system
 // exists in this project, so the water is geometry that reads as water.
 // ---------------------------------------------------------------------------
+// FALLS ARE WATER, NOT BLUE BOXES. The falls and the terrace pools were sheets of
+// M_PHI_DeepBlue - 9 m by 15 m blue slabs standing in the air, which is exactly what
+// the photographs showed. The project ships a real water material: a sheet of that
+// reads as falling water, a sheet of flat blue reads as a placeholder.
+static UMaterialInterface* VEILFallWater(const UMaterialInterface* Fallback)
+{
+	static TWeakObjectPtr<UMaterialInterface> Cached;
+	if (!Cached.IsValid())
+	{
+		Cached = LoadObject<UMaterialInterface>(nullptr,
+			TEXT("/Game/StarterContent/Materials/M_Water_Lake.M_Water_Lake"));
+	}
+	return Cached.IsValid() ? Cached.Get() : const_cast<UMaterialInterface*>(Fallback);
+}
+
 void AVEILConceptWorld::BuildWaterAndBridges(UStaticMesh* Cube, UStaticMesh* Cylinder,
 	UMaterialInterface* Water, UMaterialInterface* Stone, UMaterialInterface* Gold)
 {
@@ -200,7 +215,7 @@ void AVEILConceptWorld::BuildWaterAndBridges(UStaticMesh* Cube, UStaticMesh* Cyl
 
 		// The shelf, then the fall down its face.
 		SpawnPiece(Cube, At + FVector(0.f, 0.f, 320.f), FVector(1400.f, 1400.f, 640.f), Stone, FRotator::ZeroRotator, true);
-		SpawnPiece(Cube, At + FVector(0.f, 0.f, 520.f), FVector(900.f, 120.f, 1500.f), Water,
+		SpawnPiece(Cube, At + FVector(0.f, 0.f, 520.f), FVector(900.f, 120.f, 1500.f), VEILFallWater(Water),
 			FRotator(0.f, FMath::RadiansToDegrees(Angle), 0.f), false);
 	}
 
@@ -242,7 +257,8 @@ void AVEILConceptWorld::BuildCrystals(UStaticMesh* Cone, UStaticMesh* Cylinder,
 // Toggling floors by data layer is a different job; this is the structure itself.
 // ---------------------------------------------------------------------------
 void AVEILConceptWorld::BuildDeep(UStaticMesh* Cube, UStaticMesh* Cylinder,
-	UMaterialInterface* Water, UMaterialInterface* Glow)
+	UMaterialInterface* Water, UMaterialInterface* Glow, UMaterialInterface* Stone,
+	UMaterialInterface* Gold)
 {
 	for (int32 i = 0; i < 8; ++i)
 	{
@@ -251,7 +267,12 @@ void AVEILConceptWorld::BuildDeep(UStaticMesh* Cube, UStaticMesh* Cylinder,
 		const FVector At(DeepAt.X + FMath::Cos(Angle) * Radius, DeepAt.Y + FMath::Sin(Angle) * Radius,
 			-120.f - i * 140.f);
 
-		SpawnPiece(Cube, At, FVector(1100.f, 1100.f, 60.f), Water, FRotator(0.f, i * 17.0324f, 0.f), true);
+		// THE DEEP IS STONE, NOT A BLUE BOX. Eight blue 11 m plates were the largest
+		// placeholder blocks in the district. The deck is cut stone with a gold rim;
+		// the column above it was always light.
+		SpawnPiece(Cube, At, FVector(1100.f, 1100.f, 60.f), Stone, FRotator(0.f, i * 17.0324f, 0.f), true);
+		SpawnPiece(Cube, At + FVector(0.f, 0.f, 34.f), FVector(1140.f, 1140.f, 16.f), Gold,
+			FRotator(0.f, i * 17.0324f, 0.f), false);
 		SpawnPiece(Cylinder, At + FVector(0.f, 0.f, 420.f), FVector(160.f, 160.f, 840.f), Glow, FRotator::ZeroRotator, false);
 	}
 }
@@ -317,7 +338,7 @@ void AVEILConceptWorld::BuildTerraces(UStaticMesh* Cube, UStaticMesh* Cylinder,
 		// The fall leaving the shelf, on the face toward the plaza.
 		const FVector Inward = (Plaza - At).GetSafeNormal2D();
 		SpawnPiece(Cube, At + Inward * 1600.f + FVector(0.f, 0.f, -700.f),
-			FVector(900.f, 120.f, 1500.f), Water,
+			FVector(900.f, 120.f, 1500.f), VEILFallWater(Water),
 			FRotator(0.f, FMath::RadiansToDegrees(Angle) + 90.f, 0.f), false);
 	}
 }

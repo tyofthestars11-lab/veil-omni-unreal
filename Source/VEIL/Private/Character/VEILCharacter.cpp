@@ -6,12 +6,14 @@
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Animation/AnimInstance.h"
+#include "Animation/AnimSingleNodeInstance.h"
 #include "Animation/AnimSequence.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Misc/CommandLine.h"
 #include "Misc/Parse.h"
 #include "Systems/PHIMito.h"
 #include "EngineUtils.h"
+#include "Engine/StaticMeshActor.h"
 #include "Game/VEILGameMode.h"
 #include "HAL/IConsoleManager.h"
 #include "Systems/OMNIQuestSystem.h"
@@ -219,9 +221,14 @@ void AVEILCharacter::DriveBodyAnimation(float DeltaSeconds)
 	USkeletalMeshComponent* Body = GetMesh();
 	if (!Body || !Body->GetSkeletalMeshAsset()) return;
 
-	// If a real AnimBlueprint owns the body one day, it wins; otherwise the
-	// sequences drive it. Nothing here overrides an authored animation graph.
-	if (Body->GetAnimInstance() != nullptr) return;
+	// A REAL ANIM GRAPH WINS - A SINGLE-NODE PLAYER DOES NOT. This used to return
+	// whenever GetAnimInstance() was non-null, and PlayAnimation() ITSELF creates an
+	// AnimSingleNodeInstance: from the second frame the guard was always true, so the
+	// body played MM_Idle once at speed 0 and never changed again. That is the
+	// "South Park" look - an idle pose sliding at full speed - and the log proves
+	// it: "playing MM_Idle (speed 0)" is the only transition ever printed.
+	UAnimInstance* CurrentAnim = Body->GetAnimInstance();
+	if (CurrentAnim && !CurrentAnim->IsA<UAnimSingleNodeInstance>()) { return; }
 	if (Body->GetAnimationMode() != EAnimationMode::AnimationSingleNode)
 	{
 		Body->SetAnimationMode(EAnimationMode::AnimationSingleNode);
@@ -346,6 +353,41 @@ void AVEILCharacter::BeginPlay()
 				M ? *M->Velocity.ToCompactString() : TEXT("-"),
 				*GetActorLocation().ToCompactString());
 		}, 5.f, false);
+			// BLUE CENSUS: every actor wearing the placeholder palette, named with its
+			// mesh and world size. The photo shows flat blue slabs standing in the air
+			// over real stone; this says exactly which actors they are, so the repair
+			// is aimed instead of guessed.
+			FTimerHandle BlueCensus;
+			GetWorldTimerManager().SetTimer(BlueCensus, [this]()
+			{
+				int32 Total = 0;
+				int32 Shown = 0;
+				for (TActorIterator<AStaticMeshActor> It(GetWorld()); It; ++It)
+				{
+					UStaticMeshComponent* Comp = It->GetStaticMeshComponent();
+					if (!Comp || !Comp->GetStaticMesh()) { continue; }
+					bool bBlue = false;
+					for (int32 Slot = 0; Slot < Comp->GetNumMaterials(); ++Slot)
+					{
+						const UMaterialInterface* Mat = Comp->GetMaterial(Slot);
+						if (Mat && Mat->GetName().Contains(TEXT("DeepBlue"))) { bBlue = true; break; }
+					}
+					if (!bBlue) { continue; }
+					++Total;
+					if (Shown++ < 12)
+					{
+						const FBoxSphereBounds B = Comp->GetStaticMesh()->GetBounds();
+						const FVector S = Comp->GetComponentScale() * B.BoxExtent * 2.f;
+						UE_LOG(LogVEIL, Warning,
+							TEXT("PHI BLUE CENSUS: %s mesh=%s size=%.0fx%.0fx%.0f at %s"),
+							*It->GetName(), *Comp->GetStaticMesh()->GetName(),
+							S.X, S.Y, S.Z, *It->GetActorLocation().ToCompactString());
+					}
+				}
+				UE_LOG(LogVEIL, Warning,
+					TEXT("PHI BLUE CENSUS: %d actor(s) hold M_PHI_DeepBlue (first %d named above)."),
+					Total, FMath::Min(Shown, 12));
+			}, 7.f, false);
 	}
 
 	if (!DefaultMappingContext)
@@ -586,7 +628,17 @@ void AVEILCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 	PlayerInputComponent->BindKey(EKeys::Gamepad_RightShoulder, IE_Pressed, this, &AVEILCharacter::CameraRingOut);
 	PlayerInputComponent->BindKey(EKeys::Gamepad_LeftShoulder, IE_Pressed, this, &AVEILCharacter::CameraRingIn);
 
-	if (UEnhancedInputComponent* EIC = CastChecked<UEnhancedInputComponent>(PlayerInputComponent))
+	// A CHECKED CAST HERE IS A CRASH, NOT A CHECK. Enhanced Input lives in the ini
+	// (DefaultInputComponentClass); with that key missing the pawn is handed a plain
+	// UInputComponent and CastChecked kills the process at ClientRestart. Measured:
+	// "Cast of InputComponent ... to EnhancedInputComponent failed", Casts.cpp:10.
+	if (!PlayerInputComponent->IsA<UEnhancedInputComponent>())
+	{
+		UE_LOG(LogVEIL, Error,
+			TEXT("PHI INPUT: pawn input component is %s, not EnhancedInputComponent - check Config/DefaultInput.ini DefaultInputComponentClass. Keys still bind; actions do not."),
+			*PlayerInputComponent->GetClass()->GetName());
+	}
+	if (UEnhancedInputComponent* EIC = Cast<UEnhancedInputComponent>(PlayerInputComponent))
 	{
 		// NOTHING MAY RETURN FROM HERE. This block used to open with "if the chart is
 		// open, return" - a guard meant to stop the map's wheel from stepping the

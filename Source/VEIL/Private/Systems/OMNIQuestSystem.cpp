@@ -18,8 +18,8 @@
 // ReachCache (Cache at 0,-6200) -> WardenAwake -> Clear.
 // Anchors: Keeper (900,0), Seer (-450,780), Cache (0,-6200),
 // CacheEpic gear (300,-6200,80).
-#include "Misc/Paths.h"
 #include "Systems/OMNIQuestSystem.h"
+#include "Misc/Paths.h"
 
 #include "AI/VEILFactionAI.h"
 #include "Engine/World.h"

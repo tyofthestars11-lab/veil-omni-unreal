@@ -1,0 +1,15 @@
+#pragma once
+#include "CoreMinimal.h"
+#include "UObject/NoExportTypes.h"
+#include "VEILQuest.generated.h"
+UCLASS(Blueprintable)
+class VEIL_API UVEILQuest : public UObject
+{
+    GENERATED_BODY()
+public:
+    UPROPERTY(BlueprintReadOnly, Category="VEIL") FString QuestName = TEXT("THE GOLDEN MIDST");
+    UPROPERTY(BlueprintReadOnly, Category="VEIL") FString Objective = TEXT("Walk to the KEEPER and let her count you.");
+    UPROPERTY(BlueprintReadOnly, Category="VEIL") int32 BeaconsFound = 0;
+    UPROPERTY(BlueprintReadOnly, Category="VEIL") int32 BeaconsTotal = 3;
+    UFUNCTION(BlueprintCallable, Category="VEIL") void CountBeacon() { BeaconsFound++; }
+};

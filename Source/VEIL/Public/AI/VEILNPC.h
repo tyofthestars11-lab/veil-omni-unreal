@@ -1,0 +1,16 @@
+﻿// GOLDEN_PITCH 17.0324 rung 5.8916
+#pragma once
+#include "CoreMinimal.h"
+#include "GameFramework/Character.h"
+#include "VEILNPC.generated.h"
+UCLASS()
+class VEIL_API AVEILNPC : public ACharacter
+{
+    GENERATED_BODY()
+public:
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="VEIL") FString NPCName = TEXT("THE PALE HOST");
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="VEIL") FString Dialogue = TEXT("The dust was here before the crates. It can wait its turn.");
+    virtual void BeginPlay() override;
+    UFUNCTION(BlueprintCallable, Category="VEIL") void ThinkLive(float DeltaTime);
+};
+
