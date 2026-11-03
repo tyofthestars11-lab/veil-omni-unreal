@@ -78,6 +78,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "TimerManager.h"
 #include "Engine/StaticMesh.h"
+#include "World/VEILKitMesh.h"
 #include "VEIL.h"
 #include "World/VEILWorldBuilder.h"
 
@@ -2335,6 +2336,61 @@ void AVEILPlayerController::BeginPlay()
 
 	// The baked shells are tallened further down, in the sheet/ceiling pass, where a roof
 	// and the walls under it move as one unit instead of drifting apart.
+
+	// NO PLACEHOLDER SURVIVES THE BOOT. Every component still wearing an engine shape is
+	// re-dressed with its kit mesh and fitted to the exact volume the placeholder occupied. It
+	// runs at component level because the placeholders are not all actors: crowd walkers are
+	// instanced components, agent bodies and statue parts are default subobjects, the ocean skin
+	// and gear relics are plain components. One pass means no call site can leak a cube into the
+	// frame, and the audit straight after names anything the pass refused.
+	{
+		FTimerHandle PlaceholderTimer;
+		GetWorldTimerManager().SetTimer(PlaceholderTimer, FTimerDelegate::CreateWeakLambda(this, [this]()
+		{
+			UWorld* W = GetWorld();
+			if (!W) { return; }
+			VEILKit::Report();
+
+			int32 Swapped = 0, Refused = 0;
+			TArray<AActor*> Everyone;
+			for (TActorIterator<AActor> It(W); It; ++It) { Everyone.Add(*It); }
+			for (AActor* One : Everyone)
+			{
+				if (!One) { continue; }
+				TInlineComponentArray<UStaticMeshComponent*> Comps;
+				One->GetComponents(Comps);
+				for (UStaticMeshComponent* Comp : Comps)
+				{
+					if (!Comp || !Comp->GetStaticMesh()) { continue; }
+					if (!VEILKit::IsEngineShape(Comp->GetStaticMesh())) { continue; }
+					int32 Kind = 0;
+					if (VEILKit::Redress(Comp, Kind)) { ++Swapped; }
+					else { ++Refused; }
+				}
+			}
+
+			int32 Still = 0, Named = 0;
+			for (TActorIterator<AActor> It(W); It; ++It)
+			{
+				TInlineComponentArray<UStaticMeshComponent*> Comps;
+				It->GetComponents(Comps);
+				for (UStaticMeshComponent* Comp : Comps)
+				{
+					if (!Comp || !VEILKit::IsEngineShape(Comp->GetStaticMesh())) { continue; }
+					++Still;
+					if (Named++ < 6)
+					{
+						UE_LOG(LogVEIL, Warning, TEXT("PHI PLACEHOLDER LEFT: %s / %s wears %s"),
+							*It->GetName(), *Comp->GetName(), *Comp->GetStaticMesh()->GetName());
+					}
+				}
+			}
+			UE_LOG(LogVEIL, Warning,
+				TEXT("PHI PLACEHOLDER SWAP: %d component(s) re-dressed with kit meshes, %d refused, %d engine primitive(s) still in the world - verdict %s."),
+				Swapped, Refused, Still,
+				Still == 0 ? TEXT("NO PLACEHOLDER IN THE FRAME") : TEXT("STILL PLACEHOLDERS"));
+		}), 2.2f, false);
+	}
 
 	// THE CUT, THE LIFT AND THE MEASUREMENT, once the district has settled:
 	//  1. A mesh that CONTAINS the head point and is thinner than 120 cm in Z is neither floor
