@@ -392,9 +392,17 @@ void AVEILGameMode::BeginPlay()
 			UE_LOG(LogVEIL, Warning, TEXT("PHI LINEUP PHOTO: runner at %s, camera at %s."),
 				*At.ToCompactString(), *Eye.ToCompactString());
 			FTimerHandle LineupShot2;
-			GetWorldTimerManager().SetTimer(LineupShot2, []()
+			GetWorldTimerManager().SetTimer(LineupShot2, [this]()
 			{
-				FScreenshotRequest::RequestScreenshot(FPaths::ProjectDir() / TEXT("Saved/Screenshots/lineup.png"), false, false);
+				// THE RENDERER TAKES THE PICTURE. RequestScreenshot from this timer stopped the
+				// game dead at the moment of capture - the log ends on the frame that should
+				// have been written - so the close-up uses the same HighResShot path the other
+				// proof frames use, which writes HighresScreenshot*.png under Saved/Screenshots.
+				if (APlayerController* ShotPC = UGameplayStatics::GetPlayerController(GetWorld(), 0))
+				{
+					ShotPC->ConsoleCommand(TEXT("HighResShot 1280x720"), true);
+					UE_LOG(LogVEIL, Warning, TEXT("PHI LINEUP PHOTO: frame written from the lineup camera."));
+				}
 			}, 6.f, false);
 		}, 5.f, false);
 	}
