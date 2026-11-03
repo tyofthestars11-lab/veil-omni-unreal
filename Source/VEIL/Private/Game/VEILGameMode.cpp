@@ -2333,62 +2333,18 @@ void AVEILPlayerController::BeginPlay()
 		}
 	}
 
-	// HEADROOM FOR THE BAKED CITY. This map builds no rooms at runtime - it is a saved world,
-	// so BuildRoom's 6.4 m clear never runs here - and every shell in it was baked by an older
-	// builder that laid walls at the caller's height with the roof 12 cm above. That is the low
-	// ceiling the player walks into. The shells are tallened once, at boot, from their own
-	// bounds: a roof near the plaza rises 260 cm, a wall grows 1.4x and rises by half of it so
-	// its base stays on the ground, and the count is logged either way.
-	{
-		FTimerHandle HeadroomTimer;
-		GetWorldTimerManager().SetTimer(HeadroomTimer, FTimerDelegate::CreateWeakLambda(this, [this]()
-		{
-			UWorld* W = GetWorld();
-			if (!W) { return; }
-			int32 Roofs = 0, Walls = 0;
-			for (TActorIterator<AStaticMeshActor> It(W); It; ++It)
-			{
-				AStaticMeshActor* Piece = *It;
-				if (!Piece) { continue; }
-				UStaticMeshComponent* Body = Piece->GetStaticMeshComponent();
-				if (!Body || !Body->GetStaticMesh()) { continue; }
-				const FString MeshName = Body->GetStaticMesh()->GetName();
-				const FBox Box = Body->Bounds.GetBox();
-				const FVector At = Box.GetCenter();
-				if (FVector::Dist2D(At, FVector::ZeroVector) > 6000.f) { continue; }
+	// The baked shells are tallened further down, in the sheet/ceiling pass, where a roof
+	// and the walls under it move as one unit instead of drifting apart.
 
-				const bool bRoof = MeshName.Contains(TEXT("Roof")) || MeshName.Contains(TEXT("Ceil"));
-				const bool bWall = MeshName.Contains(TEXT("Wall"));
-				if (bRoof && At.Z > 150.f && At.Z < 900.f)
-				{
-					Piece->AddActorWorldOffset(FVector(0.f, 0.f, 260.f));
-					++Roofs;
-				}
-				else if (bWall && At.Z < 900.f)
-				{
-					const FVector Old = Piece->GetActorScale3D();
-					FVector Grown = Old;
-					Grown.Z = Old.Z * 1.4f;
-					Piece->SetActorScale3D(Grown);
-					Piece->AddActorWorldOffset(FVector(0.f, 0.f, (Grown.Z - Old.Z) * 50.f));
-					++Walls;
-				}
-			}
-			UE_LOG(LogVEIL, Warning,
-				TEXT("PHI HEADROOM: %d baked roof(s) raised 260 cm, %d wall(s) grown 1.4x - ceilings now clear a standing body."),
-				Roofs, Walls);
-		}), 2.5f, false);
-	}
-
-	// THE CUT AND THE MEASUREMENT. Three things happen once the district has settled:
+	// THE CUT, THE LIFT AND THE MEASUREMENT, once the district has settled:
 	//  1. A mesh that CONTAINS the head point and is thinner than 120 cm in Z is neither floor
 	//     nor wall - it is a plane lying across the view, which from inside a shell reads as the
 	//     ceiling resting on the player. Each one is named and hidden.
-	//  2. A roof whose measured floor gap is under 340 cm is lifted by exactly its shortfall
-	//     plus margin, which is what actually gives the short shells headroom.
-	//  3. Every roof is probed again from under its own bottom edge down to its floor, and that
-	//     gap is reported as the interior's clear height, so the number is the result and not
-	//     the intent.
+	//  2. A roof whose measured floor gap is under 340 cm rises by exactly its shortfall, and the
+	//     walls standing under that roof are stretched to its new bottom with their bases pinned,
+	//     so the room gets taller as one unit instead of the slab floating off its own walls.
+	//  3. Every roof is probed again from under its bottom edge down to its floor, and that gap
+	//     is reported as the interior's clear height - the result, not the intent.
 	{
 		FTimerHandle SheetTimer;
 		GetWorldTimerManager().SetTimer(SheetTimer, FTimerDelegate::CreateWeakLambda(this, [this]()
@@ -2436,26 +2392,64 @@ void AVEILPlayerController::BeginPlay()
 				Clear < 0.f ? TEXT("OPEN SKY") : *FString::Printf(TEXT("%.0f cm"), Clear),
 				Feet.X, Feet.Y);
 
-			int32 Lifted = 0;
+			struct FShellWall { AStaticMeshActor* Actor; FBox Box; };
+			TArray<FShellWall> WallsFound;
 			for (TActorIterator<AStaticMeshActor> It(W); It; ++It)
 			{
 				AStaticMeshActor* Piece = *It;
 				if (!Piece) { continue; }
 				UStaticMeshComponent* Body = Piece->GetStaticMeshComponent();
 				if (!Body || !Body->GetStaticMesh()) { continue; }
+				if (!Body->GetStaticMesh()->GetName().Contains(TEXT("Wall"))) { continue; }
+				FShellWall Found;
+				Found.Actor = Piece;
+				Found.Box = Body->Bounds.GetBox();
+				WallsFound.Add(Found);
+			}
+
+			int32 Lifted = 0, Grown = 0;
+			for (TActorIterator<AStaticMeshActor> It(W); It; ++It)
+			{
+				AStaticMeshActor* Roof = *It;
+				if (!Roof) { continue; }
+				UStaticMeshComponent* Body = Roof->GetStaticMeshComponent();
+				if (!Body || !Body->GetStaticMesh()) { continue; }
 				const FString MeshName = Body->GetStaticMesh()->GetName();
 				if (!MeshName.Contains(TEXT("Roof")) && !MeshName.Contains(TEXT("Ceil"))) { continue; }
-				const FBox Box = Body->Bounds.GetBox();
-				const FVector At = Box.GetCenter();
+				const FBox RoofBox = Body->Bounds.GetBox();
+				const FVector At = RoofBox.GetCenter();
 				if (FVector::Dist2D(At, FVector::ZeroVector) > 6000.f) { continue; }
 				FHitResult Under;
-				const float Down = Box.Min.Z - 5.f;
+				const float Down = RoofBox.Min.Z - 5.f;
 				if (!W->LineTraceSingleByChannel(Under, FVector(At.X, At.Y, Down),
 					FVector(At.X, At.Y, Down - 3000.f), ECC_Visibility, Q)) { continue; }
 				const float Gap = Down - Under.ImpactPoint.Z;
 				if (Gap <= 0.f || Gap >= 340.f) { continue; }
-				Piece->AddActorWorldOffset(FVector(0.f, 0.f, 380.f - Gap));
+
+				const float Lift = 380.f - Gap;
+				Roof->AddActorWorldOffset(FVector(0.f, 0.f, Lift));
+				const float NewBottom = RoofBox.Min.Z + Lift;
 				++Lifted;
+
+				for (FShellWall& Wall : WallsFound)
+				{
+					const FVector WallAt = Wall.Box.GetCenter();
+					if (WallAt.X < RoofBox.Min.X - 120.f || WallAt.X > RoofBox.Max.X + 120.f) { continue; }
+					if (WallAt.Y < RoofBox.Min.Y - 120.f || WallAt.Y > RoofBox.Max.Y + 120.f) { continue; }
+					const float WallTop = Wall.Box.Max.Z;
+					const float WallBase = Wall.Box.Min.Z;
+					const float WallHeight = WallTop - WallBase;
+					if (WallHeight < 20.f || WallTop >= NewBottom - 5.f) { continue; }
+					const float Factor = (NewBottom - WallBase) / WallHeight;
+					if (Factor <= 1.f || Factor > 6.f) { continue; }
+					const FVector Old = Wall.Actor->GetActorScale3D();
+					FVector Taller = Old;
+					Taller.Z = Old.Z * Factor;
+					Wall.Actor->SetActorScale3D(Taller);
+					Wall.Actor->AddActorWorldOffset(FVector(0.f, 0.f, WallHeight * (Factor - 1.f) * 0.5f));
+					Wall.Box = Wall.Actor->GetStaticMeshComponent()->Bounds.GetBox();
+					++Grown;
+				}
 			}
 
 			int32 Probed = 0, Low = 0;
@@ -2484,8 +2478,8 @@ void AVEILPlayerController::BeginPlay()
 			if (Probed > 0)
 			{
 				UE_LOG(LogVEIL, Warning,
-					TEXT("PHI INTERIOR: lifted %d short roof(s); %d probed, min clear %.0f cm, %d under 300 cm - verdict %s."),
-					Lifted, Probed, MinClear, Low,
+					TEXT("PHI INTERIOR: %d roof(s) lifted with %d wall(s) stretched to follow; %d probed, min clear %.0f cm, %d under 300 cm - verdict %s."),
+					Lifted, Grown, Probed, MinClear, Low,
 					Low == 0 ? TEXT("EVERY INTERIOR CLEARS A BODY") : TEXT("STILL CRAMPED"));
 			}
 			else
