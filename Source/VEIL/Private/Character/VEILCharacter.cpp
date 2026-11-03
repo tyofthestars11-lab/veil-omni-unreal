@@ -1,5 +1,6 @@
 // VEIL: THE LAST SIGNAL - player character implementation.
 #include "Character/VEILCharacter.h"
+#include "Story/VEILRaceGear.h"
 #include "Systems/PHIONE.h"
 
 #include "Engine/OverlapResult.h"
@@ -336,6 +337,8 @@ void AVEILCharacter::BeginPlay()
 	UE_LOG(LogVEIL, Log, TEXT("PHI BODY CHECK: mesh=%s anim=%s"),
 		GetMesh()->GetSkeletalMeshAsset() ? *GetMesh()->GetSkeletalMeshAsset()->GetName() : TEXT("none"),
 		GetMesh()->GetAnimInstance() ? *GetMesh()->GetAnimInstance()->GetClass()->GetName() : TEXT("none"));
+	// THE RUNNER'S SILHOUETTE: gold phi wings, dark cape, hung on the body that exists.
+	VEILRaceGear::Apply(this, GetMesh(), NAME_None, EVEILFaction::None);
 	// THE BLUE SWEEP, WHERE IT CANNOT BE SKIPPED. A flat blue box is a cube or plane
 	// carrying M_PHI_DeepBlue: not a crystal cone, not water. Called here (the path that
 	// prints PHI BODY CHECK) and again at 4 s, after the composition and the fab dressing

@@ -2,6 +2,7 @@
 #include "AI/VEILFactionAI.h"
 #include "Story/VEILCastBody.h"
 #include "Story/VEILCast.h"
+#include "Story/VEILRaceGear.h"
 
 #include "AIController.h"
 #include "Components/CapsuleComponent.h"
@@ -217,6 +218,10 @@ void AVEILFactionAgent::BeginPlay()
 		UE_LOG(LogVEIL, Warning, TEXT("PHI CAST: %s, %s of the %s - %s - at %s."),
 			*CastName, *CastRank, FactionWords[FIdx], *CastTemperament,
 			*GetActorLocation().ToCompactString());
+		// RACES, NOT RESKINS. A person's people are read from what they carry: crystal
+		// shards on the Hollow, gold on the Court, a lantern on the Watch, a satchel on
+		// Ashfall - attached to the body, so nothing floats and nothing is a placeholder.
+		VEILRaceGear::Apply(this, GetMesh(), CastCharacterId, Faction);
 	}
 
 	Super::BeginPlay();
