@@ -21,6 +21,7 @@
 #include "UObject/ConstructorHelpers.h"
 #include "EngineUtils.h"
 #include "Animation/VEILLocomotionAnimInstance.h"
+#include "Story/VEILCastBody.h"
 
 AVEILEnemy::AVEILEnemy(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -117,6 +118,18 @@ void AVEILEnemy::AlertNearby()
 
 void AVEILEnemy::BeginPlay()
 {
+	// THE ROSTER, NOT ONE MINION. Every enemy wore Elara from the constructor, so the cast
+	// census read 34 of 61 bodies on her mesh - a war against one person. The body now comes
+	// from this actor's own name, spread over the whole roster on the golden ratio, and the
+	// locomotion instance below still drives whichever body it resolves.
+	if (USkeletalMesh* RosterBody = VEILCastBody::LoadMesh(VEILCastBody::ForRole(GetName())))
+	{
+		GetMesh()->SetSkeletalMeshAsset(RosterBody);
+		GetMesh()->bDisableMorphTarget = true;
+		GetMesh()->SetAnimationMode(EAnimationMode::AnimationBlueprint);
+		GetMesh()->SetAnimInstanceClass(UVEILLocomotionAnimInstance::StaticClass());
+	}
+
 	Super::BeginPlay();
 	// Hand the clips to the blended instance that the constructor installed.
 	if (GetMesh())

@@ -7,6 +7,7 @@
 #include "Engine/SkeletalMesh.h"
 #include "Engine/World.h"
 #include "Materials/MaterialInterface.h"
+#include "Story/VEILCastBody.h"
 #include "VEIL.h"
 
 namespace
@@ -101,7 +102,17 @@ void AVEILCrowd::Populate(int32 Count)
 			*FString::Printf(TEXT("Person%d"), i));
 		if (!Person) { continue; }
 		Person->SetupAttachment(RootComponent);
-		Person->SetSkeletalMeshAsset((MetaHuman && (i % 4) == 3) ? MetaHuman : Quinn);
+		// A CROWD, NOT ONE MAN REPEATED. The body cycles the whole measured roster on the
+		// golden ratio and brings that body's own locomotion graph, so eight people in the
+		// market are eight different silhouettes instead of one mesh with two skins.
+		const int32 RosterCount = VEILCastBody::Count();
+		const int32 BodyIndex = FMath::Abs((int32)FMath::Floor(
+			FMath::Frac((double)i * 0.618033988749895) * (double)RosterCount));
+		const VEILCastBody::EBody Body = (VEILCastBody::EBody)FMath::Clamp(BodyIndex, 0, RosterCount - 1);
+		USkeletalMesh* RosterBody = VEILCastBody::LoadMesh(Body);
+		UClass* RosterGraph = VEILCastBody::LoadGraph(Body);
+		Person->SetSkeletalMeshAsset(RosterBody ? RosterBody : (MetaHuman ? MetaHuman : Quinn));
+		if (RosterGraph) { WalkAnim = RosterGraph; }
 		// Bone-driven body: keep it out of FMorphVertexBufferPool (assert :336).
 		Person->bDisableMorphTarget = true;
 		Person->SetCollisionEnabled(ECollisionEnabled::NoCollision);

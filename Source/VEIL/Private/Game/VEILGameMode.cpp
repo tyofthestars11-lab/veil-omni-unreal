@@ -6,6 +6,7 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/HUD.h"
 #include "Components/SkeletalMeshComponent.h"
+#include "Engine/SkeletalMesh.h"
 #include "Game/VEILGameMode.h"
 #include "World/VEILNestSanctum.h"
 #include "World/VEILConceptWorld.h"
@@ -4277,6 +4278,40 @@ void AVEILPlayerController::Tick(float DeltaSeconds)
 					UE_LOG(LogVEIL, Warning, TEXT("PHI STRATA: floating e.g. %s"), *FloatSample);
 				}
 			}
+		}
+	}
+
+	// PHI CAST CENSUS. Eight bodies are in Content and every role resolves one, so the
+	// count that matters is not "how many characters" but "how many DIFFERENT meshes".
+	// This prints it, with the tally per mesh, so "they are all the same person" is either
+	// confirmed by the numbers or answered by them.
+	{
+		static bool bCastCensusDone = false;
+		static float CastCensusClock = 0.f;
+		CastCensusClock += DeltaSeconds;
+		if (!bCastCensusDone && CastCensusClock >= 9.f)
+		{
+			bCastCensusDone = true;
+			TMap<FString, int32> ByMesh;
+			int32 Total = 0;
+			for (TActorIterator<AActor> ItCast(GetWorld()); ItCast; ++ItCast)
+			{
+				TArray<USkeletalMeshComponent*> Skels;
+				ItCast->GetComponents<USkeletalMeshComponent>(Skels);
+				for (USkeletalMeshComponent* Skel : Skels)
+				{
+					if (!Skel || !Skel->GetSkeletalMeshAsset()) { continue; }
+					ByMesh.FindOrAdd(Skel->GetSkeletalMeshAsset()->GetName()) += 1;
+					++Total;
+				}
+			}
+			FString Tally;
+			for (const TPair<FString, int32>& Pair : ByMesh)
+			{
+				Tally += FString::Printf(TEXT("%s x%d  "), *Pair.Key, Pair.Value);
+			}
+			UE_LOG(LogVEIL, Warning, TEXT("PHI CAST CENSUS: %d skeletal bod(ies) across %d distinct mesh(es): %s"),
+				Total, ByMesh.Num(), *Tally);
 		}
 	}
 
