@@ -38,6 +38,11 @@
 #include "UObject/ConstructorHelpers.h"
 #include "VEIL.h"
 #include "World/PhiSha256.h"
+#include "Dom/JsonObject.h"
+#include "Serialization/JsonReader.h"
+#include "Serialization/JsonSerializer.h"
+#include "Misc/Paths.h"
+#include "Misc/FileHelper.h"
 
 namespace
 {
@@ -3416,6 +3421,84 @@ void AVEILWorldBuilder::BuildPhiWhole()
 	static bool bPhiWholeBuilt = false;
 	if (bPhiWholeBuilt) { return; }
 	bPhiWholeBuilt = true;
+
+	// THE VISION FILE, WHOLE. BuildWorld reads vision_whole.json - written by
+	// VEIL-Whole-Phi-Intent.py - and places what it says. The file's SHA-256 is checked
+	// against the simulation's own digest, so the game is provably wearing the vision and
+	// not a paraphrase of it.
+	{
+		const FString VisionPath = FPaths::ProjectDir() / TEXT("vision_whole.json");
+		FString VisionText;
+		if (FFileHelper::LoadFileToString(VisionText, *VisionPath))
+		{
+			const FString VisionSha = PhiSha::Hex(VisionText);
+			TSharedPtr<FJsonObject> Root;
+			const TSharedRef<TJsonReader<>> Reader = TJsonReaderFactory<>::Create(VisionText);
+			if (FJsonSerializer::Deserialize(Reader, Root) && Root.IsValid())
+			{
+				UStaticMesh* VPillar = ColumnMesh ? ColumnMesh.Get() : CylinderMesh.Get();
+				UStaticMesh* VHouse = WallMesh ? WallMesh.Get() : CubeMesh.Get();
+				UStaticMesh* VCrystal = PyramidHeadMesh ? PyramidHeadMesh.Get() : MonolithMesh.Get();
+				UStaticMesh* VStone = FloorMesh ? FloorMesh.Get() : CubeMesh.Get();
+				const FLinearColor VGold(0.85f, 0.66f, 0.28f);
+				const FLinearColor VBlue(0.18f, 0.32f, 0.85f);
+				auto VTag = [](UStaticMeshComponent* Comp)
+				{
+					if (Comp && Comp->GetOwner()) { Comp->GetOwner()->Tags.Add(FName(TEXT("PhiCity"))); }
+				};
+				int32 PlacedPieces = 0;
+				const TArray<TSharedPtr<FJsonValue>>* Places = nullptr;
+				if (Root->TryGetArrayField(TEXT("placements"), Places) && Places)
+				{
+					for (const TSharedPtr<FJsonValue>& V : *Places)
+					{
+						const TSharedPtr<FJsonObject> P = V.IsValid() ? V->AsObject() : nullptr;
+						if (!P.IsValid()) { continue; }
+						const FString Type = P->GetStringField(TEXT("type"));
+						const float X = (float)P->GetNumberField(TEXT("x"));
+						const float Y = (float)P->GetNumberField(TEXT("y"));
+						UStaticMesh* Mesh = nullptr;
+						FLinearColor Tint = VGold;
+						FVector Sc(2.f, 2.f, 6.f);
+						float Z = 300.f;
+						if (Type == TEXT("phi_pillar")) { Mesh = VPillar; Z = 625.f; Sc = FVector(2.2f, 2.2f, 12.5f); }
+						else if (Type == TEXT("market_house")) { Mesh = VHouse; Z = 300.f; Sc = FVector(9.f, 9.f, 6.f); }
+						else if (Type == TEXT("blue_crystal")) { Mesh = VCrystal; Tint = VBlue; Z = 400.f; Sc = FVector(3.f, 3.f, 8.f); }
+						if (Mesh) { VTag(SpawnBlock(FVector(X, Y, Z), Sc, Mesh, Tint, 0.2f)); ++PlacedPieces; }
+					}
+				}
+				int32 AuthorityPlaced = 0;
+				const TSharedPtr<FJsonObject>* AuthObj = nullptr;
+				if (Root->TryGetObjectField(TEXT("authority"), AuthObj) && AuthObj && AuthObj->IsValid())
+				{
+					for (const TPair<FString, TSharedPtr<FJsonValue>>& KV : (*AuthObj)->Values)
+					{
+						const TArray<TSharedPtr<FJsonValue>>& C = KV.Value->AsArray();
+						if (C.Num() < 3) { continue; }
+						if (VStone)
+						{
+							VTag(SpawnBlock(FVector((float)C[0]->AsNumber(), (float)C[1]->AsNumber(), (float)C[2]->AsNumber()),
+								FVector(1.2f, 1.2f, 1.2f), VStone, VGold, 0.f));
+						}
+						++AuthorityPlaced;
+					}
+				}
+				int32 ZoneCount = 0;
+				const TSharedPtr<FJsonObject>* ZoneObj = nullptr;
+				if (Root->TryGetObjectField(TEXT("zones"), ZoneObj) && ZoneObj && ZoneObj->IsValid())
+				{
+					ZoneCount = (*ZoneObj)->Values.Num();
+				}
+				UE_LOG(LogVEIL, Warning,
+					TEXT("PHI VISION FILE: %d placement(s), %d authority, %d zone(s), SHA %s %s"),
+					PlacedPieces, AuthorityPlaced, ZoneCount, *VisionSha,
+					VisionSha == TEXT("cdd0897e8a8a9a4e96d2b159e346d6d29654b048db80056681c3589fa13123c0")
+						? TEXT("MATCH") : TEXT("MISMATCH"));
+				return;
+			}
+		}
+		UE_LOG(LogVEIL, Warning, TEXT("PHI VISION FILE: not found at %s - compiled law stands."), *VisionPath);
+	}
 
 	UWorld* World = GetWorld();
 	if (!World) return;
