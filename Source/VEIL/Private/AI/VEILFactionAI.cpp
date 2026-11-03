@@ -1,6 +1,7 @@
 // VEIL: THE LAST SIGNAL - faction AI implementation.
 #include "AI/VEILFactionAI.h"
 #include "Story/VEILCastBody.h"
+#include "Story/VEILCast.h"
 
 #include "AIController.h"
 #include "Components/CapsuleComponent.h"
@@ -25,6 +26,7 @@
 #include "Systems/VEILLootPickup.h"
 #include "Systems/VEILBurstFX.h"
 #include "Engine/Engine.h"
+#include "EngineUtils.h"
 
 // ---------------------------------------------------------------------------
 // ---------------------------------------------------------------------------
@@ -128,61 +130,62 @@ AVEILFactionAgent::AVEILFactionAgent()
 
 void AVEILFactionAgent::BeginPlay()
 {
-	// A PERSON, NOT A PLACEHOLDER. Twenty-four authored people across the four factions - the
-	// Ashfall crews, the Lantern Watch, the Quiet Court and the Hollow - each with a rank and a
-	// temperament. The row comes from the machine's own id, so a patrol is the same person every
-	// session and neighbours are never the same person. Temperament changes how it fights rather
-	// than labelling it: aggressive hits harder and closes faster, patient sees further and hits
-	// softer, curious watches and fires slower. Body scale and hue follow the row, so silhouette
-	// differs before anyone reads a name.
+	// A PERSON, NOT A PLACEHOLDER. The roster is the authored cast in Story/VEILCast.cpp, not
+	// a second name list beside it: the name on the plate is the person who answers [E], and
+	// their lines are the ones the cast file wrote for them. Faction, row and temperament come
+	// from the machine's own id; no two machines in a district claim the same person; and the
+	// same seat rebuilds the same roster every session. Temperament changes how it fights
+	// rather than labelling it, and body scale and hue follow the row, so silhouette differs
+	// before anyone reads a name.
 	{
-		struct FCastRow { const TCHAR* Name; const TCHAR* Rank; const TCHAR* Temper; };
-		static const FCastRow Cast[4][6] = {
-			{ {TEXT("Tova Renn"), TEXT("Cutter-Captain"), TEXT("aggressive")},
-			  {TEXT("Bram Kessler"), TEXT("Quartermaster"), TEXT("patient")},
-			  {TEXT("Nix"), TEXT("Salvage-Runner"), TEXT("curious")},
-			  {TEXT("Domen Arclight"), TEXT("Cartographer"), TEXT("curious")},
-			  {TEXT("Kesh Varo"), TEXT("Hull-Wright"), TEXT("patient")},
-			  {TEXT("Sable Ith"), TEXT("Crew-Head"), TEXT("aggressive")} },
-			{ {TEXT("Odalys Crane"), TEXT("Watch-Captain"), TEXT("aggressive")},
-			  {TEXT("Ferris Holt"), TEXT("Keeper of the Ledger"), TEXT("patient")},
-			  {TEXT("Mirea"), TEXT("Shield-Aunt"), TEXT("patient")},
-			  {TEXT("Sera Vahl"), TEXT("Keeper of the First Beacon"), TEXT("curious")},
-			  {TEXT("Halden Rook"), TEXT("Lamp-Warden"), TEXT("curious")},
-			  {TEXT("Iset Marr"), TEXT("Watch-Sergeant"), TEXT("aggressive")} },
-			{ {TEXT("Vespera Dal"), TEXT("First Voice"), TEXT("patient")},
-			  {TEXT("Elias Brume"), TEXT("The Notary"), TEXT("curious")},
-			  {TEXT("Sahn"), TEXT("Cipher-Adjutant"), TEXT("curious")},
-			  {TEXT("Ilva Marrow"), TEXT("The Seer"), TEXT("patient")},
-			  {TEXT("Corin Vey"), TEXT("Quiet Bailiff"), TEXT("aggressive")},
-			  {TEXT("Adea Lune"), TEXT("Court Archivist"), TEXT("patient")} },
-			{ {TEXT("The Listener"), TEXT("First of the Hollow"), TEXT("curious")},
-			  {TEXT("The Pale Host"), TEXT("The Hollow's answer"), TEXT("aggressive")},
-			  {TEXT("Ash-Witness"), TEXT("Hollow Echo"), TEXT("patient")},
-			  {TEXT("The Second Question"), TEXT("Hollow Echo"), TEXT("curious")},
-			  {TEXT("Pale Chorus"), TEXT("Hollow Echo"), TEXT("patient")},
-			  {TEXT("The Answerer"), TEXT("Hollow Echo"), TEXT("aggressive")} }
-		};
 		static const TCHAR* FactionWords[4] = {
 			TEXT("Ashfall Consortium"), TEXT("Lantern Watch"), TEXT("Quiet Court"), TEXT("Hollow") };
-		// THE FOUR FACTIONS ARE THE POINT, NOT ONE CREW REPEATED. Void is the enum's zero, so
-		// every machine defaulted to the Hollow and the first run read back as one crew with
-		// repeating names. Each agent takes a faction from its own id - all four represented -
-		// and the name index is hashed so neighbours differ instead of colliding every sixth.
 		const uint32 IdHash = (uint32)GetUniqueID() * 2654435761u;
-		const int32 Roll = (int32)(IdHash % 4);
-		switch (Roll)
+		switch ((int32)(IdHash % 4))
 		{
 		case 0: Faction = EVEILFaction::Scavenger; break;
 		case 1: Faction = EVEILFaction::Guardian; break;
 		case 2: Faction = EVEILFaction::Remnant; break;
 		default: Faction = EVEILFaction::Void; break;
 		}
-		const int32 FIdx = Roll;
-		const int32 CIdx = (int32)((IdHash >> 5) % 6);
-		CastName = Cast[FIdx][CIdx].Name;
-		CastRank = Cast[FIdx][CIdx].Rank;
-		CastTemperament = Cast[FIdx][CIdx].Temper;
+		// The faction's own authored people, in cast order.
+		TArray<FName> Members;
+		for (const FVEILCharacterDef& C : VEILCast::Characters())
+		{
+			if (const FVEILFactionDef* F = VEILCast::FindFaction(C.FactionId))
+			{
+				if (F->Faction == Faction) { Members.Add(C.Id); }
+			}
+		}
+		int32 Row = 0;
+		if (Members.Num() > 0)
+		{
+			// Names already claimed in this district. BeginPlay order is whatever the level
+			// gives us, so each machine looks at the ones that have spoken up so far.
+			TSet<FName> Taken;
+			if (UWorld* W = GetWorld())
+			{
+				for (TActorIterator<AVEILFactionAgent> It(W); It; ++It)
+				{
+					if (*It != this && !It->CastCharacterId.IsNone()) { Taken.Add(It->CastCharacterId); }
+				}
+			}
+			Row = (int32)((IdHash >> 5) % (uint32)Members.Num());
+			for (int32 Step = 0; Step < Members.Num(); ++Step)
+			{
+				const int32 Try = (Row + Step) % Members.Num();
+				if (!Taken.Contains(Members[Try])) { Row = Try; break; }
+			}
+			if (const FVEILCharacterDef* Who = VEILCast::FindCharacter(Members[Row]))
+			{
+				CastCharacterId = Who->Id;
+				CastName = Who->Name.ToString();
+				CastRank = Who->Title.ToString();
+			}
+		}
+		// Temperament is a separate rung so two of a faction's people still fight differently.
+		static const TCHAR* Moods[3] = { TEXT("aggressive"), TEXT("patient"), TEXT("curious") };
+		CastTemperament = Moods[(IdHash >> 11) % 3];
 		if (CastTemperament == TEXT("aggressive"))
 		{
 			MaxHealth *= 0.85f; AttackRange *= 1.15f; WeaponDamage *= 1.35f; FireInterval *= 0.80f;
@@ -196,6 +199,8 @@ void AVEILFactionAgent::BeginPlay()
 			SightRange *= 1.10f; FireInterval *= 1.15f;
 		}
 		Health = MaxHealth;
+		const int32 CIdx = Members.Num() ? (Row % 6) : 0;
+		const int32 FIdx = (int32)(IdHash % 4);
 		TArray<UStaticMeshComponent*> BodyMeshes;
 		GetComponents<UStaticMeshComponent>(BodyMeshes);
 		for (UStaticMeshComponent* BM : BodyMeshes)

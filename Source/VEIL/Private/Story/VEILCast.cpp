@@ -162,6 +162,84 @@ namespace
 					"recently dead. The Host is what the Deep sends when it wants to be understood.")),
 				{ CastT(TEXT("You are made of noise. We are made of the silence after it.")) }
 			},
+			{
+				FName(TEXT("the_third_echo")), CastT(TEXT("THE THIRD ECHO")), CastT(TEXT("HOLLOW ECHO, THREE SECONDS LATE")),
+				FName(TEXT("hollow")),
+				CastT(TEXT("Every answer the Hollow gives arrives a little late, and the Echo is the lateness: a voice "
+					"that repeats the district three seconds after it has finished speaking, in a tone that is almost "
+					"right. Almost is the part that keeps people up.")),
+				{ CastT(TEXT("You said something just now. I am about to say it better.")),
+				  CastT(TEXT("Do not wait for me to finish. I am always behind you, and always correct.")) }
+			},
+			{
+				FName(TEXT("ash_witness")), CastT(TEXT("ASH-WITNESS")), CastT(TEXT("THE HOLLOW'S MEMORY")),
+				FName(TEXT("hollow")),
+				CastT(TEXT("The Hollow does not keep records; it keeps witnesses. Ash-Witness has watched the same "
+					"square metre of the Deep for a century and remembers every foot that crossed it, including the "
+					"ones that never arrived.")),
+				{ CastT(TEXT("You have walked here four times. The fourth is the one I am speaking to.")),
+				  CastT(TEXT("Nothing burns down here. The ash is what the Signal left when it stopped shouting.")) }
+			},
+			{
+				FName(TEXT("pale_choir")), CastT(TEXT("THE PALE CHOIR")), CastT(TEXT("MANY VOICES, ONE THROAT")),
+				FName(TEXT("hollow")),
+				CastT(TEXT("Where the Signal pooled in a stairwell it learned harmony, and the Choir is what it does "
+					"with a dozen borrowed throats: a hymn that is also a census, sung at whoever is closest.")),
+				{ CastT(TEXT("We have your voice already. We are only waiting for the words.")),
+				  CastT(TEXT("Sing back, and we will tell you which of us you are.")) }
+			},
+			{
+				FName(TEXT("the_answerer")), CastT(TEXT("THE ANSWERER")), CastT(TEXT("HOLLOW ECHO, SPEAKING FIRST")),
+				FName(TEXT("hollow")),
+				CastT(TEXT("The Listener asked. The Answerer is what came back early: it answers questions nobody has "
+					"asked yet, which is why the Watch fires on it before it finishes a sentence.")),
+				{ CastT(TEXT("Ask me nothing. I have already answered.")),
+				  CastT(TEXT("You will want the beacon at the third ring. You will not want what it costs. Both are true at once.")) }
+			},
+			{
+				FName(TEXT("halden_rook")), CastT(TEXT("HALDEN ROOK")), CastT(TEXT("LAMP-WARDEN OF THE SPIRE STAIR")),
+				FName(TEXT("watch")),
+				CastT(TEXT("Rook keeps the two hundred and eleven lamps on the Spire stair, one at a time, by hand, "
+					"because the last time the Watch trusted a mechanism the stair went dark for a year and the "
+					"ledger still has the blank line.")),
+				{ CastT(TEXT("Two hundred and eleven. Count them on the way up; it is the only prayer the Watch still says.")),
+				  CastT(TEXT("Do not touch the ninth. It is not lit and it is not out - there is a difference.")) }
+			},
+			{
+				FName(TEXT("iset_marr")), CastT(TEXT("ISET MARR")), CastT(TEXT("WATCH-SERGEANT, NIGHT LEDGER")),
+				FName(TEXT("watch")),
+				CastT(TEXT("Marr commands the night shift, which in this district means she commands the only people "
+					"awake when the Signal is loudest. She writes down what her patrols hear and burns the pages "
+					"that answer.")),
+				{ CastT(TEXT("Night is a shift, not a mood. State your business before the bell.")),
+				  CastT(TEXT("My patrol heard a name in the static. It was not yours. Keep it that way.")) }
+			},
+			{
+				FName(TEXT("kesh_varo")), CastT(TEXT("KESH VARO")), CastT(TEXT("HULL-WRIGHT OF THE NEST DRY-DOCKS")),
+				FName(TEXT("ashfall")),
+				CastT(TEXT("Varo welds hulls that were never built to hold air, and does it well enough that the "
+					"Consortium forgives the eleven ships that came back empty. She keeps their manifest bolts in a "
+					"jar and calls it inventory.")),
+				{ CastT(TEXT("Everything down here is a hull if you seal it hard enough. Even the district.")),
+				  CastT(TEXT("I do not fix what the Deep broke. I fix what people broke trying to leave it.")) }
+			},
+			{
+				FName(TEXT("corin_vey")), CastT(TEXT("CORIN VEY")), CastT(TEXT("QUIET BAILIFF")),
+				FName(TEXT("court")),
+				CastT(TEXT("Vey enforces the Court's silence with a ledger and a key. He has never drawn a weapon in "
+					"the Spire and has never needed to: the rooms he locks stay locked because the people inside "
+					"agree with him.")),
+				{ CastT(TEXT("You are speaking at the volume of someone who has not signed anything.")),
+				  CastT(TEXT("The Court fines noise. I am the fine.")) }
+			},
+			{
+				FName(TEXT("adea_lune")), CastT(TEXT("ADEA LUNE")), CastT(TEXT("COURT ARCHIVIST OF THE SEALED RINGS")),
+				FName(TEXT("court")),
+				CastT(TEXT("Lune keeps every broadcast the world ever made, filed by what it was afraid of. She has "
+					"read the last one and has not slept in the Spire since, which the Court records as dedication.")),
+				{ CastT(TEXT("Every voice in the archive is filed by fear. Yours is not in it yet.")),
+				  CastT(TEXT("The last broadcast is four seconds long. Three of them are breathing.")) }
+			},
 		};
 		return List;
 	}

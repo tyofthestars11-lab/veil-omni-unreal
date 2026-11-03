@@ -114,6 +114,9 @@ public:
 	/** WHO THIS MACHINE IS. Not NPC_03: a named member of its faction, with a rank and a
 	 *  temperament that changes how it fights, picked from its own id so it is the same
 	 *  person every session and never the same person as its neighbour. */
+	/** The authored cast member this machine IS (Story/VEILCast.cpp). The nameplate and the
+	 *  conversation both read it, so the person you see is the person who answers [E]. */
+	FName CastCharacterId;
 	FString CastName;
 	FString CastRank;
 	FString CastTemperament;

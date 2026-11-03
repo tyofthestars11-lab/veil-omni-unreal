@@ -1209,7 +1209,9 @@ void AVEILHudCanvas::DrawHUD()
 		// patrol reads as Ashfall cutters or Watch shields - not "enemy 3".
 		for (TActorIterator<AVEILFactionAgent> It(W); It; ++It)
 		{
-			const FName Who = VEILCast::CharacterForFaction(It->Faction, It->GetUniqueID());
+			const FName Who = It->CastCharacterId.IsNone()
+				? VEILCast::CharacterForFaction(It->Faction, It->GetUniqueID())
+				: It->CastCharacterId;
 			const FVEILCharacterDef* C = VEILCast::FindCharacter(Who);
 			if (!C) { continue; }
 			const FVEILFactionDef* F = VEILCast::FindFaction(C->FactionId);

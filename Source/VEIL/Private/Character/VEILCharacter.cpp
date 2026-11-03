@@ -2108,6 +2108,23 @@ void AVEILCharacter::ToggleGodMode()
 float AVEILCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent,
 	AController* EventInstigator, AActor* DamageCauser)
 {
+	// WHO HIT YOU IS A PERSON. This logged the raw object name for weeks, so a
+	// death read "VEILFactionAgent_8" - the one place in the game still speaking in
+	// asset names. The causer (or the projectile's owner) resolves to its cast row.
+	const FString CauserName = [DamageCauser, EventInstigator]() -> FString
+	{
+		AActor* A = DamageCauser;
+		if (!A && EventInstigator) { A = EventInstigator->GetPawn(); }
+		const AVEILFactionAgent* Who = Cast<AVEILFactionAgent>(A);
+		if (!Who && A) { Who = Cast<AVEILFactionAgent>(A->GetOwner()); }
+		if (Who && !Who->CastName.IsEmpty())
+		{
+			return Who->CastRank.IsEmpty()
+				? Who->CastName
+				: FString::Printf(TEXT("%s, %s"), *Who->CastName, *Who->CastRank);
+		}
+		return A ? A->GetName() : FString(TEXT("(no causer)"));
+	}();
 	// GATE LOG: something refused every blow in a 130 s run while the camp logged
 	// 3 attacks, so the refusal names its own gate here.
 	// LogTemp/Display on purpose: LogVEIL at Log verbosity never appeared in a -game
@@ -2146,7 +2163,7 @@ float AVEILCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageE
 				bTokenHoldAnnounced = true;
 				UE_LOG(LogVEIL, Log, TEXT("PHI TOKEN: %d attacker(s) hold the token - blow from %s held back."),
 					RecentHitTimes.Num(),
-					DamageCauser ? *DamageCauser->GetName() : TEXT("(no causer)"));
+					*CauserName);
 			}
 			return 0.f;
 		}
@@ -2166,7 +2183,7 @@ float AVEILCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageE
 	// anywhere, so it was impossible to say what killed him. Now it is data.
 	UE_LOG(LogTemp, Display, TEXT("PHI DMG: %.1f applied (raw %.1f, clamped %.1f) from %s at t=%.2f -> health %.1f/%.1f"),
 		Applied, DamageAmount, ClampedDamage,
-		DamageCauser ? *DamageCauser->GetName() : TEXT("(no causer)"),
+		*CauserName,
 		GetWorld() ? GetWorld()->GetTimeSeconds() : 0.f, Health, MaxHealth);
 	if (Health <= 0.f)
 	{
@@ -2179,7 +2196,7 @@ float AVEILCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageE
 		// "the runner fell" named the wrong thing for weeks: he was being beaten
 		// down by a named machine, so the line says who, not "fell".
 		UE_LOG(LogTemp, Display, TEXT("PHI DEATH: the runner went down to %s at t=%.2f. Returning in phi seconds - respawn %d is next, no cap."),
-			DamageCauser ? *DamageCauser->GetName() : TEXT("(no causer)"),
+			*CauserName,
 			GetWorld() ? GetWorld()->GetTimeSeconds() : 0.f, RespawnCount + 1);
 	}
 	return Applied;

@@ -3304,7 +3304,9 @@ void AVEILPlayerController::TalkToNearest()
 	for (TActorIterator<AVEILFactionAgent> It(W); It; ++It)
 	{
 		const float D = (float)FVector::Dist(At, It->GetActorLocation());
-		if (D < BestDist) { BestDist = D; Best = VEILCast::CharacterForFaction(It->Faction, It->GetUniqueID()); }
+		if (D < BestDist) { BestDist = D; Best = It->CastCharacterId.IsNone()
+			? VEILCast::CharacterForFaction(It->Faction, It->GetUniqueID())
+			: It->CastCharacterId; }
 	}
 
 	if (Best != NAME_None)
