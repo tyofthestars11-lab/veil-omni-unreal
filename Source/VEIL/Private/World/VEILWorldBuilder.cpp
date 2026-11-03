@@ -1,4 +1,5 @@
 ﻿// VEIL: THE LAST SIGNAL - runtime world builder implementation.
+#include "World/PHILayout.h"
 #include "World/VEILWorldBuilder.h"
 
 #include "Components/SkyAtmosphereComponent.h"
@@ -3134,7 +3135,7 @@ void AVEILWorldBuilder::BuildVista()
 	for (int32 i = 0; i < 14; ++i)
 	{
 		const float Ang = FMath::DegreesToRadians(i * GoldDeg + 205.f);
-		const float Rad = 7800.f * FMath::Pow(PhiV, (float)(i % 5) * 0.20f);
+		const float Rad = PHILayout::Band(i, 7800.f, 5);
 		const FVector Base(FMath::Cos(Ang) * Rad, FMath::Sin(Ang) * Rad, 0.f);
 		const float ClusterH = 1500.f + (float)(i % 4) * 700.f;
 		for (int32 K = 0; K < 5; ++K)
@@ -3157,7 +3158,7 @@ void AVEILWorldBuilder::BuildVista()
 	for (int32 i = 0; i < 6; ++i)
 	{
 		const float Ang = FMath::DegreesToRadians(i * GoldDeg + 60.f);
-		const float Rad = 5600.f * FMath::Pow(PhiV, (float)(i % 3) * 0.25f);
+		const float Rad = PHILayout::Band(i, 5600.f, 3);
 		const FVector At(FMath::Cos(Ang) * Rad, FMath::Sin(Ang) * Rad, 0.f);
 		const FRotator Face(0.f, FMath::RadiansToDegrees(Ang) + 180.f, 0.f);
 		const float FallH = 2200.f + (float)(i % 3) * 500.f;
@@ -3178,7 +3179,7 @@ void AVEILWorldBuilder::BuildVista()
 	for (int32 T = 0; T < 3; ++T)
 	{
 		const float Ang = FMath::DegreesToRadians(T * GoldDeg + 40.f);
-		const float Rad = 3600.f * FMath::Pow(PhiV, (float)T);
+		const float Rad = PHILayout::Band(T, 3600.f, 3);
 		const FVector C(FMath::Cos(Ang) * Rad, FMath::Sin(Ang) * Rad, 0.f);
 		const float DeckZ = 320.f + 220.f * (float)T;
 		Terraces.Add(C + FVector(0.f, 0.f, DeckZ));
@@ -3232,7 +3233,7 @@ void AVEILWorldBuilder::BuildVista()
 	for (int32 i = 0; i < 3; ++i)
 	{
 		const float Ang = FMath::DegreesToRadians(i * GoldDeg + 30.f);
-		const float Rad = 1500.f * FMath::Pow(PhiV, (float)i);
+		const float Rad = PHILayout::Band(i, 1500.f, 3);
 		const FVector Base(FMath::Cos(Ang) * Rad, FMath::Sin(Ang) * Rad, 0.f);
 		SpawnBlock(Base + FVector(0.f, 0.f, 40.f), FVector(3.4f, 3.4f, 0.8f), Ground, StoneC, 0.f);
 		SpawnBlock(Base + FVector(0.f, 0.f, 600.f), FVector(0.9f, 0.9f, 11.f), Pillar, Gold, 0.15f);
@@ -3252,6 +3253,45 @@ void AVEILWorldBuilder::BuildVista()
 		}
 		SpawnBlock(FVector(Site.X, Site.Y, 300.f), FVector(2.4f, 2.4f, 6.f), Crystal, Gold, 1.1f);
 	}
+
+	// 7. UNDERGROWTH. A bare valley of stone reads as unfinished however good the stone is:
+	// clumps of the kit's debris, tinted moss, on their own phi band.
+	const FLinearColor Moss(0.20f, 0.36f, 0.19f);
+	int32 Shrubs = 0;
+	TArray<FVector> VistaSpots;
+	for (int32 i = 0; i < 48; ++i)
+	{
+		const FVector At = PHILayout::Spiral(i, 4200.f, 12.f, 5);
+		UStaticMesh* Bush = DebrisVariants.Num() ? DebrisVariants[i % DebrisVariants.Num()].Get() : Stone;
+		const float H = 180.f + 40.f * (float)(i % 5);
+		if (SpawnBlock(At + FVector(0.f, 0.f, H * 0.5f),
+			FVector(H * 0.0042f, H * 0.0042f, H / 100.f), Bush, Moss, 0.f))
+		{
+			VistaSpots.Add(At);
+			++Shrubs;
+		}
+	}
+
+	// 8. THE RIVER. Water on the valley floor, on its own phi band.
+	const FLinearColor RiverC(0.34f, 0.58f, 0.86f);
+	int32 RiverTiles = 0;
+	for (int32 i = 0; i < 6; ++i)
+	{
+		const FVector At = PHILayout::Spiral(i, 2700.f, 101.f, 4, 24.f);
+		if (SpawnBlock(At, FVector(9.5f, 4.2f, 0.5f), Water, RiverC, 0.18f))
+		{
+			VistaSpots.Add(At);
+			++RiverTiles;
+		}
+	}
+
+	// THE SPACING AUDIT: what this pass placed, measured against itself.
+	PHILayout::FSpacingReport Spacing;
+	Spacing.Measure(VistaSpots, 120.f);
+	UE_LOG(LogVEIL, Warning,
+		TEXT("PHI LAYOUT: %d shrub(s), %d river tile(s) on phi bands; %d piece(s) audited, min spacing %.0f cm, %d pair(s) under 120 cm - verdict %s."),
+		Shrubs, RiverTiles, Spacing.Count, Spacing.MinGapCm, Spacing.TooClose,
+		Spacing.IsClean() ? TEXT("BANDS HOLD") : TEXT("CROWDED"));
 
 	UE_LOG(LogVEIL, Warning,
 		TEXT("PHI VISTA: %d crystal peaks, %d waterfall(s), %d house(s) on 3 terraces, %d bridge span(s), %d phi pillar(s), %d beacon shaft(s) - the district reads in silhouette."),
