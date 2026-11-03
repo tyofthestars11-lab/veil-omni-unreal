@@ -1323,8 +1323,13 @@ void AVEILCharacter::Move(const FInputActionValue& Value)
 	const FRotator YawRot(0.f, Controller->GetControlRotation().Yaw, 0.f);
 	const FVector Forward = FRotationMatrix(YawRot).GetUnitAxis(EAxis::X);
 	const FVector Right = FRotationMatrix(YawRot).GetUnitAxis(EAxis::Y);
-	AddMovementInput(Forward, Axis.Y);
-	AddMovementInput(Right, Axis.X);
+	// GOLDEN PITCH, AROUND RIGHTVECTOR. 17.0324 deg - cos 0.9561, sin 0.2929 - so a
+	// forward push is 95.6% of the heading and 29.3% of the pitch. UpVector is yaw
+	// and rotates W sideways, which is why this uses the right axis. Every path
+	// (keys, stick, the proof) arrives here, so there is one direction, not two.
+	static const FVector PitchAxis = FVector::RightVector;
+	AddMovementInput(Forward.RotateAngleAxis(-17.0324f, PitchAxis), Axis.Y);
+	AddMovementInput(Right.RotateAngleAxis(-17.0324f, PitchAxis), Axis.X);
 }
 
 void AVEILCharacter::Look(const FInputActionValue& Value)
