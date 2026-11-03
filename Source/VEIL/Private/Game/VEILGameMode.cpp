@@ -300,6 +300,30 @@ void AVEILGameMode::ApplyPhiGrade()
 
 void AVEILGameMode::BeginPlay()
 {
+	// PHI HUB PHOTO. The spawn camera looks at rubble at 1.6 m; the market rings the Hub
+	// at 10-24 m, so the only honest proof of it is a camera that frames it. One flag,
+	// one still: the reference's own angle, from the south-west looking back at 0,0.
+	if (FParse::Param(FCommandLine::Get(), TEXT("phihub")))
+	{
+		FTimerHandle HubShot;
+		GetWorldTimerManager().SetTimer(HubShot, [this]()
+		{
+			FActorSpawnParameters CamParams;
+			CamParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+			ACameraActor* Cam = GetWorld()->SpawnActor<ACameraActor>(ACameraActor::StaticClass(),
+				FVector(2600.f, -2600.f, 900.f), FRotator(-12.f, 135.f, 0.f), CamParams);
+			if (Cam)
+			{
+				if (APlayerController* ViewPC = UGameplayStatics::GetPlayerController(GetWorld(), 0))
+				{
+					ViewPC->SetViewTargetWithBlend(Cam, 0.f);
+				}
+				UE_LOG(LogVEIL, Warning, TEXT("PHI HUB PHOTO: camera at %s, looking at the Hub market at 0,0."),
+					*Cam->GetActorLocation().ToCompactString());
+			}
+		}, 6.f, false);
+	}
+
 	// OPEN THE SKY BEFORE ANYONE IS SEATED.
 	//
 	// The seat probe refuses a plaza whose centre is roofed and wakes the runner
