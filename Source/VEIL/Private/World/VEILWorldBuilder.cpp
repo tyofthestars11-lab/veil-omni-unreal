@@ -1,6 +1,6 @@
 ﻿// VEIL: THE LAST SIGNAL - runtime world builder implementation.
-#include "World/PHILayout.h"
 #include "World/VEILWorldBuilder.h"
+#include "World/PHILayout.h"
 
 #include "Components/SkyAtmosphereComponent.h"
 #include "Components/DirectionalLightComponent.h"

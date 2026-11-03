@@ -271,6 +271,40 @@ void AVEILCharacter::BeginPlay()
 	// MetaHuman body wins, an empty assignment changes nothing, and
 	// the PHI BODY CHECK log below reports the final body.
 	AssignMetaHumanBody();
+	// THE WINGS FROM THE VISION. Flight already exists (double-tap jump) but the runner had no
+	// wing on his back, and the wings are the whole silhouette of the reference frame. Two kit
+	// panels, gold-faced, parented to the body: no new asset, no header change, and the log says
+	// how many were bound so a missing mesh is a sentence instead of a guess.
+	{
+		UStaticMesh* Panel = LoadObject<UStaticMesh>(nullptr,
+			TEXT("/Game/Sicka_EnvPack2/Sicka_Ancient_Kit/Mesh/Modular/SM_Floor2_Big.SM_Floor2_Big"));
+		UMaterialInterface* WingGold = LoadObject<UMaterialInterface>(nullptr,
+			TEXT("/Game/PHI/Palette/M_PHI_GoldMetallic.M_PHI_GoldMetallic"));
+		if (Panel && GetMesh())
+		{
+			int32 Made = 0;
+			for (int32 Side = -1; Side <= 1; Side += 2)
+			{
+				UStaticMeshComponent* Wing = NewObject<UStaticMeshComponent>(this,
+					*FString::Printf(TEXT("PhiWing%d"), Side > 0 ? 1 : 0));
+				if (!Wing) { continue; }
+				Wing->SetupAttachment(GetMesh());
+				Wing->SetStaticMesh(Panel);
+				Wing->SetRelativeLocation(FVector(-8.f, 16.f * (float)Side, 148.f));
+				Wing->SetRelativeRotation(FRotator(0.f, 0.f, 24.f * (float)Side));
+				Wing->SetRelativeScale3D(FVector(0.03f, 1.4f, 0.85f));
+				Wing->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+				Wing->SetMobility(EComponentMobility::Movable);
+				if (WingGold) { Wing->SetMaterial(0, WingGold); }
+				Wing->RegisterComponent();
+				++Made;
+			}
+			UE_LOG(LogVEIL, Warning,
+				TEXT("PHI WINGS: %d phi panel(s) bound to the runner's back - the silhouette the vision asks for."),
+				Made);
+		}
+	}
+
 	// The spawn window: phi^5 = 11.0902 seconds to find your feet.
 	GraceWindow = UPHIMito::PhiPow(5.f);
 	GraceClock = 0.f;
