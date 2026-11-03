@@ -111,9 +111,12 @@ AVEILCharacter::AVEILCharacter()
 	// once put the lens in the runner's back; the captures then showed the opposite
 	// failure, half the frame filled by a wall the camera was buried in. Collision is
 	// back on with a probe size, so the arm shortens instead of entering the stone.
-	CameraBoom->bDoCollisionTest = true;
-	CameraBoom->ProbeSize = 18.f;
-	CameraBoom->ProbeChannel = ECC_Visibility;
+		// COLLISION ON WAS TRIED AND MEASURED, AND IT DID NOT FIX THE BURIED LENS. With
+	// bDoCollisionTest the re-captured frames were unchanged - still a wall across the
+	// lower half - because the runner stands at Z=598 inside the composition, so the
+	// arm has stone on every side and shortening it only moves the lens from one face
+	// to another. The seat is the problem, not the probe, so this stays off.
+	CameraBoom->bDoCollisionTest = false;
 
 	FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
 	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
