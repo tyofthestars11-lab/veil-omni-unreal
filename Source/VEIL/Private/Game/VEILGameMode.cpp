@@ -1,4 +1,5 @@
 // VEIL: THE LAST SIGNAL - game mode + player controller implementation.
+#include "Game/VEILGameMode.h"
 #include "Camera/CameraActor.h"
 #include "Components/MeshComponent.h"
 #include "Misc/Paths.h"
@@ -7,7 +8,6 @@
 #include "GameFramework/HUD.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Engine/SkeletalMesh.h"
-#include "Game/VEILGameMode.h"
 #include "World/VEILNestSanctum.h"
 #include "World/VEILConceptWorld.h"
 #include "World/VEILCrowd.h"
@@ -53,6 +53,7 @@
 #include "Systems/VEILSociety.h"
 #include "Systems/VEILPerf.h"
 #include "Story/VEILCast.h"
+#include "World/VEILHubMarket.h"
 #include "AI/VEILFactionAI.h"
 #include "World/OMNIQuestContent.h"
 #include "World/VEILPhiTetraSpawner.h"
@@ -826,6 +827,24 @@ void AVEILGameMode::BeginPlay()
 					Rebuilt, Resurfaced, KeptBlue);
 			}
 			UE_LOG(LogTemp, Display, TEXT("PHI CONTENT OWNER: concept composition holds %d piece(s)."), Composition);
+			// PHI HUB MARKET SPAWN. The reference Hub is a cliff market under the Spire;
+			// the families pass stands down when the composition owns the district, so
+			// this is the pass that lays the twelve pillars, eight blue-canvas stalls and
+			// five crystal peaks at the Hub's own authority point. Once, and guarded.
+			{
+				int32 Market = 0;
+				for (TActorIterator<AVEILHubMarket> It(GetWorld()); It; ++It) { ++Market; }
+				if (Market == 0)
+				{
+					FActorSpawnParameters HubParams;
+					HubParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+					if (AVEILHubMarket* Built = GetWorld()->SpawnActor<AVEILHubMarket>(
+						AVEILHubMarket::StaticClass(), FVector::ZeroVector, FRotator::ZeroRotator, HubParams))
+					{
+						Built->Build();
+					}
+				}
+			}
 		}, 3.2f, false);
 	}
 
@@ -3605,6 +3624,9 @@ void AVEILPlayerController::SetupInputComponent()
 		// Field manual: H (safe), the pad's left d-pad, and F1 handled in InputKey
 		// because the engine owns F1 and must be intercepted first.
 		InputComponent->BindKey(EKeys::H, IE_Pressed, this, &AVEILPlayerController::ToggleFieldManual);
+		// F5: THE RUNNER IS A CHOICE. Garret (male) and Elara (female) are both real
+		// Polyart bodies with their own locomotion graphs; the swap is live.
+		InputComponent->BindKey(EKeys::F5, IE_Pressed, this, &AVEILPlayerController::ToggleRunnerBody);
 		// F10: the debug strips. Off by default - normal play shows the game, not the
 		// instrumentation. The Bible names F10 for exactly this.
 		InputComponent->BindKey(EKeys::F10, IE_Pressed, this, &AVEILPlayerController::ToggleDebugStrips);
@@ -3984,6 +4006,14 @@ void AVEILPlayerController::TravelOrAdvance()
 	}
 	if (bShowChart && ChartPage == 2) { OptionsActivate(); return; }
 	ChartTravel();
+}
+
+void AVEILPlayerController::ToggleRunnerBody()
+{
+	if (AVEILCharacter* Runner = Cast<AVEILCharacter>(GetPawn()))
+	{
+		Runner->SetRunnerFemale(!Runner->IsFemaleRunner());
+	}
 }
 
 void AVEILPlayerController::ToggleLog()

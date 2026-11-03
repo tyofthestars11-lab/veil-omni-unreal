@@ -163,6 +163,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "VEIL|UI")
 	void ToggleFieldManual();
 
+	/** F5: swap the runner's body between Garret (male) and Elara (female). */
+	void ToggleRunnerBody();
+
 	UFUNCTION(BlueprintCallable, Category = "VEIL|UI")
 	void ToggleMuteNarrator();
 

@@ -317,6 +317,13 @@ public:
 	float GetCameraArmLength() const { return CameraArmLength; }
 
 	// ---- Read by the field manual: the gesture itself, never a guess ----
+	/** THE RUNNER IS A CHOICE: a man or a woman, both real Polyart bodies with their
+	 *  own locomotion graphs. F5 swaps in game; the log names the body. */
+	UFUNCTION(BlueprintCallable, Category = "VEIL|Body")
+	void SetRunnerFemale(bool bFemale);
+	UFUNCTION(BlueprintPure, Category = "VEIL|Body")
+	bool IsFemaleRunner() const { return bFemaleRunner; }
+
 	UFUNCTION(BlueprintPure, Category = "VEIL|State")
 	bool IsSprintingNow() const { return bSprinting; }
 
@@ -412,6 +419,8 @@ private:
 	TArray<TObjectPtr<UInputAction>> BuiltActions;
 
 	bool bSprinting = false;
+	/** Which body the player chose. */
+	bool bFemaleRunner = false;
 
 	/** Last tap of the jump button: a second one inside 0.382 s takes off. */
 	float LastJumpTapAt = -100.f;

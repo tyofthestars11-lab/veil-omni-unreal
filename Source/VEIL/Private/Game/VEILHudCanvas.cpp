@@ -1,6 +1,6 @@
 ﻿// VEIL canvas HUD: objectives, health, progression, win/lose.
-#include "VEIL.h"
 #include "Game/VEILHudCanvas.h"
+#include "VEIL.h"
 #include "Game/VEILGameMode.h"
 #include "Game/VEILOSFace.h"
 #include "Game/VEILHudMockup.h"

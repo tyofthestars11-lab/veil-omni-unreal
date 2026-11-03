@@ -808,6 +808,38 @@ void AVEILCharacter::AssignMetaHumanBody()
 		BodyAnim ? *BodyAnim->GetName() : TEXT("unassigned"));
 }
 
+void AVEILCharacter::SetRunnerFemale(bool bFemale)
+{
+	// TWO REAL BODIES. Garret and Elara ship in the Polyart pack with their own
+	// locomotion graphs, so the choice is a body swap, not a tint. The mesh, the
+	// graph and the flag change together, and the log names which one is standing
+	// so a still frame can be checked against it.
+	const TCHAR* MeshPath = bFemale
+		? TEXT("/Game/Polyart/ModularStylizedChars/Meshes/SkeletalMeshes/Characters/SK_Elara_FullBody.SK_Elara_FullBody")
+		: TEXT("/Game/Polyart/ModularStylizedChars/Meshes/SkeletalMeshes/Characters/SK_Garret_FullBody.SK_Garret_FullBody");
+	const TCHAR* GraphPath = bFemale
+		? TEXT("/Game/Polyart/SharedResources/Characters/AnimationStuff/AnimationBlueprints/ABP_FemaleCharacter.ABP_FemaleCharacter_C")
+		: TEXT("/Game/Polyart/SharedResources/Characters/AnimationStuff/AnimationBlueprints/ABP_MaleCharacter.ABP_MaleCharacter_C");
+
+	USkeletalMesh* Body = LoadObject<USkeletalMesh>(nullptr, MeshPath);
+	if (!Body || !GetMesh())
+	{
+		UE_LOG(LogVEIL, Warning, TEXT("PHI RUNNER: %s body did not load; keeping the one that is standing."),
+			bFemale ? TEXT("Elara") : TEXT("Garret"));
+		return;
+	}
+	GetMesh()->SetSkeletalMeshAsset(Body);
+	GetMesh()->bDisableMorphTarget = true;
+	if (UClass* Graph = LoadClass<UAnimInstance>(nullptr, GraphPath))
+	{
+		GetMesh()->SetAnimationMode(EAnimationMode::AnimationBlueprint);
+		GetMesh()->SetAnimInstanceClass(Graph);
+	}
+	bFemaleRunner = bFemale;
+	UE_LOG(LogVEIL, Warning, TEXT("PHI RUNNER: body is now %s (%s) - the player's choice, not a placeholder."),
+		bFemale ? TEXT("ELARA") : TEXT("GARRET"), bFemale ? TEXT("female") : TEXT("male"));
+}
+
 void AVEILCharacter::BuildFallbackInput()
 {
 	// Build the full control scheme in code - keyboard/mouse AND Xbox pad.
