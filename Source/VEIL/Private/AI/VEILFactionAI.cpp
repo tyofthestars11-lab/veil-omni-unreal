@@ -165,8 +165,21 @@ void AVEILFactionAgent::BeginPlay()
 		};
 		static const TCHAR* FactionWords[4] = {
 			TEXT("Ashfall Consortium"), TEXT("Lantern Watch"), TEXT("Quiet Court"), TEXT("Hollow") };
-		const int32 FIdx = FMath::Clamp((int32)Faction, 0, 3);
-		const int32 CIdx = FMath::Abs((int32)(GetUniqueID() / 7)) % 6;
+		// THE FOUR FACTIONS ARE THE POINT, NOT ONE CREW REPEATED. Void is the enum's zero, so
+		// every machine defaulted to the Hollow and the first run read back as one crew with
+		// repeating names. Each agent takes a faction from its own id - all four represented -
+		// and the name index is hashed so neighbours differ instead of colliding every sixth.
+		const uint32 IdHash = (uint32)GetUniqueID() * 2654435761u;
+		const int32 Roll = (int32)(IdHash % 4);
+		switch (Roll)
+		{
+		case 0: Faction = EVEILFaction::Scavenger; break;
+		case 1: Faction = EVEILFaction::Guardian; break;
+		case 2: Faction = EVEILFaction::Remnant; break;
+		default: Faction = EVEILFaction::Void; break;
+		}
+		const int32 FIdx = Roll;
+		const int32 CIdx = (int32)((IdHash >> 5) % 6);
 		CastName = Cast[FIdx][CIdx].Name;
 		CastRank = Cast[FIdx][CIdx].Rank;
 		CastTemperament = Cast[FIdx][CIdx].Temper;
