@@ -3729,9 +3729,16 @@ void AVEILWorldBuilder::BuildPhiForms()
 	const float SpireX = 0.f, SpireY = 3500.f;
 	int32 SpirePieces = 0;
 	// Stands ON the deck it overlooks, not 180 cm above it.
-	float Z = DeckHeightAt(FMath::Sqrt(SpireX * SpireX + SpireY * SpireY)) + 60.f;
+	// THE AUTHORITY Z IS 500, not deck+60. The ENTIRE spec carries Spire [0, 3500, 500];
+	// the deck at that radius is 320, so the tower's foot sits 180 cm clear of it by law,
+	// not by my clearance constant. The law wins over the tidy number.
+	float Z = 500.f;
 	float SectionH = 500.f;
-	float SectionW = 1400.f;
+	// THE TOWER HAS MASS. At 1,400 cm wide a 990 m tower subtends four pixels from 2.6 km,
+	// which is why every establishing shot showed an empty plain. The base is 120 m across
+	// and each section narrows by phi, so it reads as a tower from the far side of the district
+	// and still comes to a point.
+	float SectionW = 12000.f;
 	for (int32 k = 0; k < 10; ++k)
 	{
 		Tag(SpawnBlockRot(FVector(SpireX, SpireY, Z + SectionH * 0.5f),
@@ -4128,6 +4135,27 @@ void AVEILWorldBuilder::Tick(float DeltaSeconds)
 
 void AVEILWorldBuilder::BuildWorld()
 {
+	// A BAKED LEVEL IS NOT REBUILT ON TOP OF ITSELF. UnrealEditor-Cmd bakes the district
+	// into VEILDistrict as level data; the game then ran BuildWorld again and added a second
+	// copy of every piece, which doubled the geometry and the draw cost. If the level already
+	// carries the district, the runtime pass stands down and says so.
+	if (UWorld* GuardWorld = GetWorld())
+	{
+		int32 Tagged = 0;
+		for (TActorIterator<AActor> ItG(GuardWorld); ItG; ++ItG)
+		{
+			if (ItG->Tags.Contains(FName(TEXT("PhiCity")))) { ++Tagged; }
+		}
+		if (Tagged > 200)
+		{
+			UE_LOG(LogVEIL, Warning,
+				TEXT("PHI LEVEL ALREADY BUILT: %d tagged piece(s) in this level - runtime build skipped, nothing doubled."),
+				Tagged);
+			bBuilt = true;
+			return;
+		}
+	}
+
 	if (bBuilt) return;
 	bBuilt = true;
 	// THE LIGHT FIRST. Everything below is judged by eye against the reference frames, and

@@ -31,7 +31,7 @@ def deck_at(r):
 
 # --- forms pass: Spire, measured column 13 x 13 x 100 cm at scale 1 (from PHI SPIRE log)
 SPX, SPY = 0.0, 3500.0
-z, w, h = deck_at(math.hypot(SPX, SPY)) + 60.0, 1400.0, 500.0
+z, w, h = 500.0, 12000.0, 500.0
 for k in range(10):
     add("spire", SPX, SPY, z + h / 2, w, w, h)
     z += h; w /= PHI; h *= PHI

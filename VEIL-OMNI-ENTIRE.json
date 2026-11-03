@@ -1,0 +1,248 @@
+{
+  "authority": {
+    "Beacon1": [
+      2800,
+      500,
+      0
+    ],
+    "Beacon2": [
+      -2000,
+      -900,
+      0
+    ],
+    "Beacon3": [
+      600,
+      -2100,
+      0
+    ],
+    "Cache": [
+      0,
+      -6200,
+      0
+    ],
+    "Cartographer": [
+      -4150,
+      -780,
+      0
+    ],
+    "Countess": [
+      809,
+      -309,
+      64.7
+    ],
+    "Keeper": [
+      900,
+      0,
+      0
+    ],
+    "Runner": [
+      0,
+      0,
+      100
+    ],
+    "Seer": [
+      -450,
+      780,
+      0
+    ],
+    "Spire": [
+      0,
+      3500,
+      500
+    ],
+    "Vault": [
+      0,
+      0,
+      -80.9
+    ]
+  },
+  "golden_angle": 137.5077640500378,
+  "golden_pitch": 17.0324,
+  "hark_build_order": "Gate 0 Golden Merge WHOLE: PASS + VEILDistrict Play, no random, seed 1618, world_layout.json one truth, Hub first then Nest Spire Omni Deep, one Unreal Editor Python script per zone, counts vs JSON, screenshot per zone",
+  "hub": {
+    "blue_crystals": 5,
+    "market_houses": 8,
+    "phi_pillars": 12,
+    "placements": 25
+  },
+  "hud": {
+    "abilities": 4,
+    "black_panels": false,
+    "centre_clear": "60%",
+    "combat": "COMBAT MODE",
+    "lv": "72 diamond",
+    "manual": "320x90 fading 6s",
+    "minimap": "180x180 at 70% top-right",
+    "objective": "420x110 top-left",
+    "overlap": false,
+    "quest": "480px one-line QUEST: THE GOLDEN MIDST Find the hidden phi chamber",
+    "stm": "117/180 green",
+    "vit": "3570/4200 red"
+  },
+  "icon": "gold V, golden spiral, feather/wings both arms, thin gold circle, blue glow, dark navy starfield, rounded-square tile",
+  "movement": {
+    "controller": true,
+    "forward": 0.9561,
+    "pitch": 0.2929,
+    "wasd": true
+  },
+  "name": "VEIL OMNI: THE LAST SIGNAL - PATH OF LIGHT",
+  "npcs": {
+    "Cartographer": "map mark own post",
+    "Countess": "hold vault upright",
+    "Keeper": "count guard own post no follow no orbit",
+    "Seer": "read speak own post"
+  },
+  "phi": 1.618033988749895,
+  "placements": [
+    {
+      "type": "phi_pillar",
+      "x": -119.30879069770975,
+      "y": 109.29662551858146
+    },
+    {
+      "type": "phi_pillar",
+      "x": 20.0051530895743,
+      "y": -227.94840123339446
+    },
+    {
+      "type": "phi_pillar",
+      "x": 170.51602981356396,
+      "y": 222.4079657726238
+    },
+    {
+      "type": "phi_pillar",
+      "x": -318.659977684147,
+      "y": -56.36646318809364
+    },
+    {
+      "type": "phi_pillar",
+      "x": 305.2735334818934,
+      "y": -194.1900337117589
+    },
+    {
+      "type": "phi_pillar",
+      "x": -102.89047101192341,
+      "y": 382.74742363592503
+    },
+    {
+      "type": "phi_pillar",
+      "x": -197.31040478548448,
+      "y": -379.90917779895886
+    },
+    {
+      "type": "phi_pillar",
+      "x": 429.8795667773617,
+      "y": 156.99132831879425
+    },
+    {
+      "type": "phi_pillar",
+      "x": -448.68675815426633,
+      "y": 185.2113712613388
+    },
+    {
+      "type": "phi_pillar",
+      "x": 216.86812471315775,
+      "y": -463.43458584614484
+    },
+    {
+      "type": "phi_pillar",
+      "x": 160.6080413439775,
+      "y": 512.043744047459
+    },
+    {
+      "type": "phi_pillar",
+      "x": -484.95383808969785,
+      "y": -281.04066177700776
+    },
+    {
+      "type": "market_house",
+      "x": 780.6912093022902,
+      "y": 109.29662551858146
+    },
+    {
+      "type": "market_house",
+      "x": 920.0051530895743,
+      "y": -227.94840123339446
+    },
+    {
+      "type": "market_house",
+      "x": 1070.516029813564,
+      "y": 222.4079657726238
+    },
+    {
+      "type": "market_house",
+      "x": 581.340022315853,
+      "y": -56.36646318809364
+    },
+    {
+      "type": "market_house",
+      "x": 1205.2735334818935,
+      "y": -194.1900337117589
+    },
+    {
+      "type": "market_house",
+      "x": 797.1095289880766,
+      "y": 382.74742363592503
+    },
+    {
+      "type": "market_house",
+      "x": 702.6895952145155,
+      "y": -379.90917779895886
+    },
+    {
+      "type": "market_house",
+      "x": 1329.8795667773616,
+      "y": 156.99132831879425
+    },
+    {
+      "type": "blue_crystal",
+      "x": 2680.69120930229,
+      "y": 609.2966255185814
+    },
+    {
+      "type": "blue_crystal",
+      "x": 2820.0051530895744,
+      "y": 272.05159876660554
+    },
+    {
+      "type": "blue_crystal",
+      "x": 2970.516029813564,
+      "y": 722.4079657726238
+    },
+    {
+      "type": "blue_crystal",
+      "x": 2481.340022315853,
+      "y": 443.63353681190637
+    },
+    {
+      "type": "blue_crystal",
+      "x": 3105.2735334818935,
+      "y": 305.80996628824107
+    }
+  ],
+  "seed": 1618,
+  "vision": "Runner gliding gold phi wings, dark cape phi, golden Spire phi-covered cloud-wreathed visible from everywhere, market town phi pillars waterfalls rope bridges, blue-and-gold city blue crystals gold beacons, Megastructure Deep dark blue-lit chasm, blue crystal mountains horizon",
+  "zones": {
+    "Hub": [
+      0,
+      0
+    ],
+    "Megastructure Deep": [
+      0,
+      -5000
+    ],
+    "Nest": [
+      -450,
+      780
+    ],
+    "Omni District": [
+      2800,
+      500
+    ],
+    "Spire": [
+      0,
+      3500
+    ]
+  }
+}

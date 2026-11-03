@@ -1,0 +1,116 @@
+﻿=== VEIL REPORT 11/03/2026 11:19:44
+--- PLUGINS ENABLED IN UPROJECT
+ProceduralMeshComponent
+EnhancedInput
+PythonScriptPlugin
+EditorScriptingUtilities
+GeometryScripting
+ModelingToolsEditorMode
+PCG
+MetaHuman
+MetaHumanCharacter
+ModelContextProtocol
+Niagara
+StateTree
+IKRig
+PoseSearch
+HDRIBackdrop
+LandscapePatch
+AllToolsets
+ToolsetRegistry
+--- UE INSTALLS
+C:\Program Files\Epic Games\UE_5.8
+--- CONTENT FOLDERS (uasset count)
+Assets  0
+Branding  1
+Character  1
+Collections  0
+Data  2
+Developers  0
+FabLibrary  3
+Iceland_Environment  78
+Mannequins  127
+Maps  1
+MetaHumans  185
+ModularS30eeb54ea3e4V1  885
+ParagonCountess  2725
+ParagonMurdock  1896
+PHI  9
+Polyart  574
+SFX  18
+Sicka_EnvPack2  567
+StarterContent  264
+Underwater  3
+Voice  38
+__ExternalActors__  1423
+__ExternalObjects__  16
+--- FAB / MEGASCANS FOLDERS
+D:\VEIL-OMNI\Content\FabLibrary
+D:\VEIL-OMNI\Content\ParagonCountess\Characters\Global\MaterialLayers\Fabric
+D:\VEIL-OMNI\Content\ParagonMurdock\Characters\Global\MaterialLayers\Fabric
+--- MISSING.TXT
+=== ERRORS ===
+Private\Game\VEILGameMode.cpp(71,49): error C2027: use of undefined type 'AVEILPlayerController'
+Private\Game\VEILGameMode.cpp(1129,24): error C2027: use of undefined type 'AVEILPlayerController'
+Private\Game\VEILGameMode.cpp(1129,24): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+Private\Game\VEILGameMode.cpp(1132,2): error C2065: 'MainMenuWidgetClass': undeclared identifier
+Private\Game\VEILGameMode.cpp(1133,2): error C2065: 'PauseWidgetClass': undeclared identifier
+Private\Game\VEILGameMode.cpp(1134,1): error C4508: '{ctor}': function should return a value; 'void' return type assumed
+Private\Game\VEILGameMode.cpp(1138,29): error C2027: use of undefined type 'AVEILPlayerController'
+Private\Game\VEILGameMode.cpp(1140,2): error C2653: 'Super': is not a class or namespace name
+Private\Game\VEILGameMode.cpp(1144,2): error C3861: 'GetWorldTimerManager': identifier not found
+Private\Game\VEILGameMode.cpp(1144,51): error C2355: 'this': can only be referenced inside non-static member functions or non-static data member initializers
+Private\Game\VEILGameMode.cpp(1144,81): error C2027: use of undefined type 'AVEILPlayerController'
+Private\Game\VEILGameMode.cpp(1144,81): error C2065: 'PhiOnTimerCheck': undeclared identifier
+Private\Game\VEILGameMode.cpp(1146,6): error C2065: 'HUDWidgetClass': undeclared identifier
+Private\Game\VEILGameMode.cpp(1146,24): error C3861: 'IsLocalController': identifier not found
+Private\Game\VEILGameMode.cpp(1148,3): error C2065: 'HUDWidget': undeclared identifier
+Private\Game\VEILGameMode.cpp(1148,41): error C2355: 'this': can only be referenced inside non-static member functions or non-static data member initializers
+Private\Game\VEILGameMode.cpp(1148,47): error C2065: 'HUDWidgetClass': undeclared identifier
+Private\Game\VEILGameMode.cpp(1148,15): error C2672: 'CreateWidget': no matching overloaded function found
+Private\Game\VEILGameMode.cpp(1149,7): error C2065: 'HUDWidget': undeclared identifier
+Private\Game\VEILGameMode.cpp(1149,18): error C2065: 'HUDWidget': undeclared identifier
+Private\Game\VEILGameMode.cpp(1177,6): error C2065: 'MainMenuWidgetClass': undeclared identifier
+Private\Game\VEILGameMode.cpp(1177,29): error C3861: 'IsLocalController': identifier not found
+Private\Game\VEILGameMode.cpp(1179,3): error C2065: 'MainMenuWidget': undeclared identifier
+Private\Game\VEILGameMode.cpp(1179,46): error C2355: 'this': can only be referenced inside non-static member functions or non-static data member initializers
+Private\Game\VEILGameMode.cpp(1179,52): error C2065: 'MainMenuWidgetClass': undeclared identifier
+Private\Game\VEILGameMode.cpp(1179,20): error C2672: 'CreateWidget': no matching overloaded function found
+Private\Game\VEILGameMode.cpp(1180,7): error C2065: 'MainMenuWidget': undeclared identifier
+Private\Game\VEILGameMode.cpp(1182,4): error C2065: 'MainMenuWidget': undeclared identifier
+Private\Game\VEILGameMode.cpp(1183,4): error C3861: 'SetPause': identifier not found
+Private\Game\VEILGameMode.cpp(1184,4): error C3861: 'SetInputMode': identifier not found
+Private\Game\VEILGameMode.cpp(1185,4): error C2065: 'bShowMouseCursor': undeclared identifier
+Private\Game\VEILGameMode.cpp(1189,2): error C3861: 'SetInputMode': identifier not found
+Private\Game\VEILGameMode.cpp(1190,2): error C2065: 'bShowMouseCursor': undeclared identifier
+Private\Game\VEILGameMode.cpp(1204,4): error C3861: 'GetWorldTimerManager': identifier not found
+Private\Game\VEILGameMode.cpp(1204,82): error C2355: 'this': can only be referenced inside non-static member functions or non-static data member initializers
+Private\Game\VEILGameMode.cpp(1204,89): error C3482: 'this' can only be used as a lambda capture within a non-static member function
+Private\Game\VEILGameMode.cpp(1206,21): error C3861: 'GetWorld': identifier not found
+Private\Game\VEILGameMode.cpp(1204,65): error C2672: 'TDelegate<void (void),FNotThreadSafeNotCheckedDelegateUserPolicy>::CreateWeakLambda': no matching overloaded function found
+Private\Game\VEILGameMode.cpp(1220,3): error C3861: 'GetWorldTimerManager': identifier not found
+Private\Game\VEILGameMode.cpp(1220,78): error C2355: 'this': can only be referenced inside non-static member functions or non-static data member initializers
+Private\Game\VEILGameMode.cpp(1220,85): error C3482: 'this' can only be used as a lambda capture within a non-static member function
+Private\Game\VEILGameMode.cpp(1222,20): error C3861: 'GetWorld': identifier not found
+Private\Game\VEILGameMode.cpp(1220,61): error C2672: 'TDelegate<void (void),FNotThreadSafeNotCheckedDelegateUserPolicy>::CreateWeakLambda': no matching overloaded function found
+Private\Game\VEILGameMode.cpp(1236,3): error C2065: 'bShowFieldManual': undeclared identifier
+Private\Game\VEILGameMode.cpp(1247,17): error C3482: 'this' can only be used as a lambda capture within a non-static member function
+Private\Game\VEILGameMode.cpp(1249,4): error C3861: 'InputKey': identifier not found
+Private\Game\VEILGameMode.cpp(1250,4): error C2065: 'bShowFieldManual': undeclared identifier
+Private\Game\VEILGameMode.cpp(1250,4): error C3553: decltype expects an expression not a type
+Private\Game\VEILGameMode.cpp(1255,3): error C3861: 'GetWorldTimerManager': identifier not found
+Private\Game\VEILGameMode.cpp(1255,75): error C2355: 'this': can only be referenced inside non-static member functions or non-static data member initializers
+Private\Game\VEILGameMode.cpp(1255,58): error C2672: 'TDelegate<void (void),FNotThreadSafeNotCheckedDelegateUserPolicy>::CreateWeakLambda': no matching overloaded function found
+Private\Game\VEILGameMode.cpp(1257,3): error C3861: 'GetWorldTimerManager': identifier not found
+Private\Game\VEILGameMode.cpp(1257,75): error C2355: 'this': can only be referenced inside non-static member functions or non-static data member initializers
+Private\Game\VEILGameMode.cpp(1257,58): error C2672: 'TDelegate<void (void),FNotThreadSafeNotCheckedDelegateUserPolicy>::CreateWeakLambda': no matching overloaded function found
+Private\Game\VEILGameMode.cpp(1259,3): error C3861: 'GetWorldTimerManager': identifier not found
+Private\Game\VEILGameMode.cpp(1259,75): error C2355: 'this': can only be referenced inside non-static member functions or non-static data member initializers
+Private\Game\VEILGameMode.cpp(1259,58): error C2672: 'TDelegate<void (void),FNotThreadSafeNotCheckedDelegateUserPolicy>::CreateWeakLambda': no matching overloaded function found
+Private\Game\VEILGameMode.cpp(1264,3): error C3861: 'GetWorldTimerManager': identifier not found
+Private\Game\VEILGameMode.cpp(1264,75): error C2355: 'this': can only be referenced inside non-static member functions or non-static data member initializers
+Private\Game\VEILGameMode.cpp(1264,58): error C2672: 'TDelegate<void (void),FNotThreadSafeNotCheckedDelegateUserPolicy>::CreateWeakLambda': no matching overloaded function found
+GIT FOUND
+--- UBT LOG (result + errors)
+Result: Succeeded
+--- EDITOR LOG (errors)
