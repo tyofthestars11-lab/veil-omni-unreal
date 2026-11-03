@@ -23,10 +23,13 @@ void AOMNIWardenPrime::BeginPlay()
 	// agent frame, seated after the base bind so it stands last.
 	// PARAGON OUT. The Warden wore Revenant's ChronoBoss skin - Fab padding for a body we
 	// already own. He wears the project's own Polyart character and locomotion graph now.
+	// THE WARDEN IS NOT THE RUNNER. He wore Garret, the player's own mesh, so the boss of the
+	// district arrived looking like the player. Elara's rig is the same skeleton family and
+	// her graph is installed, so the body animates and the silhouette is someone else.
 	USkeletalMesh* Boss = LoadObject<USkeletalMesh>(nullptr,
-		TEXT("/Game/Polyart/ModularStylizedChars/Meshes/SkeletalMeshes/Characters/SK_Garret_FullBody.SK_Garret_FullBody"));
+		TEXT("/Game/Polyart/ModularStylizedChars/Meshes/SkeletalMeshes/Characters/SK_Elara_FullBody.SK_Elara_FullBody"));
 	UClass* BossAnim = LoadClass<UAnimInstance>(nullptr,
-		TEXT("/Game/Polyart/SharedResources/Characters/AnimationStuff/AnimationBlueprints/ABP_MaleCharacter.ABP_MaleCharacter_C"));
+		TEXT("/Game/Polyart/SharedResources/Characters/AnimationStuff/AnimationBlueprints/ABP_FemaleCharacter.ABP_FemaleCharacter_C"));
 	if (Boss)
 	{
 		GetMesh()->SetSkeletalMeshAsset(Boss);
@@ -34,6 +37,8 @@ void AOMNIWardenPrime::BeginPlay()
 		GetMesh()->bDisableMorphTarget = true;
 		GetMesh()->SetRelativeLocation(FVector(0.f, 0.f, -96.f));
 		GetMesh()->SetRelativeRotation(FRotator(0.f, -90.f, 0.f));
+		// A head taller than the runner, so the boss reads as a boss at a distance.
+		GetMesh()->SetRelativeScale3D(FVector(1.15f));
 		if (BossAnim) GetMesh()->SetAnimInstanceClass(BossAnim);
 		UE_LOG(LogVEIL, Log, TEXT("PHI WARDEN BODY: %s stands - a body this project owns, not a Fab stand-in."), *Boss->GetName());
 	}

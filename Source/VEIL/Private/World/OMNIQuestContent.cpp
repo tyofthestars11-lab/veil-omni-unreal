@@ -1,5 +1,7 @@
 ﻿// OMNI RPG: PATH OF LIGHT - quest content implementation.
+#include "Components/SkeletalMeshComponent.h"
 #include "World/OMNIQuestContent.h"
+#include "Story/VEILCastBody.h"
 
 #include "Character/VEILCharacter.h"
 #include "Character/VEILCountessCharacter.h"
@@ -125,6 +127,13 @@ AOMNIQuestGiver::AOMNIQuestGiver()
 	USceneComponent* Root = CreateDefaultSubobject<USceneComponent>(TEXT("Root"));
 	SetRootComponent(Root);
 
+	// A REAL PERSON, NOT A STATUE. The giver was a cylinder with a column balanced on it; this
+	// component carries an installed cast body, applied in BeginPlay once the name is known.
+	USkeletalMeshComponent* Figure = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("CastFigure"));
+	Figure->SetupAttachment(Root);
+	Figure->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	Figure->SetRelativeLocation(FVector(0.f, 0.f, 0.f));
+
 	UStaticMeshComponent* Body = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("StatueBody"));
 	Body->SetupAttachment(Root);
 	Body->SetRelativeLocation(FVector(0.f, 0.f, 150.f));
@@ -157,6 +166,50 @@ void AOMNIQuestGiver::BeginPlay()
 	TalkRadius->OnComponentBeginOverlap.AddDynamic(this, &AOMNIQuestGiver::OnTalkRadius);
 	TalkRadius->OnComponentEndOverlap.AddDynamic(this, &AOMNIQuestGiver::OnTalkEnd);
 	UE_LOG(LogVEIL, Log, TEXT("OMNI QUEST CONTENT: the %s stands ready."), *GiverName.ToString());
+
+	// THE STATUE STEPS ASIDE. Cylinder, column head and visor were the placeholder; the giver
+	// now wears a body chosen by name, and the stone parts go dark so the person is what the
+	// player meets rather than a pillar doing a person's job.
+	if (USkeletalMeshComponent* CastFigure = FindComponentByClass<USkeletalMeshComponent>())
+	{
+		VEILCastBody::Apply(CastFigure, VEILCastBody::ForRole(GiverName.ToString()),
+			GiverName.ToString(), 1.f);
+	}
+	{
+		TArray<UStaticMeshComponent*> StatueParts;
+		GetComponents<UStaticMeshComponent>(StatueParts);
+		for (UStaticMeshComponent* Part : StatueParts)
+		{
+			if (!Part) { continue; }
+			if (Part->GetName().Contains(TEXT("Statue")))
+			{
+				Part->SetVisibility(false);
+				Part->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+			}
+		}
+	}
+
+	// THE STATUE STEPS ASIDE. Cylinder, column head and visor were the placeholder; the giver
+	// now wears a body chosen by name, and the stone parts go dark so the person is what the
+	// player meets rather than a pillar with a person's job.
+	if (USkeletalMeshComponent* CastFigure = FindComponentByClass<USkeletalMeshComponent>())
+	{
+		VEILCastBody::Apply(CastFigure, VEILCastBody::ForRole(GiverName.ToString()),
+			GiverName.ToString(), 1.f);
+	}
+	{
+		TArray<UStaticMeshComponent*> StatueParts;
+		GetComponents<UStaticMeshComponent>(StatueParts);
+		for (UStaticMeshComponent* Part : StatueParts)
+		{
+			if (!Part) { continue; }
+			if (Part->GetName().Contains(TEXT("Statue")))
+			{
+				Part->SetVisibility(false);
+				Part->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+			}
+		}
+	}
 	{ // PHI BIGBANG: every voice wears its own light
 		FLinearColor Visor(1.f, 0.78f, 0.3f), Robe(0.35f, 0.33f, 0.38f);
 		if (GiverName == FName(TEXT("Engineer"))) { Visor = FLinearColor(1.f, 0.45f, 0.15f); Robe = FLinearColor(0.4f, 0.25f, 0.15f); }

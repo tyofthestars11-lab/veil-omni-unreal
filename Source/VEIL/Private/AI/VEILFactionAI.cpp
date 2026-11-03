@@ -1,5 +1,6 @@
 // VEIL: THE LAST SIGNAL - faction AI implementation.
 #include "AI/VEILFactionAI.h"
+#include "Story/VEILCastBody.h"
 
 #include "AIController.h"
 #include "Components/CapsuleComponent.h"
@@ -515,8 +516,11 @@ void AVEILFactionAgent::BindStoneBody()
 	// Greystone skeletal mesh was never in Content at all - both loads failed every boot and
 	// the fallback carried the plaza. The body is now the Polyart character this project
 	// OWNS, first choice rather than fallback, driven by its own locomotion graph.
-	USkeletalMesh* Stone = LoadObject<USkeletalMesh>(nullptr,
-		TEXT("/Game/Polyart/ModularStylizedChars/Meshes/SkeletalMeshes/Characters/SK_Garret_FullBody.SK_Garret_FullBody"));
+	// A CAST BODY, NOT THE RUNNER AGAIN. The mesh is resolved from this agent's own name, so
+	// the plaza's agents are different people instead of the player standing at every post.
+	// The locomotion instance below still drives whichever body is resolved.
+	const VEILCastBody::EBody AgentBody = VEILCastBody::ForRole(GetName());
+	USkeletalMesh* Stone = VEILCastBody::LoadMesh(AgentBody);
 	UClass* StoneAnim = LoadClass<UAnimInstance>(nullptr,
 		TEXT("/Game/Polyart/SharedResources/Characters/AnimationStuff/AnimationBlueprints/ABP_MaleCharacter.ABP_MaleCharacter_C"));
 	// Greystone is NOT whole in this project: Content/ParagonGreystone holds

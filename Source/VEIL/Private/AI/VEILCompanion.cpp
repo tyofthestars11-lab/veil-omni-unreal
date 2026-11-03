@@ -1,5 +1,6 @@
 ﻿// VEIL companion implementation: follow and fight beside the Runner.
 #include "AI/VEILCompanion.h"
+#include "Story/VEILCastBody.h"
 
 #include "AI/OMNIWardenPrime.h"
 #include "AIController.h"
@@ -24,16 +25,9 @@ AVEILCompanion::AVEILCompanion(const FObjectInitializer& ObjectInitializer)
 	GetCharacterMovement()->MaxWalkSpeed = 620.f;
 	GetCharacterMovement()->bOrientRotationToMovement = true;
 
-	// Proven foe pattern: runtime load, silent on miss, never a dialog.
-	// Paragon minion was a placeholder; the Polyart character is ours and complete.
-	if (USkeletalMesh* M = LoadObject<USkeletalMesh>(nullptr, TEXT("/Game/Polyart/ModularStylizedChars/Meshes/SkeletalMeshes/Characters/SK_Garret_FullBody.SK_Garret_FullBody")))
-	{
-		GetMesh()->SetSkeletalMesh(M);
-		// Bone-driven body: keep it out of FMorphVertexBufferPool (assert :336).
-		GetMesh()->bDisableMorphTarget = true;
-		GetMesh()->SetRelativeLocation(FVector(0.f, 0.f, -90.f));
-		GetMesh()->SetRelativeRotation(FRotator(0.f, -90.f, 0.f));
-	}
+	// THE BODY COMES FROM THE CALL SIGN, NOT FROM THE RUNNER. This constructor used to load
+	// the runner's own mesh, so every companion was the player standing beside himself. The
+	// body is applied in ConfigureForRole, once the call sign that decides it is known.
 	IdleSeq = LoadObject<UAnimSequence>(nullptr, TEXT("/Game/Polyart/SharedResources/Characters/AnimationStuff/Animations/Locomotion/Male/MM_Idle.MM_Idle"));
 	JogSeq = LoadObject<UAnimSequence>(nullptr, TEXT("/Game/Polyart/SharedResources/Characters/AnimationStuff/Animations/Locomotion/Shared/MM_Run.MM_Run"));
 	GetMesh()->SetAnimationMode(EAnimationMode::AnimationSingleNode);
@@ -68,6 +62,10 @@ void AVEILCompanion::ConfigureForRole(EVEILCompanionRole InRole, FName InCallSig
 	}
 	Health = MaxHealth;
 	SetActorScale3D(Scale);
+
+	// A PERSON, CHOSEN BY NAME. Sage, Scout, Guard, Bulwark and Drone resolve to different
+	// bodies from the installed cast, so a party reads as five people rather than five copies.
+	VEILCastBody::Apply(GetMesh(), VEILCastBody::ForRole(CallSign.ToString()), CallSign.ToString(), 1.f);
 	UE_LOG(LogVEIL, Log, TEXT("PHI COMPANION: %s joins the party (%d)."),
 		*CallSign.ToString(), (int32)CompanionRole + 1);
 }

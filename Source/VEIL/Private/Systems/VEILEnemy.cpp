@@ -33,9 +33,10 @@ AVEILEnemy::AVEILEnemy(const FObjectInitializer& ObjectInitializer)
 	GetCapsuleComponent()->InitCapsuleSize(34.f, 88.f);
 	GetMesh()->SetRelativeLocation(FVector(0.f, 0.f, -88.f));
 	GetMesh()->SetRelativeRotation(FRotator(0.f, -90.f, 0.f));
-	// THE SAME BODY THE PLAZA WEARS. Enemies were Paragon minions - a placeholder pack - while
-	// the project owns a complete Polyart character with its own skeleton and animations.
-	static ConstructorHelpers::FObjectFinder<USkeletalMesh> MinionMesh(TEXT("/Game/Polyart/ModularStylizedChars/Meshes/SkeletalMeshes/Characters/SK_Garret_FullBody.SK_Garret_FullBody"));
+	// NOT THE RUNNER'S BODY. Enemies wore SK_Garret_FullBody, the player's own mesh, so a
+	// fight was the player against himself. Elara is the same Polyart rig - the locomotion
+	// instance below drives her exactly as it drove him - and she is a different person.
+	static ConstructorHelpers::FObjectFinder<USkeletalMesh> MinionMesh(TEXT("/Game/Polyart/ModularStylizedChars/Meshes/SkeletalMeshes/Characters/SK_Elara_FullBody.SK_Elara_FullBody"));
 	if (MinionMesh.Succeeded() && GetMesh())
 	{
 		GetMesh()->SetSkeletalMeshAsset(MinionMesh.Object);
