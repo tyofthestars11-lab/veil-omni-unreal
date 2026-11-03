@@ -4251,17 +4251,26 @@ void AVEILPlayerController::Tick(float DeltaSeconds)
 				FScreenshotRequest::RequestScreenshot(TEXT("phisnap_air"), false, false);
 				UE_LOG(LogVEIL, Warning, TEXT("PHI AERIAL: plan view from Z=18000 requested."));
 						}
-			else if (AirStep == 1 && AirClock >= 12.f)
+			else if (AirStep == 1 && AirClock >= 9.f)
 			{
 				// THE LANDMARK FRAME. Plan views never showed the Spire: it stands 3.5 km north of
 				// the plaza they cover, so the one object the vision is built around was missing
 				// from every capture. Stand back from the tower and look up it.
 				AirStep = 2;
-				Cam->SetActorLocation(FVector(0.f, -4500.f, 6000.f));
-				Cam->SetActorRotation(FRotator(12.f, 90.f, 0.f));
-				if (Cam->GetCameraComponent()) { Cam->GetCameraComponent()->SetFieldOfView(100.f); }
+				// INSIDE THE RING, NOT BEHIND IT. From (0,-4500,6000) the camera looked through
+				// the 3600 cliff ring: its columns filled the frame and the tower stood behind
+				// them. Stand inside the ring, above the market, and look north up the tower -
+				// and take it at 9 s, before the machines reach the runner and the death overlay
+				// covers the capture.
+				// A 990 m TOWER IS NOT FRAMED FROM 95 m. Two attempts from inside the district
+				// filled the frame with the cliff ring's columns and never showed the Spire at all.
+				// An establishing shot needs a standoff of roughly twice the height: stand 2.6 km
+				// south, 500 m up, and the whole tower plus the terraces fit in a 70 degree lens.
+				Cam->SetActorLocation(FVector(0.f, -260000.f, 50000.f));
+				Cam->SetActorRotation(FRotator(-4.f, 90.f, 0.f));
+				if (Cam->GetCameraComponent()) { Cam->GetCameraComponent()->SetFieldOfView(70.f); }
 				FScreenshotRequest::RequestScreenshot(TEXT("phisnap_spire"), false, false);
-				UE_LOG(LogVEIL, Warning, TEXT("PHI SPIRE SHOT: camera at (0, -4500, 6000) looking at the tower at 0, 3500."));
+				UE_LOG(LogVEIL, Warning, TEXT("PHI SPIRE SHOT: establishing shot from (0, -260000, 50000) at the tower at 0, 3500 (top 99074 cm)."));
 				return;
 				Cam->SetActorLocation(FVector(9000.f, -9000.f, 4500.f));
 				Cam->SetActorRotation((FVector(0.f, 0.f, 300.f) - Cam->GetActorLocation()).Rotation());
