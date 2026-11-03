@@ -3149,6 +3149,8 @@ void AVEILPlayerController::SetupInputComponent()
 		// F10: the debug strips. Off by default - normal play shows the game, not the
 		// instrumentation. The Bible names F10 for exactly this.
 		InputComponent->BindKey(EKeys::F10, IE_Pressed, this, &AVEILPlayerController::ToggleDebugStrips);
+		// L: the log. Hidden by default, per the locked HUD spec.
+		InputComponent->BindKey(EKeys::L, IE_Pressed, this, &AVEILPlayerController::ToggleLog);
 		// Respawn
 		InputComponent->BindKey(EKeys::R, IE_Pressed, this, &AVEILPlayerController::RespawnRunner);
 		// Switch lead
@@ -3520,6 +3522,12 @@ void AVEILPlayerController::TravelOrAdvance()
 	}
 	if (bShowChart && ChartPage == 2) { OptionsActivate(); return; }
 	ChartTravel();
+}
+
+void AVEILPlayerController::ToggleLog()
+{
+	bShowLog = !bShowLog;
+	UE_LOG(LogVEIL, Log, TEXT("PHI LOG: %s"), bShowLog ? TEXT("shown") : TEXT("hidden"));
 }
 
 void AVEILPlayerController::ToggleDebugStrips()

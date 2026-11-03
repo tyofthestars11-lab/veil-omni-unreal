@@ -163,6 +163,9 @@ public:
 	 */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "VEIL|UI")
 	bool bShowDebug = false;
+	/** L: the system log. Hidden by default - the brief puts it behind a key. */
+	bool bShowLog = false;
+	void ToggleLog();
 
 	UFUNCTION(BlueprintCallable, Category = "VEIL|UI")
 	void ToggleDebugStrips();

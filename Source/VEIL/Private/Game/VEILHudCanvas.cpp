@@ -1159,7 +1159,7 @@ void AVEILHudCanvas::DrawHUD()
 		if (CPC->bShowChart && CPC->ChartPage == 0)
 		{
 			const float CX = Canvas->ClipX * 0.5f - 330.f, CY = Canvas->ClipY * 0.5f - 240.f;
-			FVeilUI::Glass(this, FLinearColor(0.020f, 0.030f, 0.062f, 0.92f), CX, CY, 660.f, 480.f, 16.f);
+			FVeilUI::Glass(this, FLinearColor(0.020f, 0.030f, 0.062f, 0.55f), CX, CY, 660.f, 480.f, 16.f);
 			float LY = CY + 30.f;
 			DrawText(TEXT("CHART OF THE SIGNAL"), FLinearColor(1.f, 0.85f, 0.3f), CX + 30.f, LY, Big); LY += 52.f;
 			// THE SAME QUESTION AS THE HUD CARD, ASKED THE SAME WAY: the region
@@ -1234,7 +1234,7 @@ void AVEILHudCanvas::DrawHUD()
 			const float MY2 = (Canvas->ClipY - MH) * 0.5f;
 			const bool bPadCol = VEILInput::IsGamepad();
 
-			FVeilUI::Glass(this, FLinearColor(0.018f, 0.026f, 0.050f, 0.94f), MX2, MY2, MW, MH, 16.f);
+			FVeilUI::Glass(this, FLinearColor(0.018f, 0.026f, 0.050f, 0.55f), MX2, MY2, MW, MH, 16.f);
 			DrawRect(FLinearColor(1.f, 0.78f, 0.3f, 0.95f), MX2, MY2, 3.f, MH);
 			DrawRect(FLinearColor(1.f, 0.78f, 0.3f, 0.3f), MX2, MY2, MW, 1.f);
 
@@ -1279,7 +1279,7 @@ void AVEILHudCanvas::DrawHUD()
 			const float MY3 = (Canvas->ClipY - MH) * 0.5f;
 			const bool bDuty = Clock && Clock->IsDutyBeat();
 
-			FVeilUI::Glass(this, FLinearColor(0.018f, 0.026f, 0.050f, 0.94f), MX3, MY3, MW, MH, 16.f);
+			FVeilUI::Glass(this, FLinearColor(0.018f, 0.026f, 0.050f, 0.55f), MX3, MY3, MW, MH, 16.f);
 			FVeilUI::RoundRect(this, FLinearColor(0.42f, 0.78f, 1.f, 0.95f), MX3 + 1.f, MY3 + 14.f, 3.f, MH - 28.f, 1.5f);
 
 			DrawText(TEXT("THE LIVING WORLD"), FLinearColor(0.70f, 0.90f, 1.f), MX3 + 28.f, MY3 + 18.f, Big, 1.15f);
@@ -1397,7 +1397,7 @@ void AVEILHudCanvas::DrawHUD()
 			const float MX4 = (Canvas->ClipX - MW) * 0.5f;
 			const float MY4 = (Canvas->ClipY - MH) * 0.5f;
 
-			FVeilUI::Glass(this, FLinearColor(0.018f, 0.026f, 0.050f, 0.95f), MX4, MY4, MW, MH, 16.f);
+			FVeilUI::Glass(this, FLinearColor(0.018f, 0.026f, 0.050f, 0.55f), MX4, MY4, MW, MH, 16.f);
 			DrawRect(FLinearColor(1.f, 0.78f, 0.30f, 0.95f), MX4, MY4, 3.f, MH);
 			DrawRect(FLinearColor(1.f, 0.78f, 0.30f, 0.3f), MX4, MY4, MW, 1.f);
 			DrawText(TEXT("OPTIONS"), FLinearColor(1.f, 0.88f, 0.36f), MX4 + 28.f, MY4 + 16.f, Big, 1.15f);
@@ -1590,7 +1590,7 @@ void AVEILHudCanvas::DrawHUD()
 			const float MX2 = FMath::Max(10.f, (Canvas->ClipX - MW2) * 0.5f);
 			const float MY2 = FMath::Max(12.f, (Canvas->ClipY - MH2) * 0.5f);
 
-			FVeilUI::Glass(this, FLinearColor(0.016f, 0.024f, 0.046f, 0.95f), MX2, MY2, MW2, MH2, 16.f);
+			FVeilUI::Glass(this, FLinearColor(0.016f, 0.024f, 0.046f, 0.55f), MX2, MY2, MW2, MH2, 16.f);
 			DrawRect(FLinearColor(1.f, 0.55f, 0.15f, 0.95f), MX2, MY2, 3.f, MH2);
 			DrawText(TEXT("GODMODE"), FLinearColor(1.f, 0.74f, 0.28f), MX2 + 28.f, MY2 + 16.f, Big, 1.25f);
 			DrawText(Cheats ? Cheats->StatusLine() : FString(TEXT("GODMODE  //  ALL OFF")),
@@ -1688,7 +1688,32 @@ void AVEILHudCanvas::DrawHUD()
 	// canvas already owned, and the OS face painted a full-screen panel behind both -
 	// three systems, one corner, the overlap in the photograph. The canvas owns the
 	// play HUD now; the face is a surface you raise with F1, drawn only while open.
-	if (const AVEILPlayerController* OsPC = Cast<AVEILPlayerController>(PC))
+	// L: THE SYSTEM LOG. Hidden by default so the play view is the world; real lines
+	// only - the campaign's activity row, the quest stage, the golden angle.
+	if (const AVEILPlayerController* LogPC = Cast<AVEILPlayerController>(PC))
+	{
+		if (LogPC->bShowLog)
+		{
+			const float LogW = 480.f, LogH = 132.f, LogX = 30.f, LogY = 136.f;
+			FVeilUI::Glass(this, FLinearColor(0.055f, 0.078f, 0.141f, 0.55f), LogX, LogY, LogW, LogH, 11.f);
+			DrawText(TEXT("LOG"), FLinearColor(0.910f, 0.768f, 0.416f), LogX + 14.f, LogY + 8.f, Big, 0.70f);
+			float Row = LogY + 34.f;
+			if (const UVEILCampaignSubsystem* LogCamp = W->GetSubsystem<UVEILCampaignSubsystem>())
+			{
+				DrawText(LogCamp->ActivityLine(), FLinearColor(1.f, 0.85f, 0.45f), LogX + 14.f, Row, Med, 0.66f);
+				Row += 19.f;
+			}
+			if (Q)
+			{
+				DrawText(FString::Printf(TEXT("STAGE %d   FRAGMENTS %d"), (int32)Q->Stage, Q->Fragments),
+					FLinearColor(0.86f, 0.89f, 0.95f), LogX + 14.f, Row, Med, 0.66f);
+				Row += 19.f;
+			}
+			DrawText(TEXT("PHI 1.618033988749895   GOLDEN 137.5077640500378"),
+				FLinearColor(0.788f, 0.635f, 0.290f), LogX + 14.f, Row, Med, 0.62f);
+		}
+	}
+		if (const AVEILPlayerController* OsPC = Cast<AVEILPlayerController>(PC))
 	{
 				if (OsPC->bShowDebug) { VEILOSFace::Draw(this, Canvas); }
 	}

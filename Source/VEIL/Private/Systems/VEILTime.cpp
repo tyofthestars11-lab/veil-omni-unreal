@@ -24,7 +24,7 @@ namespace
 		TEXT("THE DEEP NIGHT"),
 	};
 
-	constexpr float GPhi = 1.618033988749895f;
+	constexpr float GVeilTimePhi = 1.618033988749895f;
 	/** An unobserved field resolves itself after this many real seconds. */
 	// 8 s, not 13: with 1-second beats early in the day, a 13 s hold could stall
 	// the clock for longer than a whole stretch of the morning.
@@ -118,7 +118,7 @@ void UVEILTime::EnterSuperposition()
 	{
 		FVEILBeatCandidate C;
 		C.Beat = (BeatIndex + 1 + k) % GBeatSeconds.Num();
-		C.Amplitude = FMath::Pow(1.f / GPhi, (float)k);
+		C.Amplitude = FMath::Pow(1.f / GVeilTimePhi, (float)k);
 		Total += C.Amplitude;
 		Field.Add(C);
 	}
@@ -189,7 +189,7 @@ float UVEILTime::WorldTimeScale() const
 {
 	// One beat ahead runs the world at 1/phi, two at 1/phi^2, and so on. At rest
 	// this is exactly 1, so normal play is never touched by the mechanic.
-	return FMath::Pow(1.f / GPhi, (float)PhaseDrift);
+	return FMath::Pow(1.f / GVeilTimePhi, (float)PhaseDrift);
 }
 
 float UVEILTime::PhaseRung() const
@@ -197,7 +197,7 @@ float UVEILTime::PhaseRung() const
 	const float Scale = WorldTimeScale();
 	if (Scale <= 0.f) { return -55.f; }
 	// Computed fresh from the live scale, never typed: rung = ln(value)/ln(phi).
-	return FMath::Loge(Scale) / FMath::Loge(GPhi);
+	return FMath::Loge(Scale) / FMath::Loge(GVeilTimePhi);
 }
 
 FString UVEILTime::PhaseLine() const
@@ -217,7 +217,7 @@ void UVEILTime::EnterPhase(int32 Beats, const TCHAR* Cause)
 	PhaseDrift = FMath::Max(0, Beats);
 	// One beat of the gap closes every phi^2 seconds: the world catches up along
 	// the golden step, not all at once.
-	PhaseLeft = GPhi * GPhi;
+	PhaseLeft = GVeilTimePhi * GVeilTimePhi;
 	PhaseRefresh = 0.f;
 	ApplyPhaseToWorld();
 
@@ -320,7 +320,7 @@ void UVEILTime::Tick(float DeltaTime)
 	if (const APawn* P = UGameplayStatics::GetPlayerPawn(this, 0))
 	{
 		const float Speed = (float)P->GetVelocity().Size2D();
-		SampleSpeed = FMath::FInterpTo(SampleSpeed, Speed, DeltaTime, GPhi);
+		SampleSpeed = FMath::FInterpTo(SampleSpeed, Speed, DeltaTime, GVeilTimePhi);
 	}
 	const float Stillness = FMath::Clamp(1.f - SampleSpeed / 260.f, 0.f, 1.f);
 	Coherence = FMath::Clamp(Coherence + (Stillness - 0.38f) * DeltaTime * 0.5f, 0.f, 1.f);
@@ -342,7 +342,7 @@ void UVEILTime::Tick(float DeltaTime)
 			if (PhaseLeft <= 0.f)
 			{
 				--PhaseDrift;
-				PhaseLeft = GPhi * GPhi;
+				PhaseLeft = GVeilTimePhi * GVeilTimePhi;
 				if (PhaseDrift <= 0)
 				{
 					LeavePhase(TEXT("the world caught up"));
@@ -371,7 +371,7 @@ void UVEILTime::Tick(float DeltaTime)
 
 		// Standing still IS an observation: the field settles on the nearest
 		// future once the runner has held still for phi^2 seconds.
-		if (SampleSpeed < 30.f && HoldSeconds >= GPhi * GPhi)
+		if (SampleSpeed < 30.f && HoldSeconds >= GVeilTimePhi * GVeilTimePhi)
 		{
 			CollapseTo(0, TEXT("stillness"));
 			return;
