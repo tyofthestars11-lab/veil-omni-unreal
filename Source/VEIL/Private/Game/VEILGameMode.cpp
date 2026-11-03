@@ -4164,6 +4164,24 @@ void AVEILPlayerController::Tick(float DeltaSeconds)
 		}
 	}
 
+	// -noconcept: remove the concept-world pile for one run, so a frame can be
+	// compared against the same view with it present. The composition that boxes
+	// the camera in is built by that actor as components, which no actor-level
+	// dressing filter can see.
+	if (FParse::Param(FCommandLine::Get(), TEXT("noconcept")))
+	{
+		static bool bConceptOff = false;
+		static float ConceptClock = 0.f;
+		ConceptClock += DeltaSeconds;
+		if (!bConceptOff && ConceptClock >= 3.f)
+		{
+			bConceptOff = true;
+			int32 Killed = 0;
+			for (TActorIterator<AVEILConceptWorld> It(GetWorld()); It; ++It) { It->Destroy(); ++Killed; }
+			UE_LOG(LogVEIL, Warning, TEXT("PHI CONCEPT: %d concept actor(s) removed for this comparison run."), Killed);
+		}
+	}
+
 	// ONE CAMERA, HELD WHOLE. The rig owns its own pitch (golden rest, phi
 	// envelope) and the arm never re-derives it, so the controller no longer
 	// pins control pitch - that pinning is what made the camera unable to look

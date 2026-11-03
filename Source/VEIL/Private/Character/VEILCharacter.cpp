@@ -1235,6 +1235,48 @@ void AVEILCharacter::Tick(float DeltaSeconds)
 			}
 		}
 
+		// CLEAR THE POCKET AROUND THE RUNNER.
+		// Measured with -phisnap: the nearest scenery to the runner is a floor tile at
+		// 159 cm, a dome at 312 cm, a monolith at 416 cm and gold palette blocks at
+		// 540-608 cm - all plain dressing - and the camera sits inside it, which is what
+		// makes the frame read as random blocks. Plain static-mesh actors that cross the
+		// runner's column are removed once, by bounds, and named in the log. Gameplay
+		// actors are never touched: only actors whose class is a StaticMeshActor.
+		{
+			static bool bPocketCleared = false;
+			static float PocketClock = 0.f;
+			if (!bPocketCleared)
+			{
+				PocketClock += DeltaSeconds;
+				if (PocketClock >= 4.f)
+				{
+					bPocketCleared = true;
+					if (UWorld* PW = GetWorld())
+					{
+						const FVector Me = GetActorLocation();
+						TArray<AActor*> Doomed;
+						for (TActorIterator<AActor> It(PW); It; ++It)
+						{
+							if (!It->GetClass()->GetName().Contains(TEXT("StaticMeshActor"))) { continue; }
+							const FBox B = It->GetComponentsBoundingBox(true);
+							if (!B.IsValid) { continue; }
+							const bool bOverColumn = FVector::Dist2D(B.GetCenter(), Me) < 700.f + B.GetExtent().GetMax();
+							const bool bInBand = B.Max.Z > Me.Z - 100.f && B.Min.Z < Me.Z + 400.f;
+							if (bOverColumn && bInBand) { Doomed.Add(*It); }
+						}
+						for (AActor* One : Doomed)
+						{
+							UE_LOG(LogVEIL, Warning, TEXT("PHI POCKET: clearing %s at %s"),
+								*One->GetName(), *One->GetActorLocation().ToCompactString());
+							One->Destroy();
+						}
+						UE_LOG(LogVEIL, Warning, TEXT("PHI POCKET: %d dressing block(s) cleared around the runner at Z=%.0f."),
+							Doomed.Num(), Me.Z);
+					}
+				}
+			}
+		}
+
 		static float StuckClock = 0.f;
 		const UCharacterMovementComponent* StuckMove = GetCharacterMovement();
 		const bool bPushing = !MoveAxis.IsNearlyZero();
