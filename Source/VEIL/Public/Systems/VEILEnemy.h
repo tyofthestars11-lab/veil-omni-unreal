@@ -32,7 +32,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "VEIL") float MaxHealth = 60.f;
 	UPROPERTY(BlueprintReadOnly, Category = "VEIL") float Health = 60.f;
 	UPROPERTY(EditAnywhere, Category = "VEIL") float AttackDamage = 8.f;
-	UPROPERTY(EditAnywhere, Category = "VEIL") float AttackRange = 180.f;
+	UPROPERTY(EditAnywhere, Category = "VEIL") float AttackRange = 300.f;
 	UPROPERTY(EditAnywhere, Category = "VEIL") float AttackCooldown = 1.2f;
 	UPROPERTY(EditAnywhere, Category = "VEIL") float MoveSpeed = 380.f;
 

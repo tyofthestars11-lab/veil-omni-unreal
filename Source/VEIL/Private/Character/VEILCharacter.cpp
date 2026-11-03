@@ -75,8 +75,14 @@ AVEILCharacter::AVEILCharacter()
 	Move->BrakingDecelerationWalking = 640.f * UPHIMito::Phi;
 	Move->GroundFriction = 8.f / UPHIMito::Phi;
 	Move->AirControl = 1.f / UPHIMito::Phi;
-	Move->JumpZVelocity = 620.f;
+	// THE BLUEPRINT'S LEAP, NOT A ROUND NUMBER. 185 cm of rise under -980 is
+	// v = sqrt(2 * 980 * 185) = 602.1 cm/s, so the jump height is the authored one
+	// and the arc is a consequence of gravity rather than a tuned guess.
+	Move->JumpZVelocity = 602.f;
 	Move->MaxWalkSpeed = WalkSpeed;
+	// GRAVITY IS -980, THE WORLD'S OWN. GravityScale 1.0 means the drop law is the
+	// blueprint's; the leap above is derived from it rather than fought with it.
+	Move->GravityScale = 1.f;
 	// AIR AND FLIGHT, tuned on the same phi as the ground profile above.
 	// A capped fall speed means a long drop lands at a speed the soft-landing
 	// window can absorb instead of a rail drop; a double jump is two leaps, not
@@ -339,6 +345,20 @@ void AVEILCharacter::BeginPlay()
 		GetMesh()->GetAnimInstance() ? *GetMesh()->GetAnimInstance()->GetClass()->GetName() : TEXT("none"));
 	// THE RUNNER'S SILHOUETTE: gold phi wings, dark cape, hung on the body that exists.
 	VEILRaceGear::Apply(this, GetMesh(), NAME_None, EVEILFaction::None);
+
+	// THE PHYSICS RECEIPT. The blueprint states gravity, walk, sprint, leap and glide;
+	// this prints what the movement component is actually holding, so the two can be
+	// compared line for line instead of assumed equal.
+	if (UCharacterMovementComponent* Phys = GetCharacterMovement())
+	{
+		const float GEff = Phys->GravityScale * GetWorld()->GetGravityZ();
+		const float Rise = FMath::Square(Phys->JumpZVelocity) / FMath::Max(1.f, -2.f * GEff);
+		UE_LOG(LogVEIL, Warning,
+			TEXT("PHI PHYSICS: gravity %.0f, walk %.0f, sprint %.0f, leap %.0f cm/s = %.0f cm, glide %.0f with drop %.0f, capsule r %.0f half-height %.0f, grounded %d."),
+			GEff, Phys->MaxWalkSpeed, SprintSpeed, Phys->JumpZVelocity, Rise,
+			Phys->MaxFlySpeed, GlideDrop, GetCapsuleComponent()->GetScaledCapsuleRadius(),
+			GetCapsuleComponent()->GetScaledCapsuleHalfHeight(), Phys->IsMovingOnGround() ? 1 : 0);
+	}
 	// THE BLUE SWEEP, WHERE IT CANNOT BE SKIPPED. A flat blue box is a cube or plane
 	// carrying M_PHI_DeepBlue: not a crystal cone, not water. Called here (the path that
 	// prints PHI BODY CHECK) and again at 4 s, after the composition and the fab dressing
@@ -1747,6 +1767,12 @@ void AVEILCharacter::ApplyFlight(float DeltaSeconds)
 	// Speed bands, with the acceleration the movement component already owns -
 	// flying faster is a ramp, not a teleport.
 	Move->MaxFlySpeed = bSprinting ? FlyFastSpeed : FlyCruiseSpeed;
+	// GLIDE, NOT HOVER. With the wings out and no climb held, the body sinks at the
+	// blueprint's -50 cm/s instead of holding altitude; the fall is eased, not a switch.
+	if (bFlying && FMath::IsNearlyZero(ClimbAxis, 0.01f))
+	{
+		Move->Velocity.Z = FMath::FInterpTo(Move->Velocity.Z, GlideDrop, GetWorld()->GetDeltaSeconds(), 4.f);
+	}
 
 	// THE VERTICAL AXIS. Camera pitch is not read here at all.
 	//

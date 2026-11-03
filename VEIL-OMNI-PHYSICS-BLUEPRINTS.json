@@ -1,0 +1,153 @@
+{
+  "blueprints": {
+    "BP_Cartographer": {
+      "post": [
+        -4150,
+        -780
+      ],
+      "role": "Cartographer"
+    },
+    "BP_Countess": {
+      "post": [
+        809,
+        -309,
+        64.7
+      ],
+      "role": "Countess"
+    },
+    "BP_Enemy": {
+      "follow": false,
+      "orbit": false,
+      "variety": [
+        "Crystal Guardian",
+        "Gold Warrior",
+        "Deep Dweller",
+        "Beacon Shadow"
+      ]
+    },
+    "BP_HUD": {
+      "centre_clear": "60%",
+      "minimap": "180x180 at 70%",
+      "objective": "420x110",
+      "quest": "480px"
+    },
+    "BP_Keeper_SeraVahl": {
+      "line": "Stand still. I count the living first.",
+      "own_post": true,
+      "role": "Keeper of the First Beacon"
+    },
+    "BP_Menu_Items": {
+      "items": [
+        "ARMOR",
+        "BELT",
+        "BOOTS",
+        "GLOVES",
+        "WARDEN"
+      ],
+      "ui": "gold ribbon"
+    },
+    "BP_Mount": {
+      "grounded": true,
+      "variety": [
+        "Gold Wing Mount",
+        "Crystal Mount",
+        "Market Mount",
+        "Deep Mount"
+      ]
+    },
+    "BP_Runner": {
+      "components": [
+        "Capsule",
+        "GoldWings",
+        "Cape",
+        "Movement"
+      ],
+      "floats": false,
+      "grounded": true,
+      "mesh": "vision Runner gold phi wings dark cape"
+    },
+    "BP_Seer": {
+      "post": [
+        -450,
+        780
+      ],
+      "role": "Seer"
+    },
+    "BP_World": {
+      "golden_angle": 137.5077640500378,
+      "seed": 1618,
+      "spire": [
+        0,
+        3500,
+        500
+      ],
+      "zones": [
+        "Hub",
+        "Nest",
+        "Spire",
+        "Omni District",
+        "Megastructure Deep"
+      ]
+    }
+  },
+  "games_in_1": 50,
+  "name": "VEIL OMNI \u2014 PHYSICS + BLUEPRINTS \u2014 ALL",
+  "physics": {
+    "collision": {
+      "capsule": true,
+      "floor_collision": true,
+      "no_clip_through_floor": true
+    },
+    "dialogue": {
+      "continue_key": "E",
+      "enter": false,
+      "space": false
+    },
+    "enemies": {
+      "attack_range": 300,
+      "follow_player": false,
+      "move_radius": 0,
+      "orbit": false,
+      "own_post": true
+    },
+    "floats": false,
+    "glide": {
+      "glide_drop": -50.0,
+      "glide_speed": 600.0,
+      "grounded_on_land": true,
+      "wings": "gold phi wings"
+    },
+    "gravity": -980.0,
+    "ground_z": 0.0,
+    "grounded": true,
+    "hud": {
+      "boring_text": false,
+      "cool_text": "gold ribbon",
+      "one_prompt": "ONE only, mic symbol"
+    },
+    "jump_height": 185.0,
+    "mounts": {
+      "mount_float": false,
+      "mount_grounded": true,
+      "mount_speed": 900.0
+    },
+    "movement": {
+      "forward": 0.9561,
+      "golden_pitch_deg": 17.0324,
+      "pitch": 0.2929,
+      "right_vector": true,
+      "yaw_only": false
+    },
+    "npcs": {
+      "follow_player": false,
+      "orbit": false,
+      "own_post": true
+    },
+    "placeholders": false,
+    "random": false,
+    "runner_z": 100.0,
+    "sprint_speed": 750.0,
+    "vision_only": true,
+    "walk_speed": 439.0
+  }
+}

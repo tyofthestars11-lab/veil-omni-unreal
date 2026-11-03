@@ -219,7 +219,7 @@ public:
 
 	// ---- Movement tuning ----
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "VEIL|Movement")
-	float WalkSpeed = 450.f;
+	float WalkSpeed = 439.f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "VEIL|Movement")
 	float SprintSpeed = 750.f;
@@ -247,10 +247,14 @@ public:
 	float ClimbAxis = 0.f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "VEIL|Flight")
-	float FlyCruiseSpeed = 900.f;
+	float FlyCruiseSpeed = 600.f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "VEIL|Flight")
-	float FlyFastSpeed = 1700.f;
+	float FlyFastSpeed = 750.f;
+
+	/** Glide sink rate with the wings out and no climb held: a glide, not a hover. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "VEIL|Flight")
+	float GlideDrop = -50.f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "VEIL|Flight")
 	float FlyClimbSpeed = 800.f;
