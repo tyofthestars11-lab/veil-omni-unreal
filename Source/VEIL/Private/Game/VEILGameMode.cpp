@@ -4110,6 +4110,37 @@ void AVEILPlayerController::Tick(float DeltaSeconds)
 					// 30 m of the runner, with the material it is actually wearing.
 					if (Snapshots == 1)
 					{
+						// NEAREST FIRST, WITH THE MESH NAME. The unsorted pass listed gameplay
+						// actors and never reached the slab in the picture, so the list is sorted
+						// by distance and carries the mesh asset, which identifies the spawner.
+						struct FNearRow { float D; FString Who; FString Mesh; FString Mat; };
+						TArray<FNearRow> Rows;
+						const AVEILCharacter* NearMe = Cast<AVEILCharacter>(GetPawn());
+						const FVector NearAt = NearMe ? NearMe->GetActorLocation() : FVector::ZeroVector;
+						for (TActorIterator<AActor> It(GetWorld()); It; ++It)
+						{
+							UMeshComponent* MC = It->FindComponentByClass<UMeshComponent>();
+							if (!MC) { continue; }
+							const float D = FVector::Dist(It->GetActorLocation(), NearAt);
+							if (D > 2500.f) { continue; }
+							FString MeshName = TEXT("?");
+							if (const UStaticMeshComponent* SMC = Cast<UStaticMeshComponent>(MC))
+							{
+								if (SMC->GetStaticMesh()) { MeshName = SMC->GetStaticMesh()->GetName(); }
+							}
+							FString MatName = TEXT("none");
+							if (UMaterialInterface* MM = MC->GetMaterial(0)) { MatName = MM->GetName(); }
+							Rows.Add({D, It->GetName(), MeshName, MatName});
+						}
+						Rows.Sort([](const FNearRow& A, const FNearRow& B) { return A.D < B.D; });
+						for (int32 q = 0; q < Rows.Num() && q < 14; ++q)
+						{
+							UE_LOG(LogVEIL, Warning, TEXT("PHI NEAREST: %5.0f cm  %-24s mesh=%-26s mat=%s"),
+								Rows[q].D, *Rows[q].Who, *Rows[q].Mesh, *Rows[q].Mat);
+						}
+					}
+					if (false)
+					{
 						const AVEILCharacter* Me = Cast<AVEILCharacter>(GetPawn());
 						const FVector Mine = Me ? Me->GetActorLocation() : FVector::ZeroVector;
 						int32 Shown = 0;
