@@ -2110,7 +2110,7 @@ void AVEILWorldBuilder::BuildDistrictLayer()
 
 	BuildDistrict();
 	DressBeaconSites();
-	BuildCityGrid();
+	BuildPhiDistrict();
 	BuildHorizon();
 	UE_LOG(LogVEIL, Log, TEXT("VEIL: phi street layer laid over the saved district - the level itself was not touched."));
 }
@@ -3133,12 +3133,12 @@ void AVEILWorldBuilder::BakeToLevel()
 #endif
 }
 
-void AVEILWorldBuilder::BuildCityGrid()
+void AVEILWorldBuilder::BuildPhiDistrict()
 {
 	// ONCE. A second pass would stack a second city on the first.
-	static bool bCityBuilt = false;
-	if (bCityBuilt) { return; }
-	bCityBuilt = true;
+	static bool bPhiDistrictBuilt = false;
+	if (bPhiDistrictBuilt) { return; }
+	bPhiDistrictBuilt = true;
 
 	UWorld* World = GetWorld();
 	if (!World) return;
@@ -3148,147 +3148,253 @@ void AVEILWorldBuilder::BuildCityGrid()
 	UStaticMesh* Pillar = ColumnMesh ? ColumnMesh.Get() : CylinderMesh.Get();
 	if (!Wall || !Ground) { return; }
 
+	// THE LAW IS PHI, AND IT IS THE WHOLE PLAN. No Cartesian grid underneath and no
+	// orthogonal street between the shapes: the radii are powers of phi, the avenues are
+	// the golden angle, and the blocks are one phyllotaxis - the same object a sunflower
+	// is. A grid with phi ornamented onto it is the half-Cartesian compromise this
+	// replaces.
+	const double Phi = 1.618033988749895;
+	const double GoldenDeg = 137.5077640500378;
+	const float PlazaR = 1500.f;   // the open plaza: r < 15 m
+	const float CityR = 13500.f;   // the district's edge: r = 135 m
+
 	const FLinearColor Stone(0.46f, 0.44f, 0.40f);
 	const FLinearColor StoneWarm(0.50f, 0.44f, 0.36f);
-	const FLinearColor Asphalt(0.19f, 0.18f, 0.18f);
 	const FLinearColor CapTint(0.28f, 0.24f, 0.21f);
 	const FLinearColor LampTint(1.0f, 0.78f, 0.36f);
 
-	// EVERYTHING THIS PASS BUILDS IS MARKED, so the clean-up below can tell the city
-	// apart from the scenery that was already standing in the air.
 	auto TagCity = [](UStaticMeshComponent* Comp)
 	{
 		if (Comp && Comp->GetOwner()) { Comp->GetOwner()->Tags.Add(FName(TEXT("PhiCity"))); }
 	};
 
-	// ONE PIECE OF GROUND. 9 x 9 flagstone tiles of 45 m, laid edge to edge, top face
-	// at z = 0. The aerial photo is why: the district stood on nine tiles in three
-	// strips with the sea showing between them, which is an island, not a city.
-	// SIZED FROM THE MESH, NOT FROM ITS NAME. The traces across y = 0 hit ground at
-	// every sample while the aerial frame still shows blue bands, which means the bands
-	// are the gaps between tile ROWS - the floor mesh is not square at scale, so tiling
-	// it on a square step leaves a channel every 45 m. A probe measures the real
-	// footprint and the scale is solved from it, so a non-square mesh cannot leave one.
-	float TileScaleX = 47.5f;
-	float TileScaleY = 47.5f;
+	// MEASURE, NEVER ASSUME. Every mesh is placed in centimetres and a mesh's size at
+	// scale 1 is not its name: SM_Floor1_Big is 100 x 56 cm, which is why tiling it on a
+	// square step opened an 18.4 m channel between every row. Each mesh used for size is
+	// probed once and every scale below is solved from the measurement.
+	auto Footprint = [this](UStaticMesh* M, const FVector& At) -> FVector
 	{
-		UStaticMeshComponent* Probe = SpawnBlock(FVector(0.f, 0.f, -40000.f), FVector(1.f, 1.f, 1.f), Ground, Stone, 0.f);
+		FVector F(100.f, 100.f, 100.f);
+		if (!M) { return F; }
+		UStaticMeshComponent* Probe = SpawnBlock(At, FVector(1.f, 1.f, 1.f), M, FLinearColor::White, 0.f);
 		if (Probe)
 		{
-			const FVector Foot = Probe->Bounds.BoxExtent * 2.f;
-			UE_LOG(LogVEIL, Warning, TEXT("PHI TILE SIZE: %.0f x %.0f x %.0f cm at scale 1"), Foot.X, Foot.Y, Foot.Z);
-			if (Foot.X > 10.f && Foot.Y > 10.f)
-			{
-				TileScaleX = 4600.f / Foot.X;
-				TileScaleY = 4600.f / Foot.Y;
-			}
+			const FVector B = Probe->Bounds.BoxExtent * 2.f;
+			if (B.X > 5.f && B.Y > 5.f && B.Z > 0.2f) { F = B; }
 			if (Probe->GetOwner()) { Probe->GetOwner()->Destroy(); }
 		}
-	}
-	for (int32 gx = -4; gx <= 4; ++gx)
+		return F;
+	};
+	const FVector GUnit = Footprint(Ground, FVector(0.f, 0.f, -40000.f));
+	const FVector WUnit = Footprint(Wall, FVector(0.f, 0.f, -42000.f));
+	const FVector CUnit = Footprint(Cap, FVector(0.f, 0.f, -44000.f));
+	UE_LOG(LogVEIL, Warning,
+		TEXT("PHI UNIT SIZE: floor %.0fx%.0fx%.0f, wall %.0fx%.0fx%.0f, cap %.0fx%.0fx%.0f cm at scale 1"),
+		GUnit.X, GUnit.Y, GUnit.Z, WUnit.X, WUnit.Y, WUnit.Z, CUnit.X, CUnit.Y, CUnit.Z);
+
+	// THE RINGS. r_k = PlazaR * phi^k. The gap a ring has to bridge is (phi - 1) of the
+	// radius below it, and every tile is 1.25x that gap, so consecutive rings overlap and
+	// a hole cannot open by construction.
+	TArray<float> RingR;
+	for (int32 k = 0; k < 8; ++k)
 	{
-		for (int32 gy = -4; gy <= 4; ++gy)
+		const float R = PlazaR * (float)FMath::Pow(Phi, (double)k);
+		if (R > CityR * 1.05f) { break; }
+		RingR.Add(R);
+	}
+	UE_LOG(LogVEIL, Warning, TEXT("PHI RINGS: %d ring(s) at %s"),
+		RingR.Num(), *FString::JoinBy(RingR, TEXT(", "), [](float R) { return FString::Printf(TEXT("%.0f"), R); }));
+
+	auto LayTile = [&](float X, float Y, float SizeCm, float YawDeg)
+	{
+		UStaticMeshComponent* T = SpawnBlockRot(FVector(X, Y, -GUnit.Z * 0.5f),
+			FVector(SizeCm / GUnit.X, SizeCm / GUnit.Y, 1.f), Ground, Stone, 0.f, FRotator(0.f, YawDeg, 0.f));
+		TagCity(T);
+		if (T && T->GetOwner()) { T->GetOwner()->Tags.Add(FName(TEXT("PhiGround"))); }
+	};
+
+	// THE PLAZA, then a ring of stone at every golden radius.
+	LayTile(0.f, 0.f, PlazaR * 2.0f * 1.15f, 0.f);
+	for (int32 k = 0; k < RingR.Num(); ++k)
+	{
+		const float R = RingR[k];
+		const float Prev = (k == 0) ? PlazaR * 0.55f : RingR[k - 1];
+		const float TileCm = (R - Prev) * 1.6f;
+		// Count from the tile's OUTER edge, not the ring radius: counting from R left a
+		// wedge at the outside of every ring, which is half of where the 28% was.
+		const int32 Count = FMath::Max(6, (int32)FMath::CeilToFloat((float)(2.0 * PI * (R + TileCm * 0.5f)) / (TileCm * 0.80f)));
+		for (int32 i = 0; i < Count; ++i)
 		{
-			UStaticMeshComponent* Tile = SpawnBlock(FVector(gx * 4500.f, gy * 4500.f, -50.f),
-				FVector(TileScaleX, TileScaleY, 1.f), Ground, Stone, 0.f);
-			TagCity(Tile);
-			if (Tile && Tile->GetOwner()) { Tile->GetOwner()->Tags.Add(FName(TEXT("PhiGround"))); }
+			const float Ang = (float)i * (360.f / (float)Count);
+			const float Rad = FMath::DegreesToRadians(Ang);
+			LayTile(FMath::Cos(Rad) * R, FMath::Sin(Rad) * R, TileCm, Ang);
 		}
 	}
 
-	// STRAIGHT STREETS, AND STONE. The kit floor carries MI_Modular1, which reads blue
-	// from the air, so a street laid with it became a blue channel through the city -
-	// the material census named it (MID_MI_Modular1_0 x623). Streets wear cut stone.
-	const float BlockCm = 3600.f;
-	const float HalfBlock = 1350.f;
-	UStaticMesh* StreetMesh = Ground;
+	// THE RIM. The outermost golden ring ends short of the district edge, and the
+	// coverage census found the band it left. This closes it at exactly CityR.
+	{
+		const float Edge = CityR;
+		const float Prev = RingR[RingR.Num() - 1];
+		const float TileCm = (Edge - Prev) * 1.6f;
+		const int32 Count = FMath::Max(8, (int32)FMath::CeilToFloat((float)(2.0 * PI * (Edge + TileCm * 0.5f)) / (TileCm * 0.80f)));
+		for (int32 i = 0; i < Count; ++i)
+		{
+			const float Ang = (float)i * (360.f / (float)Count);
+			const float Rad = FMath::DegreesToRadians(Ang);
+			LayTile(FMath::Cos(Rad) * Edge, FMath::Sin(Rad) * Edge, TileCm, Ang);
+		}
+	}
+
+	// THE AVENUES. Thirteen spokes on the golden angle, laid segment by segment between
+	// the rings with each segment turned to its own bearing, so the street follows the
+	// spiral instead of a straight rule with a curve drawn over it.
 	UMaterialInterface* StreetStone = LoadObject<UMaterialInterface>(nullptr,
 		TEXT("/Game/StarterContent/Materials/M_Brick_Cut_Stone.M_Brick_Cut_Stone"));
-	UMaterialInterface* StreetFallback = nullptr;
-	if (StreetStone)
+	const float AveW = 700.f;
+	bool bSizedOnce = false;
+	auto LayStrip = [&](float MidR, float LenCm, float AngDeg, float WidthCm)
 	{
-		StreetFallback = StreetStone;
-	}
-	const float StreetW = 9.f;
-	for (int32 i = -3; i <= 2; ++i)
-	{
-		const float Line = ((float)i + 0.5f) * BlockCm;
-		for (int32 Axis = 0; Axis < 2; ++Axis)
+		const float Rad = FMath::DegreesToRadians(AngDeg);
+		UStaticMeshComponent* St = SpawnBlockRot(FVector(FMath::Cos(Rad) * MidR, FMath::Sin(Rad) * MidR, 4.f),
+			FVector(LenCm / GUnit.X, WidthCm / GUnit.Y, 0.08f), Ground, Stone, 0.f, FRotator(0.f, AngDeg, 0.f));
+		TagCity(St);
+		if (St && StreetStone) { St->SetMaterial(0, StreetStone); }
+		if (St && !bSizedOnce)
 		{
-			const FVector At = Axis == 0 ? FVector(0.f, Line, 4.f) : FVector(Line, 0.f, 4.f);
-			const FVector Sc = Axis == 0 ? FVector(189.f, StreetW, 0.08f) : FVector(StreetW, 189.f, 0.08f);
-			UStaticMeshComponent* Strip = SpawnBlock(At, Sc, StreetMesh, Asphalt, 0.f);
-			TagCity(Strip);
-			if (Strip && StreetFallback) { Strip->SetMaterial(0, StreetFallback); }
-			if (Strip && i == -3 && Axis == 0)
-			{
-				const FString MatName = Strip->GetMaterial(0) ? Strip->GetMaterial(0)->GetPathName() : TEXT("none");
-				UE_LOG(LogVEIL, Warning, TEXT("PHI CITY STREET: mat=%s width %.0f cm"), *MatName, StreetW * 100.f);
-			}
+			bSizedOnce = true;
+			const FVector B = St->Bounds.BoxExtent * 2.f;
+			UE_LOG(LogVEIL, Warning,
+				TEXT("PHI SIZES: first street piece %.0f x %.0f x %.0f cm (asked %.0f long, %.0f wide), scale %.2f x %.2f x %.2f"),
+				B.X, B.Y, B.Z, LenCm, WidthCm, St->GetComponentScale().X, St->GetComponentScale().Y, St->GetComponentScale().Z);
+		}
+	};
+	for (int32 Spoke = 0; Spoke < 13; ++Spoke)
+	{
+		const float Ang = (float)FMath::Fmod((double)Spoke * GoldenDeg, 360.0);
+		for (int32 k = 0; k + 1 < RingR.Num(); ++k)
+		{
+			const float A2 = RingR[k];
+			const float B2 = RingR[k + 1];
+			LayStrip((A2 + B2) * 0.5f, (B2 - A2) * 1.08f, Ang, AveW);
+		}
+		LayStrip((RingR[RingR.Num() - 1] + CityR) * 0.5f, (CityR - RingR[RingR.Num() - 1]) * 1.08f, Ang, AveW);
+	}
+	// RING ROADS at the golden radii: twenty-four segments each, every one turned so its
+	// length runs tangent to the circle it lies on.
+	for (int32 k = 0; k < RingR.Num(); ++k)
+	{
+		const float R = RingR[k];
+		const int32 Seg = 24;
+		for (int32 i = 0; i < Seg; ++i)
+		{
+			const float Ang = (float)i * (360.f / (float)Seg) + 7.5f;
+			LayStrip(R, (float)(2.0 * PI * (double)R / (double)Seg) * 1.10f, Ang + 90.f, AveW);
 		}
 	}
 
-	// THE BLOCKS. Four buildings per block, set in a 2 x 2, every one axis-aligned to
-	// the grid and standing on z = 0 - no golden angle in this layer, because a street
-	// that wanders is what the eye reads as scatter. Heights walk a phi ladder so the
-	// skyline steps instead of repeating.
-	const float Heights[6] = { 820.f, 1100.f, 1327.f, 1600.f, 2147.f, 2600.f };
+	// THE CITY IS ONE SUNFLOWER. r = PlazaR + A * sqrt(i), theta = i * golden angle, so
+	// no two blocks share a bearing or a radius, and each is turned tangential to its own
+	// radius. Footprint and height step by phi per band outward, so the skyline falls away
+	// instead of repeating.
+	const int32 Lots = 144;
+	const float Growth = (CityR - PlazaR) / FMath::Sqrt((float)Lots);
 	int32 Built = 0;
-	for (int32 bx = -2; bx <= 2; ++bx)
+	int32 OnStreet = 0;
+	for (int32 i = 1; i <= Lots; ++i)
 	{
-		for (int32 by = -2; by <= 2; ++by)
+		const double Ang = (double)i * GoldenDeg;
+		const float R = PlazaR + Growth * FMath::Sqrt((float)i);
+		if (R > CityR) { continue; }
+		bool bBlocked = false;
+		for (int32 Spoke = 0; Spoke < 13 && !bBlocked; ++Spoke)
 		{
-			if (bx == 0 && by == 0) { continue; }   // the plaza stays open
-			const float CX = (float)bx * BlockCm;
-			const float CY = (float)by * BlockCm;
-			for (int32 lx = 0; lx < 2; ++lx)
-			{
-				for (int32 ly = 0; ly < 2; ++ly)
-				{
-					const int32 Index = Built;
-					const float H = Heights[Index % 6];
-					const float W = ((Index % 3) == 0) ? 1300.f : 1150.f;
-					const float AtX = CX + (lx ? 700.f : -700.f);
-					const float AtY = CY + (ly ? 700.f : -700.f);
-					TagCity(SpawnBlock(FVector(AtX, AtY, H * 0.5f),
-						FVector(W * 0.01f, W * 0.01f, H * 0.01f), Wall,
-						((Index % 2) == 0) ? Stone : StoneWarm, 0.f));
-					TagCity(SpawnBlock(FVector(AtX, AtY, H + 18.f),
-						FVector(W * 0.0112f, W * 0.0112f, 0.36f), Cap, CapTint, 0.f));
-					++Built;
-				}
-			}
+			const double SAng = FMath::Fmod((double)Spoke * GoldenDeg, 360.0);
+			const float Diff = (float)FMath::Abs(FMath::Fmod(Ang - SAng + 540.0, 360.0) - 180.0);
+			if (Diff < 4.5f) { bBlocked = true; }
 		}
+		for (int32 k = 0; k < RingR.Num() && !bBlocked; ++k)
+		{
+			if (FMath::Abs(R - RingR[k]) < AveW * 0.75f) { bBlocked = true; }
+		}
+		if (bBlocked) { ++OnStreet; continue; }
+
+		const float Rad = FMath::DegreesToRadians((float)Ang);
+		const int32 Band = FMath::Clamp((int32)(FMath::Loge(R / PlazaR) / FMath::Loge((float)Phi)), 0, 5);
+		const float Foot = 1350.f / (float)FMath::Pow(Phi, (double)Band);
+		const float Height = 760.f * (float)FMath::Pow(Phi, (double)(Band + 1));
+		const FVector At(FMath::Cos(Rad) * R, FMath::Sin(Rad) * R, 0.f);
+		const FRotator Tangential(0.f, (float)Ang + 90.f, 0.f);
+		TagCity(SpawnBlockRot(At + FVector(0.f, 0.f, Height * 0.5f),
+			FVector(Foot / WUnit.X, Foot / WUnit.Y, Height / WUnit.Z), Wall,
+			((i % 2) == 0) ? Stone : StoneWarm, 0.f, Tangential));
+		TagCity(SpawnBlockRot(At + FVector(0.f, 0.f, Height + 18.f),
+			FVector(Foot * 1.12f / CUnit.X, Foot * 1.12f / CUnit.Y, 36.f / CUnit.Z), Cap, CapTint, 0.f, Tangential));
+		++Built;
 	}
 
-	// LAMPS AT THE CORNERS, so the street has a scale in it from the air.
-	for (int32 i = -2; i <= 2; ++i)
+	// LAMPS where every other avenue crosses a golden ring, so the disc has a scale.
+	for (int32 k = 0; k < RingR.Num(); ++k)
 	{
-		for (int32 j = -2; j <= 2; ++j)
+		for (int32 Spoke = 0; Spoke < 13; Spoke += 2)
 		{
-			const FVector Corner((float)i * BlockCm + HalfBlock, (float)j * BlockCm + HalfBlock, 0.f);
+			const float Ang = (float)FMath::Fmod((double)Spoke * GoldenDeg, 360.0);
+			const float Rad = FMath::DegreesToRadians(Ang);
+			const FVector At(FMath::Cos(Rad) * RingR[k], FMath::Sin(Rad) * RingR[k], 0.f);
 			if (Pillar)
 			{
-				TagCity(SpawnBlock(Corner + FVector(0.f, 0.f, 180.f), FVector(0.34f, 0.34f, 3.6f), Pillar, CapTint, 0.f));
+				TagCity(SpawnBlock(At + FVector(0.f, 0.f, 180.f), FVector(0.34f, 0.34f, 3.6f), Pillar, CapTint, 0.f));
 			}
-			TagCity(SpawnBlock(Corner + FVector(0.f, 0.f, 380.f), FVector(0.5f, 0.5f, 0.42f), Ground, LampTint, 6.f));
+			TagCity(SpawnBlock(At + FVector(0.f, 0.f, 380.f), FVector(0.5f, 0.5f, 0.42f), Ground, LampTint, 8.f));
 		}
 	}
 
-	UE_LOG(LogVEIL, Warning, TEXT("PHI CITY: ground 9x9 x 45 m edge to edge at z=0, %d block(s) built, 12 street(s)."),
-		25);
+	UE_LOG(LogVEIL, Warning,
+		TEXT("PHI DISTRICT: %d block(s) on the sunflower, %d skipped as street, %d ring(s), 13 golden avenues, %d ring road segment(s)."),
+		Built, OnStreet, RingR.Num(), RingR.Num() * 24);
 
-	// THE SKY IS NOT A DISTRICT. Late passes hang their pieces at 400, 600, 800 and
-	// 1000 cm while the ground is at 0, which is the cloud the aerial photo shows.
-	// Deferred by six seconds so it runs after those passes, and it moves nothing the
-	// city pass built: every piece here is tagged PhiCity.
-	FTimerHandle PhiFlattenHandle;
-	FTimerDelegate PhiFlatten = FTimerDelegate::CreateWeakLambda(this, [this]()
+	// MEASURE THE PLAN, THEN SETTLE IT. Six seconds in: trace a golden spiral through the
+	// disc and count the samples that stand on PhiGround - a hole is a number, not an
+	// impression - then bring anything still hanging in the air down onto the floor.
+	FTimerHandle PhiDistrictHandle;
+	FTimerDelegate PhiSettle = FTimerDelegate::CreateWeakLambda(this, [this, CityR]()
 	{
 		UWorld* W = GetWorld();
 		if (!W) { return; }
-		const FName CityTag(TEXT("PhiCity"));
 		const FName GroundTag(TEXT("PhiGround"));
+		const FName CityTag(TEXT("PhiCity"));
+		int32 Samples = 0;
+		int32 OnFloor = 0;
+		int32 OnCity = 0;
+		int32 OnNothing = 0;
+		TArray<FString> EmptyAt;
+		for (int32 i = 1; i <= 600; ++i)
+		{
+			const double Ang = FMath::DegreesToRadians(FMath::Fmod((double)i * 137.5077640500378, 360.0));
+			const float R = CityR * FMath::Sqrt((float)i / 600.f);
+			const FVector At(FMath::Cos(Ang) * R, FMath::Sin(Ang) * R, 0.f);
+			FHitResult H;
+			FCollisionQueryParams P(SCENE_QUERY_STAT(VEILPhiCoverage), false);
+			++Samples;
+			// A SAMPLE ON A ROOF IS NOT A HOLE. Counting only PhiGround called every
+			// building a hole, which is most of what the 72% and 79% were. Floor and city
+			// are both solid; only a sample that hits nothing at all is a hole.
+			if (!W->LineTraceSingleByChannel(H, At + FVector(0.f, 0.f, 6000.f), At - FVector(0.f, 0.f, 6000.f), ECC_Visibility, P))
+			{
+				++OnNothing;
+				if (EmptyAt.Num() < 6) { EmptyAt.Add(FString::Printf(TEXT("r=%.0f a=%.0f"), R, FMath::Fmod((float)i * 137.5077640500378f, 360.f))); }
+				continue;
+			}
+			const AActor* HitA = H.GetActor();
+			if (HitA && HitA->ActorHasTag(GroundTag)) { ++OnFloor; }
+			else if (HitA && HitA->ActorHasTag(CityTag)) { ++OnCity; }
+			else { ++OnNothing; if (EmptyAt.Num() < 6) { EmptyAt.Add(FString::Printf(TEXT("r=%.0f hit=%s"), R, HitA ? *HitA->GetName() : TEXT("none"))); } }
+		}
+		UE_LOG(LogVEIL, Warning,
+			TEXT("PHI COVERAGE: %d of %d samples solid (%d on flagstone, %d on a building, %d on nothing). Empty: %s"),
+			OnFloor + OnCity, Samples, OnFloor, OnCity, OnNothing,
+			EmptyAt.Num() ? *FString::Join(EmptyAt, TEXT("; ")) : TEXT("none"));
+
 		int32 Dropped = 0;
 		float Deepest = 0.f;
 		for (TActorIterator<AActor> It(W); It; ++It)
@@ -3297,86 +3403,18 @@ void AVEILWorldBuilder::BuildCityGrid()
 			if (!A || A->IsA(APawn::StaticClass()) || A->IsA(ALight::StaticClass())) { continue; }
 			if (A->ActorHasTag(CityTag) || A->ActorHasTag(GroundTag)) { continue; }
 			const FBox B = A->GetComponentsBoundingBox(true);
-			if (!B.IsValid) { continue; }
-			if (B.Min.Z <= 320.f) { continue; }
+			if (!B.IsValid || B.Min.Z <= 320.f) { continue; }
 			if (B.GetSize().Z > 4000.f) { continue; }   // landscape stays landscape
-			if (FVector2D(B.GetCenter().X, B.GetCenter().Y).Size() > 16000.f) { continue; }
+			if (FVector2D(B.GetCenter().X, B.GetCenter().Y).Size() > CityR + 3000.f) { continue; }
 			const float Drop = B.Min.Z;
 			A->AddActorWorldOffset(FVector(0.f, 0.f, 0.f - Drop));
 			++Dropped;
 			Deepest = FMath::Max(Deepest, Drop);
 		}
-		// WHAT THE BLUE IS. The aerial frame shows the streets as blue channels. Rather
-		// than guess at a tint, count the materials actually in the district and log the
-		// heaviest - the name of the surface is the answer.
-		{
-			TMap<FString, int32> MatCount;
-			for (TActorIterator<AActor> ItMat(W); ItMat; ++ItMat)
-			{
-				AActor* A = *ItMat;
-				if (!A) { continue; }
-				const FBox B = A->GetComponentsBoundingBox(true);
-				if (!B.IsValid || FVector2D(B.GetCenter().X, B.GetCenter().Y).Size() > 12000.f) { continue; }
-				TInlineComponentArray<UStaticMeshComponent*> Comps;
-				A->GetComponents(Comps);
-				for (UStaticMeshComponent* Comp : Comps)
-				{
-					UMaterialInterface* M = Comp ? Comp->GetMaterial(0) : nullptr;
-					const FString Key = M ? M->GetName() : FString(TEXT("none"));
-					MatCount.FindOrAdd(Key) += 1;
-				}
-			}
-			MatCount.ValueSort([](int32 A, int32 B) { return A > B; });
-			int32 Shown = 0;
-			for (const TPair<FString, int32>& Pair : MatCount)
-			{
-				UE_LOG(LogVEIL, Warning, TEXT("PHI MAT CENSUS: %s x%d"), *Pair.Key, Pair.Value);
-				if (++Shown >= 7) { break; }
-			}
-		}
-		// WHAT THE BLUE IS, MEASURED. The bands are still in the aerial frame after the
-		// streets were given stone, so they are not the streets. Trace straight down
-		// through a line of points across the district and name every surface hit: the
-		// sheet that shows up at one Z across all of them is the blue.
-		{
-			int32 GroundTiles = 0;
-			for (TActorIterator<AActor> ItG(W); ItG; ++ItG)
-			{
-				if (ItG->ActorHasTag(FName(TEXT("PhiGround")))) { ++GroundTiles; }
-			}
-			UE_LOG(LogVEIL, Warning, TEXT("PHI BLUE CENSUS: %d ground tile actor(s) present."), GroundTiles);
-			TMap<FString, int32> SheetCount;
-			for (int32 Sample = -8; Sample <= 8; ++Sample)
-			{
-				const FVector At((float)Sample * 1000.f, 0.f, 0.f);
-				TArray<FHitResult> Hits;
-				FCollisionQueryParams P(SCENE_QUERY_STAT(VEILBlueCensus), false);
-				W->LineTraceMultiByChannel(Hits, At + FVector(0.f, 0.f, 6000.f), At - FVector(0.f, 0.f, 6000.f),
-					ECC_Visibility, P);
-				for (const FHitResult& H : Hits)
-				{
-					const AActor* HitActor = H.GetActor();
-					const UPrimitiveComponent* HitComp = H.GetComponent();
-					const UMaterialInterface* HitMat = HitComp ? HitComp->GetMaterial(0) : nullptr;
-					const FString Key = FString::Printf(TEXT("%s | %s | z=%.0f"),
-						HitActor ? *HitActor->GetName() : TEXT("none"),
-						HitMat ? *HitMat->GetName() : TEXT("none"),
-						H.ImpactPoint.Z);
-					SheetCount.FindOrAdd(Key) += 1;
-				}
-			}
-			SheetCount.ValueSort([](int32 A2, int32 B2) { return A2 > B2; });
-			int32 ShownHits = 0;
-			for (const TPair<FString, int32>& Pair : SheetCount)
-			{
-				UE_LOG(LogVEIL, Warning, TEXT("PHI BLUE HIT %d: %s"), Pair.Value, *Pair.Key);
-				if (++ShownHits >= 10) { break; }
-			}
-		}
-		UE_LOG(LogVEIL, Warning, TEXT("PHI FLATTEN: %d piece(s) brought down onto the ground plane, deepest was %.0f cm up."),
+		UE_LOG(LogVEIL, Warning, TEXT("PHI FLATTEN: %d piece(s) brought down onto the floor, deepest was %.0f cm up."),
 			Dropped, Deepest);
 	});
-	World->GetTimerManager().SetTimer(PhiFlattenHandle, PhiFlatten, 6.f, false);
+	World->GetTimerManager().SetTimer(PhiDistrictHandle, PhiSettle, 6.f, false);
 }
 
 void AVEILWorldBuilder::BuildWorld()
@@ -3415,7 +3453,7 @@ void AVEILWorldBuilder::BuildWorld()
 	BuildLighting();
 	BuildDistrict();
 	DressBeaconSites();
-	BuildCityGrid();
+	BuildPhiDistrict();
 	BuildHorizon();
 	BuildVista();
 	UE_LOG(LogVEIL, Log, TEXT("VEIL: free to play under the PHI LICENSE (PHI-LICENSE.md). The phi framework is licensed only through Tyree Shariff Jones, its source - universal, including Earth's."));
