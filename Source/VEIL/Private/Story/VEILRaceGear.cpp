@@ -27,7 +27,7 @@ namespace
 		GearBlue = LoadObject<UMaterialInterface>(nullptr, TEXT("/Game/PHI/Palette/M_PHI_DeepBlue.M_PHI_DeepBlue"));
 		GearGlow = LoadObject<UMaterialInterface>(nullptr, TEXT("/Game/PHI/Palette/M_PHI_WhiteEmissive.M_PHI_WhiteEmissive"));
 		GearStone = LoadObject<UMaterialInterface>(nullptr, TEXT("/Game/StarterContent/Materials/M_Brick_Cut_Stone.M_Brick_Cut_Stone"));
-		GearDark = LoadObject<UMaterialInterface>(nullptr, TEXT("/Game/StarterContent/Materials/M_Metal_Dark.M_Metal_Dark"));
+		GearDark = LoadObject<UMaterialInterface>(nullptr, TEXT("/Game/PHI/Palette/M_PHI_DeepBlue.M_PHI_DeepBlue"));
 	}
 
 	UStaticMeshComponent* Attach(AActor* Owner, USkeletalMeshComponent* Body, UStaticMesh* Mesh,
