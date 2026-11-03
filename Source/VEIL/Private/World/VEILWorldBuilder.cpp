@@ -3777,6 +3777,7 @@ void AVEILWorldBuilder::BuildWorld()
 	BuildLighting();
 	BuildDistrict();
 	BuildPhiWhole();
+	BuildPhiForms();
 	DressBeaconSites();
 	BuildPhiDistrict();
 	BuildHorizon();
