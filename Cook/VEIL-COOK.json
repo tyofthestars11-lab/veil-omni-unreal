@@ -22,32 +22,7 @@
     "top_cm": 99073.4955049954,
     "deck_cm": 320
   },
-  "faults": [
-    [
-      "crystal",
-      "deck",
-      5763,
-      -2416,
-      1664,
-      820
-    ],
-    [
-      "crystal",
-      "deck",
-      5222,
-      -143,
-      2692,
-      320
-    ],
-    [
-      "crystal",
-      "deck",
-      5372,
-      -2516,
-      2692,
-      820
-    ]
-  ],
+  "faults": [],
   "assets": [
     "/Game/Sicka_EnvPack2",
     "/Game/Polyart",

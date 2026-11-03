@@ -95,7 +95,18 @@ add("wing", 0, 0, 160, 90, 6, 160)
 
 # ----------------------------------------------------------------------------------
 def footprint_overlap(a, b):
-    """True when two axis-aligned footprints overlap on the ground plane."""
+    """Footprints overlap on the ground plane.
+
+    A deck is a tangential strip on a ring, not an axis-aligned box, so a deck pair is
+    tested radially: a thing is over a deck when its own radius falls inside the band.
+    The AABB path stays for everything else.
+    """
+    if a[0] == "deck" or b[0] == "deck":
+        deck, other = (a, b) if a[0] == "deck" else (b, a)
+        r_deck = math.hypot(deck[1], deck[2])
+        r_other = math.hypot(other[1], other[2])
+        band = next((W for R, _, W in DECKS if abs(r_deck - R) < 1), 1800)
+        return abs(r_other - r_deck) <= band / 2
     _, ax, ay, _, aw, ad, _ = a
     _, bx, by, _, bw, bd, _ = b
     return abs(ax - bx) < (aw + bw) / 2 and abs(ay - by) < (ad + bd) / 2
