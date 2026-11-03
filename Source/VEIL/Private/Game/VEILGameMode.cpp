@@ -3482,7 +3482,17 @@ void AVEILPlayerController::OpenTypeToONE()
 	SetInputMode(Mode);
 	bShowMouseCursor = true;
 	bTypingToONE = true;
-	UE_LOG(LogVEIL, Warning, TEXT("PHI TYPE: field open - click landed in the type bar."));
+	// CLICK TO SPEAK **OR** TYPE. The bar opens the field, and it also opens the microphone,
+	// so one click gives you both doors: talk if you talk, type if you type. Whichever you
+	// use, it ends in UPHIONE::Say, so the ledger cannot tell them apart.
+	if (UWorld* W = GetWorld())
+	{
+		if (UPHIONE* One = W->GetSubsystem<UPHIONE>())
+		{
+			One->BeginTalk();
+		}
+	}
+	UE_LOG(LogVEIL, Warning, TEXT("PHI TYPE: field open and microphone open - click landed in the ONE bar."));
 }
 
 void AVEILPlayerController::CloseTypeToONE()
@@ -3494,6 +3504,14 @@ void AVEILPlayerController::CloseTypeToONE()
 	TypeContainer.Reset();
 	TypeBox.Reset();
 	bTypingToONE = false;
+	// Closing the bar closes the microphone too: nothing stays listening after the door shuts.
+	if (UWorld* W = GetWorld())
+	{
+		if (UPHIONE* One = W->GetSubsystem<UPHIONE>())
+		{
+			One->EndTalk();
+		}
+	}
 	SetInputMode(FInputModeGameOnly());
 	bShowMouseCursor = false;
 }
