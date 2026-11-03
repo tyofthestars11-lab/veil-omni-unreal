@@ -1288,10 +1288,27 @@ void AVEILGameMode::BeginPlay()
 					{
 						if (Ground.ImpactPoint.Z > Seat.Z + 50.f)
 						{
+						// A ROOF IS NOT A FLOOR. This trace starts 200 m above the address, so
+						// the first surface it meets over the plaza is whatever is ON TOP of it -
+						// a roof at z=2440 in this district - and the block below then lifted the
+						// runner onto that roof and logged it as "standing on the floor". He
+						// spent the run five metres above the market he was supposed to wake in.
+						// Only a surface within a storey of the seat is ground he could be
+						// sinking through; anything higher is architecture, and the seat is kept.
+						const float Rise = (float)Ground.ImpactPoint.Z - Seat.Z;
+						if (Rise > 1200.f)
+						{
+							UE_LOG(LogVEIL, Warning,
+								TEXT("VEIL SEAT GROUND: surface at z=%.0f is %.0f cm overhead - a roof, not a floor; seat kept at z=%.0f (%.0f,%.0f)."),
+								Ground.ImpactPoint.Z, Rise, Seat.Z, Seat.X, Seat.Y);
+						}
+						else
+						{
 							UE_LOG(LogVEIL, Warning,
 								TEXT("VEIL SEAT GROUND: anchor z=%.0f but the floor under the address is z=%.0f - standing on the floor, X,Y untouched (%.0f,%.0f)."),
 								Seat.Z, Ground.ImpactPoint.Z, Seat.X, Seat.Y);
 							Seat.Z = Ground.ImpactPoint.Z + 98.f;
+						}
 						}
 					}
 				}

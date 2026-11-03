@@ -372,7 +372,7 @@ void AVEILConceptWorld::BuildTerrain(UStaticMesh* Cube, UMaterialInterface* Ston
 	Ground->RegisterComponent();
 
 	const float Spacing = 12000.f;     // 120 m per tile
-	const int32 Steps = 50;           // 101 x 101 tiles, six kilometres each way
+	const int32 Steps = 80;           // a ring out to 9.6 km, not a plate over the city
 	const float Thick = 800.f;
 	int32 Placed = 0;
 
@@ -384,8 +384,17 @@ void AVEILConceptWorld::BuildTerrain(UStaticMesh* Cube, UMaterialInterface* Ston
 			const float Y = iy * Spacing;
 			const float R = FMath::Sqrt(X * X + Y * Y);
 
-			// Flat over the hub, then a smooth ramp into the country.
-			const float Blend = FMath::Clamp((R - 8000.f) / 30000.f, 0.f, 1.f);
+			// THE PLAIN IS THE FLOOR. This field used to cover the whole district with
+			// tiles whose top face sat 90 cm above the world's own ground, so the
+			// market, the tents and every counter at z=0-110 were buried under a second
+			// floor that nobody could see the edge of. The terrain now begins BEYOND
+			// the plain that the builder already lays - 800,000 cm, eight kilometres,
+			// the plain's own edge, in centimetres like every other length here - and
+			// carries only the horizon. Inside it the district's floor is the only
+			// ground there is, and the two never sit coplanar and fight for pixels.
+			if (R < 800000.f) { continue; }
+
+			const float Blend = FMath::Clamp((R - 800000.f) / 1200000.f, 0.f, 1.f);
 
 			// Golden frequencies: k, k*phi, k*(phi+1) - three waves that never
 			// repeat together, which is why the hills do not look tiled.
@@ -394,7 +403,7 @@ void AVEILConceptWorld::BuildTerrain(UStaticMesh* Cube, UMaterialInterface* Ston
 				+ 0.5f * FMath::Sin((X + Y) * 0.00013f * (ConceptPhi + 1.f)))
 				+ 1100.f;
 
-			const float H = FMath::Lerp(90.f, Hills, Blend);
+			const float H = FMath::Lerp(0.f, Hills, Blend);
 
 			Ground->AddInstance(FTransform(FRotator::ZeroRotator,
 				FVector(X, Y, H - Thick * 0.5f),
@@ -404,7 +413,7 @@ void AVEILConceptWorld::BuildTerrain(UStaticMesh* Cube, UMaterialInterface* Ston
 	}
 
 	UE_LOG(LogVEIL, Warning,
-		TEXT("PHI TERRAIN: %d instanced tiles, flat over the hub, rising to phi-sine hills beyond 80 m."),
+		TEXT("PHI TERRAIN: %d instanced tiles, none inside the 8 km plain, rising to phi-sine hills beyond it."),
 		Placed);
 }
 
