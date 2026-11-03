@@ -555,12 +555,20 @@ void AVEILGameMode::BeginPlay()
 			}
 			Ordered.Sort([](const FPhiLight& A, const FPhiLight& B) { return A.Dist < B.Dist; });
 
+						// SIX SHADOWED POINT LIGHTS, WHICH IS WHERE THEY STARTED.
+			// Cutting them to one was measured and changed nothing: 45.1 fps and 22.19 ms
+			// against 44.3-54.2 fps before, inside the run-to-run spread. The lamp cubes
+			// were not the cost. The 8-9 ms of shadow measured with the governor frozen
+			// belongs to the sun's cascades, so the lamp shadows stay and VEILSky trims those.
 			const int32 ShadowsKept = 6;
 			int32 ShadowsOff = 0, RadiusClamped = 0;
 			for (int32 i = 0; i < Ordered.Num(); ++i)
 			{
 				UPointLightComponent* C = Cast<UPointLightComponent>(Ordered[i].Actor->GetLightComponent());
 				if (!C) continue;
+							// One shadow is a lamp pool under a post, not a second sun. The engine's own
+				// resolution knob is not exposed on point lights in 5.8, so the saving is the
+				// count of cube passes, not their size.
 				if (i < ShadowsKept) { C->SetCastShadows(true); }
 				else if (C->CastShadows) { C->SetCastShadows(false); ++ShadowsOff; }
 				if (C->AttenuationRadius > 1500.f)

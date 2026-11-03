@@ -1,3 +1,4 @@
+#include "HAL/IConsoleManager.h"
 #include "World/VEILSky.h"
 
 #include "Components/DirectionalLightComponent.h"
@@ -48,6 +49,22 @@ void VEILSky::Dress(UWorld* World)
 			Light->SetIntensity(7.0f);
 			Light->SetLightColor(SunColor);
 			Light->SetCastShadows(true);
+
+			// THE SUN'S CASCADES ARE THE SHADOW COST.
+			// Frozen-governor measurements at 100 %% screen: shadows on 25.04-26.73 ms a
+			// frame, shadows off 16.92-17.17 ms, and dropping six lamp shadows changed
+			// nothing. Shadow depth renders at its own resolution, so shrinking the screen
+			// could never recover the time either - which is why the governor sat at its
+			// floor and still missed 60. Half the cascade distance and a 1024 map is the
+			// trim that actually lands on the pass doing the work.
+			if (IConsoleVariable* Res = IConsoleManager::Get().FindConsoleVariable(TEXT("r.Shadow.MaxCSMResolution")))
+			{
+				Res->Set(1024, ECVF_SetByGameSetting);
+			}
+			if (IConsoleVariable* Dist = IConsoleManager::Get().FindConsoleVariable(TEXT("r.Shadow.DistanceScale")))
+			{
+				Dist->Set(0.5f, ECVF_SetByGameSetting);
+			}
 		}
 	}
 
