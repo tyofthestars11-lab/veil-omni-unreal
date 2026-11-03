@@ -1704,48 +1704,42 @@ void AVEILHudCanvas::DrawHUD()
 	// Hidden while a conversation owns the plate, because two voices at once is
 	// neither.
 	// ------------------------------------------------------------------
-	// CLICK HERE TO TYPE TO ONE. A push-to-talk key is not a conversation; this is the door
-	// you can see. The controller hit-tests this exact rectangle, so the bar that is drawn is
-	// the bar that opens the field, and it lights while the field owns the pointer so a click
-	// never happens without an answer.
+		// ONE, IN ONE PLACE. The type bar and the state line were two doors for one voice: a
+	// "click here to type" chip and a separate "ready - hold B to speak" line floating above
+	// it, both on screen at once, both about the same conversation. They are one control now:
+	// click it and you speak or type to ONE from that click, and nothing pops up until you do.
 	{
 		const VEILTypeBar::FZone Zone = VEILTypeBar::ForScreen(Canvas->ClipX, Canvas->ClipY);
-		// PC is the base controller here; the type-bar state lives on the VEIL controller.
 		const AVEILPlayerController* VPC = Cast<AVEILPlayerController>(PC);
 		const bool bTypingNow = VPC && VPC->IsTypingToONE();
-		FVeilUI::Chip(this, FLinearColor(0.035f, 0.045f, 0.075f, bTypingNow ? 0.92f : 0.70f),
+		const UPHIONE* One = W->GetSubsystem<UPHIONE>();
+		const UVEILDialogue* DlgNow = W->GetSubsystem<UVEILDialogue>();
+		const bool bBusy = DlgNow && DlgNow->IsActive();
+		const EONEState OneState = One ? One->GetState() : EONEState::Ready;
+		const bool bListening = OneState == EONEState::Listening;
+		const bool bWorking = OneState == EONEState::Thinking;
+		const bool bSpeaking = OneState == EONEState::Speaking;
+		FVeilUI::Chip(this, FLinearColor(0.035f, 0.045f, 0.075f, (bTypingNow || bListening) ? 0.92f : 0.60f),
 			Zone.X, Zone.Y, Zone.W, Zone.H);
-		const FLinearColor Edge(1.f, 0.78f, 0.30f, bTypingNow ? 0.95f : 0.55f);
+		const FLinearColor Edge(1.f, 0.78f, 0.30f, (bTypingNow || bListening) ? 0.95f : 0.42f);
 		DrawRect(Edge, Zone.X, Zone.Y, Zone.W, 1.4f);
 		DrawRect(Edge, Zone.X, Zone.Y + Zone.H - 1.4f, Zone.W, 1.4f);
-		DrawText(bTypingNow ? TEXT("TYPING TO ONE  -  ENTER SENDS") : TEXT("CLICK HERE TO TYPE TO ONE"),
-			bTypingNow ? FLinearColor(1.f, 0.90f, 0.55f) : FLinearColor(0.88f, 0.82f, 0.64f),
-			Zone.X + 12.f, Zone.Y + 6.f, Med, 0.62f);
-	}
-
-	if (const UPHIONE* One = W->GetSubsystem<UPHIONE>())
-	{
-		const UVEILDialogue* DlgNow = W->GetSubsystem<UVEILDialogue>();
-		if (!DlgNow || !DlgNow->IsActive())
+		const FLinearColor Orb = bSpeaking ? FLinearColor(1.f, 0.85f, 0.35f)
+			: bWorking ? FLinearColor(0.45f, 0.95f, 0.85f)
+			: bListening ? FLinearColor(0.85f, 0.92f, 1.f)
+			: FLinearColor(0.30f, 0.34f, 0.44f);
+		DrawRect(Orb, Zone.X + 12.f, Zone.Y + 12.f, 6.f, 6.f);
+		const TCHAR* Label = bTypingNow ? TEXT("TYPING TO ONE  -  ENTER SENDS, ESC CLOSES")
+			: bListening ? TEXT("ONE IS LISTENING  -  speak now, or type")
+			: bWorking ? TEXT("ONE IS WORKING")
+			: TEXT("ONE  -  click to speak or type");
+		DrawText(Label, (bTypingNow || bListening) ? FLinearColor(1.f, 0.90f, 0.55f) : FLinearColor(0.88f, 0.82f, 0.64f),
+			Zone.X + 26.f, Zone.Y + 5.f, Med, 0.60f);
+		if (One && !bBusy)
 		{
 			const FString OneLine = One->StateLine();
-			float OW = 0.f, OH = 0.f;
-			Canvas->StrLen(Med, OneLine, OW, OH);
-			const float OX = (Canvas->ClipX - OW) * 0.5f;
-			const float OY = Canvas->ClipY - 170.f;
-			FVeilUI::Chip(this, FLinearColor(0.03f, 0.05f, 0.09f, 0.66f), OX - 18.f, OY - 6.f, OW + 36.f, OH + 12.f);
-			const bool bSpeaking = One->GetState() == EONEState::Speaking;
-			const bool bWorking = One->GetState() == EONEState::Thinking;
-			// Ready is deliberately dim: the dot only lights while the key is
-			// actually down, so "listening" can never be shown when it is not.
-			const bool bHearing = One->GetState() == EONEState::Listening;
-			const FLinearColor Orb = bSpeaking ? FLinearColor(1.f, 0.85f, 0.35f)
-				: bWorking ? FLinearColor(0.45f, 0.95f, 0.85f)
-				: bHearing ? FLinearColor(0.85f, 0.92f, 1.f)
-				: FLinearColor(0.30f, 0.34f, 0.44f);
-			DrawRect(Orb, OX - 12.f, OY + OH * 0.5f - 3.f, 6.f, 6.f);
 			DrawText(OneLine, bSpeaking ? FLinearColor(1.f, 0.92f, 0.72f) : FLinearColor(0.82f, 0.88f, 1.f),
-				OX, OY, Med, 0.9f);
+				Zone.X + 26.f, Zone.Y + 22.f, Med, 0.56f);
 		}
 	}
 

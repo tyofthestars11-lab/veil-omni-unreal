@@ -103,7 +103,7 @@ void UPHIONE::OnWorldBeginPlay(UWorld& InWorld)
 		{ TEXT("fly"), TEXT("take off") });
 
 	State = EONEState::Ready;
-	UE_LOG(LogVEIL, Warning, TEXT("PHI ONE: awake, ready - hold B to speak. %d skills across game / ledger / pc / voice. Memory: Saved/ONE/ledger.txt"),
+	UE_LOG(LogVEIL, Warning, TEXT("PHI ONE: awake, ready - click the ONE bar to speak or type. %d skills across game / ledger / pc / voice. Memory: Saved/ONE/ledger.txt"),
 		SkillTable.Num());
 }
 
@@ -204,7 +204,7 @@ void UPHIONE::Tick(float DeltaTime)
 // ---------------------------------------------------------------------------
 FString UPHIONE::StateLine() const
 {
-	const TCHAR* StateWord = State == EONEState::Ready ? TEXT("ready - hold B to speak")
+	const TCHAR* StateWord = State == EONEState::Ready ? TEXT("ready - click to speak or type")
 		: State == EONEState::Listening ? TEXT("listening")
 		: State == EONEState::Thinking ? TEXT("working") : TEXT("speaking");
 	if (Reply.IsEmpty()) { return FString::Printf(TEXT("ONE  %s"), StateWord); }

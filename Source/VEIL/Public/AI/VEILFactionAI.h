@@ -111,6 +111,13 @@ public:
 	UFUNCTION(BlueprintPure, Category = "VEIL|Phi")
 	FString PhiStatus() const;
 
+	/** WHO THIS MACHINE IS. Not NPC_03: a named member of its faction, with a rank and a
+	 *  temperament that changes how it fights, picked from its own id so it is the same
+	 *  person every session and never the same person as its neighbour. */
+	FString CastName;
+	FString CastRank;
+	FString CastTemperament;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "VEIL|Faction")
 	EVEILFaction Faction = EVEILFaction::Void;
 

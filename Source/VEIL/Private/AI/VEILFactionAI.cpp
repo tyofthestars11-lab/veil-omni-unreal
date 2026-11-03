@@ -128,6 +128,79 @@ AVEILFactionAgent::AVEILFactionAgent()
 
 void AVEILFactionAgent::BeginPlay()
 {
+	// A PERSON, NOT A PLACEHOLDER. Twenty-four authored people across the four factions - the
+	// Ashfall crews, the Lantern Watch, the Quiet Court and the Hollow - each with a rank and a
+	// temperament. The row comes from the machine's own id, so a patrol is the same person every
+	// session and neighbours are never the same person. Temperament changes how it fights rather
+	// than labelling it: aggressive hits harder and closes faster, patient sees further and hits
+	// softer, curious watches and fires slower. Body scale and hue follow the row, so silhouette
+	// differs before anyone reads a name.
+	{
+		struct FCastRow { const TCHAR* Name; const TCHAR* Rank; const TCHAR* Temper; };
+		static const FCastRow Cast[4][6] = {
+			{ {TEXT("Tova Renn"), TEXT("Cutter-Captain"), TEXT("aggressive")},
+			  {TEXT("Bram Kessler"), TEXT("Quartermaster"), TEXT("patient")},
+			  {TEXT("Nix"), TEXT("Salvage-Runner"), TEXT("curious")},
+			  {TEXT("Domen Arclight"), TEXT("Cartographer"), TEXT("curious")},
+			  {TEXT("Kesh Varo"), TEXT("Hull-Wright"), TEXT("patient")},
+			  {TEXT("Sable Ith"), TEXT("Crew-Head"), TEXT("aggressive")} },
+			{ {TEXT("Odalys Crane"), TEXT("Watch-Captain"), TEXT("aggressive")},
+			  {TEXT("Ferris Holt"), TEXT("Keeper of the Ledger"), TEXT("patient")},
+			  {TEXT("Mirea"), TEXT("Shield-Aunt"), TEXT("patient")},
+			  {TEXT("Sera Vahl"), TEXT("Keeper of the First Beacon"), TEXT("curious")},
+			  {TEXT("Halden Rook"), TEXT("Lamp-Warden"), TEXT("curious")},
+			  {TEXT("Iset Marr"), TEXT("Watch-Sergeant"), TEXT("aggressive")} },
+			{ {TEXT("Vespera Dal"), TEXT("First Voice"), TEXT("patient")},
+			  {TEXT("Elias Brume"), TEXT("The Notary"), TEXT("curious")},
+			  {TEXT("Sahn"), TEXT("Cipher-Adjutant"), TEXT("curious")},
+			  {TEXT("Ilva Marrow"), TEXT("The Seer"), TEXT("patient")},
+			  {TEXT("Corin Vey"), TEXT("Quiet Bailiff"), TEXT("aggressive")},
+			  {TEXT("Adea Lune"), TEXT("Court Archivist"), TEXT("patient")} },
+			{ {TEXT("The Listener"), TEXT("First of the Hollow"), TEXT("curious")},
+			  {TEXT("The Pale Host"), TEXT("The Hollow's answer"), TEXT("aggressive")},
+			  {TEXT("Ash-Witness"), TEXT("Hollow Echo"), TEXT("patient")},
+			  {TEXT("The Second Question"), TEXT("Hollow Echo"), TEXT("curious")},
+			  {TEXT("Pale Chorus"), TEXT("Hollow Echo"), TEXT("patient")},
+			  {TEXT("The Answerer"), TEXT("Hollow Echo"), TEXT("aggressive")} }
+		};
+		static const TCHAR* FactionWords[4] = {
+			TEXT("Ashfall Consortium"), TEXT("Lantern Watch"), TEXT("Quiet Court"), TEXT("Hollow") };
+		const int32 FIdx = FMath::Clamp((int32)Faction, 0, 3);
+		const int32 CIdx = FMath::Abs((int32)(GetUniqueID() / 7)) % 6;
+		CastName = Cast[FIdx][CIdx].Name;
+		CastRank = Cast[FIdx][CIdx].Rank;
+		CastTemperament = Cast[FIdx][CIdx].Temper;
+		if (CastTemperament == TEXT("aggressive"))
+		{
+			MaxHealth *= 0.85f; AttackRange *= 1.15f; WeaponDamage *= 1.35f; FireInterval *= 0.80f;
+		}
+		else if (CastTemperament == TEXT("patient"))
+		{
+			MaxHealth *= 1.25f; AttackRange *= 0.85f; WeaponDamage *= 0.80f; SightRange *= 1.30f;
+		}
+		else
+		{
+			SightRange *= 1.10f; FireInterval *= 1.15f;
+		}
+		Health = MaxHealth;
+		TArray<UStaticMeshComponent*> BodyMeshes;
+		GetComponents<UStaticMeshComponent>(BodyMeshes);
+		for (UStaticMeshComponent* BM : BodyMeshes)
+		{
+			if (!BM || BM->GetFName() != FName(TEXT("MachineBody"))) { continue; }
+			const float Wide = 0.60f + 0.05f * (float)CIdx;
+			BM->SetRelativeScale3D(FVector(Wide, Wide, 1.30f + 0.10f * (float)CIdx));
+			static const FLinearColor Hues[6] = {
+				FLinearColor(0.20f, 0.11f, 0.06f), FLinearColor(0.18f, 0.20f, 0.28f),
+				FLinearColor(0.07f, 0.18f, 0.20f), FLinearColor(0.22f, 0.17f, 0.07f),
+				FLinearColor(0.16f, 0.09f, 0.22f), FLinearColor(0.24f, 0.22f, 0.20f) };
+			PHITintComponent(BM, Hues[CIdx], 0.f);
+		}
+		UE_LOG(LogVEIL, Warning, TEXT("PHI CAST: %s, %s of the %s - %s - at %s."),
+			*CastName, *CastRank, FactionWords[FIdx], *CastTemperament,
+			*GetActorLocation().ToCompactString());
+	}
+
 	Super::BeginPlay();
 	BindStoneBody();
 	Health = MaxHealth;
