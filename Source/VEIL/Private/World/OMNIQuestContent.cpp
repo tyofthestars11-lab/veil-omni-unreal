@@ -1,6 +1,6 @@
-﻿// OMNI RPG: PATH OF LIGHT - quest content implementation.
-#include "Components/SkeletalMeshComponent.h"
+// OMNI RPG: PATH OF LIGHT - quest content implementation.
 #include "World/OMNIQuestContent.h"
+#include "Components/SkeletalMeshComponent.h"
 #include "Story/VEILCastBody.h"
 
 #include "Character/VEILCharacter.h"

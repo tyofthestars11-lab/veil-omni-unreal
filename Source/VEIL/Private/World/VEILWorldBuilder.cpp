@@ -531,9 +531,15 @@ void AVEILWorldBuilder::BuildRoom(const FVector& Centre, float HalfW, float Half
 	const FRotator Yaw(0.f, FMath::RadiansToDegrees(FMath::Atan2(F.Y, F.X)), 0.f);
 
 	const float T = 40.f;            // wall thickness, cm
-	const float DoorHalf = 130.f;    // a 2.6 m doorway: a body walks through, no crouch
-	const float DoorH = 330.f;
-	const float Mid = Height * 0.5f;
+	// A ROOM A BODY CAN STAND UP IN. Walls were laid at exactly the height the caller asked
+	// for and the roof sat 12 cm above that, so a shell asked for at 5.2 m finished as a low
+	// room with a slab on the player's head. One number governs the interior now: 6.4 m clear
+	// at minimum, a door that grows with the ceiling, and walls, lintel, roof and hearth light
+	// all read from it - so no caller can build a room the player has to hunch in.
+	const float RoomH = FMath::Max(Height, 640.f);
+	const float DoorHalf = 150.f;    // 3.0 m wide: two abreast, no crouch
+	const float DoorH = FMath::Clamp(RoomH * 0.66f, 380.f, 520.f);
+	const float Mid = RoomH * 0.5f;
 	const float SegW = FMath::Max(60.f, HalfW - DoorHalf);
 
 	// Local axes are built with the room: x runs along the door direction, y across
@@ -565,14 +571,14 @@ void AVEILWorldBuilder::BuildRoom(const FVector& Centre, float HalfW, float Half
 	};
 
 	// BACK
-	UStaticMeshComponent* BackWall = Wall3(FVector(-HalfD, 0.f, 0.f), T, 2.f * HalfW, Height, Mid);
+	UStaticMeshComponent* BackWall = Wall3(FVector(-HalfD, 0.f, 0.f), T, 2.f * HalfW, RoomH, Mid);
 	// SIDES
-	UStaticMeshComponent* LeftWall = Wall3(FVector(0.f, -HalfW, 0.f), 2.f * HalfD, T, Height, Mid);
-	UStaticMeshComponent* RightWall = Wall3(FVector(0.f, HalfW, 0.f), 2.f * HalfD, T, Height, Mid);
+	UStaticMeshComponent* LeftWall = Wall3(FVector(0.f, -HalfW, 0.f), 2.f * HalfD, T, RoomH, Mid);
+	UStaticMeshComponent* RightWall = Wall3(FVector(0.f, HalfW, 0.f), 2.f * HalfD, T, RoomH, Mid);
 	// FRONT: two jambs and a lintel, with a real gap between them
-	Wall3(FVector(HalfD, -(DoorHalf + SegW * 0.5f), 0.f), T, SegW, Height, Mid);
-	Wall3(FVector(HalfD, DoorHalf + SegW * 0.5f, 0.f), T, SegW, Height, Mid);
-	Wall3(FVector(HalfD, 0.f, 0.f), T, 2.f * DoorHalf, Height - DoorH, DoorH + (Height - DoorH) * 0.5f);
+	Wall3(FVector(HalfD, -(DoorHalf + SegW * 0.5f), 0.f), T, SegW, RoomH, Mid);
+	Wall3(FVector(HalfD, DoorHalf + SegW * 0.5f, 0.f), T, SegW, RoomH, Mid);
+	Wall3(FVector(HalfD, 0.f, 0.f), T, 2.f * DoorHalf, RoomH - DoorH, DoorH + (RoomH - DoorH) * 0.5f);
 
 	// FLOOR you stand on, and a ROOF split by a skylight band: daylight reaches the
 	// middle of the room without a point light per building (28 of those would
@@ -594,7 +600,7 @@ void AVEILWorldBuilder::BuildRoom(const FVector& Centre, float HalfW, float Half
 		// is the floor turned over only when the roof asset is missing.
 		UStaticMesh* Roof = RoofMesh ? RoofMesh.Get() : Floor;
 		const FRotator RoofRot = RoofMesh ? FRotator(0.f, Yaw.Yaw, 0.f) : FRotator(0.f, Yaw.Yaw, 180.f);
-		SpawnBlockRot(Centre + FVector(0.f, 0.f, Height + 12.f),
+		SpawnBlockRot(Centre + FVector(0.f, 0.f, RoomH + 12.f),
 			FVector(2.f * HalfW / 100.f, 2.f * HalfD / 100.f, 0.18f), Roof, Tint, 0.f, RoofRot);
 	}
 
@@ -619,7 +625,7 @@ void AVEILWorldBuilder::BuildRoom(const FVector& Centre, float HalfW, float Half
 	if (UWorld* W = GetWorld())
 	{
 		if (APointLight* Lamp = W->SpawnActor<APointLight>(
-			APointLight::StaticClass(), Hearth + FVector(0.f, 0.f, Height * 0.72f), FRotator::ZeroRotator))
+			APointLight::StaticClass(), Hearth + FVector(0.f, 0.f, RoomH * 0.72f), FRotator::ZeroRotator))
 		{
 			if (UPointLightComponent* L = Cast<UPointLightComponent>(Lamp->GetLightComponent()))
 			{
@@ -662,6 +668,9 @@ void AVEILWorldBuilder::BuildRoom(const FVector& Centre, float HalfW, float Half
 
 		// Standing room, off-centre toward the door: the middle belongs to the room,
 		// not to the proof camera.
+		UE_LOG(LogVEIL, Warning,
+			TEXT("PHI ROOM SCALE: ceiling %.0f cm, doorway %.0f wide x %.0f tall (the shell asked for %.0f cm)."),
+			RoomH, 2.f * DoorHalf, DoorH, Height);
 		FirstRoomInterior = Centre + F * 150.f + FVector(0.f, 0.f, 110.f);
 		FirstRoomDoor = Centre + F * (HalfD + 180.f) + FVector(0.f, 0.f, 110.f);
 		UE_LOG(LogVEIL, Warning,
