@@ -28,6 +28,7 @@
 #include "Systems/PHIIntent.h"
 #include "Systems/VEILEnemy.h"
 #include "Systems/VEILTime.h"
+#include "Systems/VEILCampaign.h"
 #include "Systems/VEILSociety.h"
 #include "Systems/VEILPerf.h"
 #include "Engine/TextureRenderTarget2D.h"
@@ -545,7 +546,9 @@ void AVEILHudCanvas::DrawHUD()
 	// the blips share one yaw, so a marker cannot lie about where a thing is.
 	// ------------------------------------------------------------------
 	{
-		const float MS = 180.f;                   // spec: 180 x 180
+		// MINIMAP DIAMETER = SCREEN HEIGHT / PHI. 1080 / 1.618033988749895 = 667 px,
+		// 720 / phi = 445 px - the ring is sized by the law, not by a guess.
+		const float MS = Canvas->ClipY / UPHIMITO_PHI_SAFE;
 		const float MX = Canvas->ClipX - MS - 26.f, MY = 30.f;
 		const FLinearColor Gold(1.f, 0.78f, 0.3f, 0.92f);
 
@@ -841,6 +844,14 @@ void AVEILHudCanvas::DrawHUD()
 			// carries above the legend, so the screen always names the work in progress.
 			{
 				// A BANNER, NOT A BAR ACROSS THE CORNER: shorter, lighter, one line.
+				// ACTIVITIES ON ITS OWN BAND. It was the mockup's line, drawn 16 px above
+				// its own banner while the canvas ribbon sat at ClipY-146: three texts in
+				// one strip. It now sits one phi step above the ribbon and nothing else does.
+				if (const UVEILCampaignSubsystem* Camp = W->GetSubsystem<UVEILCampaignSubsystem>())
+				{
+					DrawText(Camp->ActivityLine(), FLinearColor(0.788f, 0.635f, 0.290f, 0.95f),
+						30.f, Canvas->ClipY - 146.f - 26.f, Med, 0.56f);
+				}
 				const float QY = Canvas->ClipY - 146.f;
 				float QW = 0.f, QH = 0.f;
 				Canvas->StrLen(Med, FString(TEXT("THE GOLDEN MIDST")), QW, QH);
@@ -1658,7 +1669,14 @@ void AVEILHudCanvas::DrawHUD()
 
 	// THE ONE OS rides over the world HUD in its own pass. It is a surface you
 	// raise, not more rows in the instrument, so it cannot crowd the play view.
-	VEILHudMockup::Draw(this, Canvas);
-	VEILOSFace::Draw(this, Canvas);
+	// ONE OWNER PER ZONE. The mockup used to draw a second quest banner, a second
+	// diamond hotbar and its own ACTIVITIES row into the same bottom-left corner the
+	// canvas already owned, and the OS face painted a full-screen panel behind both -
+	// three systems, one corner, the overlap in the photograph. The canvas owns the
+	// play HUD now; the face is a surface you raise with F1, drawn only while open.
+	if (const AVEILPlayerController* OsPC = Cast<AVEILPlayerController>(PC))
+	{
+				if (OsPC->bShowDebug) { VEILOSFace::Draw(this, Canvas); }
+	}
 }
 
