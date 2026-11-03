@@ -379,6 +379,18 @@ UStaticMeshComponent* AVEILWorldBuilder::SpawnBlockRot(const FVector& Location,
 	// every wall in the package rendered as engine grey. Disallowing Nanite on the
 	// component keeps the authored material on the mesh that is actually drawn.
 	Comp->bDisallowNanite = true;
+	// PACK STONE. The kit material is not flagged "Used with Nanite", and the cooked build
+	// said so: MI_Modular1 missing usage flag Nanite, Default Material will be used in game.
+	// A component-level Nanite ban was not enough, so the unsafe material is swapped for the
+	// project's authored stone before anything samples it, and the package draws its own walls.
+	if (Comp->GetMaterial(0) && Comp->GetMaterial(0)->GetName().Contains(TEXT("MI_Modular")))
+	{
+		if (UMaterialInterface* PackStone = LoadObject<UMaterialInterface>(nullptr,
+			TEXT("/Game/StarterContent/Materials/M_Brick_Cut_Stone.M_Brick_Cut_Stone")))
+		{
+			Comp->SetMaterial(0, PackStone);
+		}
+	}
 	Comp->SetStaticMesh(Mesh);
 	Comp->SetMobility(EComponentMobility::Movable);
 	// A MESH WITHOUT COLLISION IS A PICTURE OF A FLOOR.
