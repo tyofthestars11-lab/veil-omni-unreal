@@ -173,6 +173,45 @@ namespace FVeilUI
 				CX + FMath::Cos(A1) * R, CY + FMath::Sin(A1) * R, C, Thickness);
 		}
 	}
+	/** A GOLD CURL. The reference frame is drawn with flourishes that leave the panel
+	 *  and taper into the air, not with a straight border. This walks a short spiral in
+	 *  segments so it thins as it turns; DirX/DirY mirror it cleanly. */
+	static void Curl(AHUD* H, float X, float Y, float R, float StartDeg, float SweepDeg,
+		float DirX, float DirY, FLinearColor C, float Th)
+	{
+		if (!H) { return; }
+		const int32 Steps = 18;
+		float LastX = X, LastY = Y;
+		for (int32 i = 0; i <= Steps; ++i)
+		{
+			const float T = i / (float)Steps;
+			const float A = FMath::DegreesToRadians(StartDeg + SweepDeg * T);
+			const float Rad = R * (1.f - 0.58f * T);
+			const float PXx = X + DirX * FMath::Cos(A) * Rad;
+			const float PYy = Y + DirY * FMath::Sin(A) * Rad;
+			if (i > 0)
+			{
+				H->DrawLine(LastX, LastY, PXx, PYy,
+					FLinearColor(C.R, C.G, C.B, C.A * (1.f - 0.55f * T)), FMath::Max(0.6f, Th * (1.f - 0.55f * T)));
+			}
+			LastX = PXx; LastY = PYy;
+		}
+	}
+
+	/** AN ORNATE FRAME: halo, bright gold edge, dark bezel, hairline, navy body.
+	 *  Layered like a metal fitting rather than a coloured rectangle. */
+	static void GoldFrame(AHUD* H, FLinearColor Body, float X, float Y, float W, float Ht, float R)
+	{
+		if (!H || W <= 0.f || Ht <= 0.f) { return; }
+		const FLinearColor G(1.f, 0.82f, 0.36f, 0.95f);
+		const FLinearColor G2(0.80f, 0.60f, 0.22f, 0.50f);
+		RoundRect(H, FLinearColor(G.R, G.G, G.B, 0.08f), X - 7.f, Y - 7.f, W + 14.f, Ht + 14.f, R + 7.f);
+		RoundRect(H, FLinearColor(G.R, G.G, G.B, 0.22f), X - 4.f, Y - 4.f, W + 8.f, Ht + 8.f, R + 4.f);
+		RoundRect(H, G, X - 1.5f, Y - 1.5f, W + 3.f, Ht + 3.f, R + 1.5f);
+		RoundRect(H, FLinearColor(0.03f, 0.04f, 0.08f, 0.97f), X, Y, W, Ht, R);
+		RoundRect(H, G2, X + 2.5f, Y + 2.5f, W - 5.f, Ht - 5.f, FMath::Max(1.f, R - 2.f));
+		RoundRect(H, Body, X + 3.5f, Y + 3.5f, W - 7.f, Ht - 7.f, FMath::Max(1.f, R - 3.f));
+	}
 }
 
 static const TCHAR* PhiStageText(int32 Stage)
@@ -364,18 +403,27 @@ void AVEILHudCanvas::DrawHUD()
 	auto Bar = [this](float X, float Yy, float Wd, float Ht, float Pct, FLinearColor Fill)
 	{
 		const float R = Ht * 0.5f;
-		FVeilUI::RoundRect(this, FLinearColor(0.f, 0.f, 0.f, 0.45f), X - 1.f, Yy - 1.f, Wd + 2.f, Ht + 2.f, R + 1.f);
+		// A HALO UNDER THE INSTRUMENT: the reference bars sit in their own light.
+		FVeilUI::RoundRect(this, FLinearColor(Fill.R, Fill.G, Fill.B, 0.12f), X - 4.f, Yy - 4.f, Wd + 8.f, Ht + 8.f, R + 4.f);
+		FVeilUI::RoundRect(this, FLinearColor(0.f, 0.f, 0.f, 0.50f), X - 1.f, Yy - 1.f, Wd + 2.f, Ht + 2.f, R + 1.f);
 		// Warm trough, not a grey slot: the bar sits in gold-shadowed bronze so the
 		// VIT red and STM green read as light inside an instrument.
 		FVeilUI::RoundRect(this, FLinearColor(0.10f, 0.07f, 0.02f, 0.92f), X, Yy, Wd, Ht, R);
 		const float FW = FMath::Max(0.f, (Wd - 2.f) * FMath::Clamp(Pct, 0.f, 1.f));
 		if (FW > 0.f)
 		{
-			FVeilUI::RoundRect(this, FLinearColor(Fill.R * 0.50f, Fill.G * 0.50f, Fill.B * 0.50f, 0.95f), X + 1.f, Yy + 1.f, FW, Ht - 2.f, R);
-			FVeilUI::RoundRect(this, FLinearColor(Fill.R, Fill.G, Fill.B, 0.85f), X + 1.f, Yy + 1.f, FW, (Ht - 2.f) * 0.5f, R);
-			if (FW > 4.f)
+			// THREE BANDS: deep base, hot body, pale crest - a lit liquid inside a trough,
+			// which is what the reference's VIT and STM read as at a glance.
+			FVeilUI::RoundRect(this, FLinearColor(Fill.R * 0.42f, Fill.G * 0.42f, Fill.B * 0.42f, 0.96f), X + 1.f, Yy + 1.f, FW, Ht - 2.f, R);
+			FVeilUI::RoundRect(this, FLinearColor(Fill.R, Fill.G, Fill.B, 0.92f), X + 1.f, Yy + 1.f, FW, (Ht - 2.f) * 0.60f, R);
+			FVeilUI::RoundRect(this, FLinearColor(FMath::Min(1.f, Fill.R + 0.30f), FMath::Min(1.f, Fill.G + 0.30f), FMath::Min(1.f, Fill.B + 0.30f), 0.55f),
+				X + 1.f, Yy + 1.f, FW, (Ht - 2.f) * 0.30f, R);
+			if (FW > 6.f)
 			{
-				FVeilUI::RoundRect(this, FLinearColor(1.f, 1.f, 1.f, 0.80f), X + FW - 1.5f, Yy + 1.f, 3.f, Ht - 2.f, 1.5f);
+				// THE SPARKLE AT THE TIP, with its own halo: the one detail that makes a
+				// filling bar look alive instead of printed.
+				FVeilUI::Diamond(this, X + FW, Yy + Ht * 0.5f, Ht * 1.05f, FLinearColor(1.f, 1.f, 1.f, 0.10f));
+				FVeilUI::Diamond(this, X + FW, Yy + Ht * 0.5f, Ht * 0.50f, FLinearColor(1.f, 0.97f, 0.90f, 0.92f));
 			}
 		}
 	};
@@ -389,20 +437,33 @@ void AVEILHudCanvas::DrawHUD()
 	// its width and the bars start at BARX instead of being squeezed to make room. These
 	// are stated before the plate because the badge is drawn with it, not after it.
 	const float BadgeC = PX + 30.f;
-	const float BadgeY = PY + 34.f;
+	const float BadgeY = PY + 30.f;
 	const float BARX = PX + 76.f;                 // text column aligns with the gauges
 	const float BARW = 170.f;
 
 	// NAVY GLASS, GOLD LINE - the mockup's plate. #0E1424 under #C9A24A.
-	FVeilUI::Glass(this, FLinearColor(0.055f, 0.078f, 0.141f, 0.55f), PX, PY, PW, PH, 11.f);
+	// NINE LAYERS OF GOLD, NOT A GREY CARD. The reference plate is a fitting: a halo,
+	// a bright edge, a dark bezel, a hairline and a navy body, with gold curls leaving
+	// the corners. All of it is drawn from rows and lines, so it holds at any size.
+	FVeilUI::GoldFrame(this, FLinearColor(0.050f, 0.072f, 0.135f, 0.66f), PX, PY, PW, PH, 11.f);
+	{
+		const FLinearColor CurlGold(1.f, 0.83f, 0.38f, 0.80f);
+		FVeilUI::Curl(this, PX + PW - 4.f, PY + 15.f, 34.f, -95.f, 120.f, 1.f, -1.f, CurlGold, 2.2f);
+		FVeilUI::Curl(this, PX + PW - 4.f, PY + 15.f, 20.f, -75.f, 100.f, 1.f, -1.f,
+			FLinearColor(CurlGold.R, CurlGold.G, CurlGold.B, 0.45f), 1.3f);
+		FVeilUI::Curl(this, PX + 4.f, PY + 15.f, 34.f, -85.f, 120.f, -1.f, -1.f,
+			FLinearColor(CurlGold.R, CurlGold.G, CurlGold.B, 0.60f), 1.9f);
+		FVeilUI::Curl(this, PX + PW - 4.f, PY + PH - 12.f, 22.f, 95.f, -110.f, 1.f, 1.f,
+			FLinearColor(CurlGold.R, CurlGold.G, CurlGold.B, 0.35f), 1.2f);
+	}
 	FVeilUI::RoundRect(this, FLinearColor(0.788f, 0.635f, 0.290f, 0.62f), PX + 8.f, PY + 1.f, PW - 16.f, 2.4f, 1.2f);
 	FVeilUI::RoundRect(this, FLinearColor(0.788f, 0.635f, 0.290f, 0.95f), PX + 1.f, PY + 10.f, 2.6f * UPHIMito::Phi, PH - 20.f, 1.3f * UPHIMito::Phi);
 
 	// THE PHI DIAMOND AND THE LEVEL. A gold diamond, a dark diamond inside it so the
 	// glyph reads, the phi mark itself, and LV under it - the badge the vision leads with.
 	{
-		FVeilUI::Diamond(this, BadgeC, BadgeY, 26.f, FLinearColor(1.f, 0.86f, 0.45f, 0.95f));
-		FVeilUI::Diamond(this, BadgeC, BadgeY, 20.f, FLinearColor(0.10f, 0.07f, 0.02f, 0.96f));
+		FVeilUI::Diamond(this, BadgeC, BadgeY, 22.f, FLinearColor(1.f, 0.86f, 0.45f, 0.95f));
+		FVeilUI::Diamond(this, BadgeC, BadgeY, 17.f, FLinearColor(0.10f, 0.07f, 0.02f, 0.96f));
 		DrawText(TEXT("\u03C6"), FLinearColor(1.f, 0.93f, 0.58f), BadgeC - 5.f, BadgeY - 11.f, Big, 0.90f);
 		// LV moved onto the XP row: the plate is 110 px tall and the badge no longer has a
 		// floor of its own to set it under.
@@ -449,7 +510,7 @@ void AVEILHudCanvas::DrawHUD()
 		// state the vision shows - not a bar with the truth filed off.
 		// VIT #D9343A, STM #2FB36A - the two gradients the mockup leads with.
 		const FLinearColor Vit = Pct > 0.35f ? FLinearColor(0.851f, 0.204f, 0.227f) : FLinearColor(0.95f, 0.55f, 0.18f);
-		Bar(BARX, Y, BARW, 7.f, Pct, Vit);
+		Bar(BARX, Y, BARW, 9.f, Pct, Vit);
 		Shadow(FString::Printf(TEXT("VIT  %.0f / %.0f"), Pawn->Health, Pawn->MaxHealth),
 			FLinearColor(1.f, 0.86f, 0.70f), BARX + BARW + 10.f, Y - 2.f, Med, 0.58f);
 		Y += 13.f;
@@ -461,7 +522,7 @@ void AVEILHudCanvas::DrawHUD()
 		const float Stam = Pawn->MaxATP > 0.f
 			? FMath::Clamp(Pawn->ATP / Pawn->MaxATP, 0.f, 1.f)
 			: 1.f;
-		Bar(BARX, Y, BARW, 7.f, Stam, FLinearColor(0.184f, 0.702f, 0.416f));
+		Bar(BARX, Y, BARW, 9.f, Stam, FLinearColor(0.184f, 0.702f, 0.416f));
 		Shadow(FString::Printf(TEXT("STM  %.0f / %.0f"), Pawn->ATP, Pawn->MaxATP),
 			FLinearColor(0.74f, 1.f, 0.80f), BARX + BARW + 10.f, Y - 2.f, Med, 0.58f);
 		Y += 13.f;
@@ -472,11 +533,14 @@ void AVEILHudCanvas::DrawHUD()
 		const float Pct = Need > 0 ? (float)Q->XP / (float)Need : 0.f;
 		// LV IS A DIAMOND. The badge shape carries the number, and the XP bar fills
 		// beside it - the same level, read at a glance instead of spelled out.
-		Bar(BARX, Y, BARW, 7.f, Pct, FLinearColor(0.55f, 0.80f, 1.f));
+		Bar(BARX, Y, BARW, 9.f, Pct, FLinearColor(0.55f, 0.80f, 1.f));
 		// THE LEVEL LIVES WHERE THE XP IS. The badge is 26 px in a 110 px plate, so the
 		// number it used to carry under itself now sits on the row it belongs to.
 		Shadow(FString::Printf(TEXT("LV %d   XP %d / %d"), Q->Level, Q->XP, Need),
 			FLinearColor(0.72f, 0.86f, 1.f), BARX + BARW + 10.f, Y - 2.f, Med, 0.58f);
+		// LV UNDER THE BADGE. The diamond is the level's house; the row belongs to XP.
+		Shadow(FString::Printf(TEXT("LV %d"), Q->Level), FLinearColor(1.f, 0.92f, 0.62f),
+			BadgeC - 13.f, PY + 54.f, Med, 0.52f);
 		Y += 11.f;
 	}
 
@@ -658,6 +722,19 @@ void AVEILHudCanvas::DrawHUD()
 		FVeilUI::Ring(this, CCX, CCY, CR + 5.f, FLinearColor(Gold.R, Gold.G, Gold.B, 0.10f), 5.f, 64);
 		FVeilUI::Ring(this, CCX, CCY, CR + 1.5f, FLinearColor(Gold.R, Gold.G, Gold.B, 0.55f), 2.f, 64);
 		FVeilUI::Ring(this, CCX, CCY, CR, FLinearColor(Gold.R, Gold.G, Gold.B, 0.95f), 1.6f, 72);
+		// THE RUNE RING. The reference compass is ringed with ticks - long at the quarters,
+		// short between - so the instrument reads as a dial instead of a plain circle.
+		for (int32 Tick = 0; Tick < 24; ++Tick)
+		{
+			const float TA = (Tick / 24.f) * 2.f * PI - PI * 0.5f;
+			const bool bMajor = (Tick % 6) == 0;
+			const bool bMid = (Tick % 3) == 0;
+			const float R0 = CR + 3.f;
+			const float R1 = CR + (bMajor ? 12.f : bMid ? 8.f : 6.f);
+			DrawLine(CCX + FMath::Cos(TA) * R0, CCY + FMath::Sin(TA) * R0,
+				CCX + FMath::Cos(TA) * R1, CCY + FMath::Sin(TA) * R1,
+				FLinearColor(Gold.R, Gold.G, Gold.B, bMajor ? 0.95f : 0.42f), bMajor ? 2.f : 1.f);
+		}
 
 		// Projection shared by every mark: screen right = (-sin, cos), screen up =
 		// (cos, sin), because the capture camera is yawed with the runner.
@@ -935,16 +1012,18 @@ void AVEILHudCanvas::DrawHUD()
 					DrawText(Camp->ActivityLine(), FLinearColor(0.788f, 0.635f, 0.290f, 0.95f),
 						30.f, Canvas->ClipY - 94.f, Med, 0.56f);   // band 2: activities
 				}
-				const float QY = Canvas->ClipY - 70.f;      // band 3: the quest ribbon
-				float QW = 0.f, QH = 0.f;
-				Canvas->StrLen(Med, FString(TEXT("THE GOLDEN MIDST")), QW, QH);
-				// ONE LINE, 480 PX. The band is the specification, not the text length.
-				FVeilUI::Ribbon(this, FLinearColor(0.16f, 0.11f, 0.03f, 0.88f), 30.f, QY, Canvas->ClipX / (UPHIMITO_PHI_SAFE * UPHIMITO_PHI_SAFE), 21.f, true);
-				DrawText(TEXT("QUEST"), FLinearColor(0.62f, 0.47f, 0.20f), 38.f, QY + 2.f, Med, 0.5f);
-				DrawText(TEXT("THE GOLDEN MIDST"), FLinearColor(1.f, 0.88f, 0.50f), 76.f, QY + 2.f, Med, 0.58f);
-				// The step rides on the same line, dimmer: two lines of banner was a block.
+				const float QY = Canvas->ClipY - 76.f;      // band 3: the quest banner
+				const float QWid = Canvas->ClipX / (UPHIMITO_PHI_SAFE * UPHIMITO_PHI_SAFE);
+				// A BANNER, NOT A BROWN BAR. Gold fitting around navy cloth, a phi diamond
+				// bullet, the quest in gold and the step in cream beneath it - the way the
+				// reference frames the work in progress.
+				FVeilUI::GoldFrame(this, FLinearColor(0.045f, 0.065f, 0.125f, 0.90f), 30.f, QY, QWid, 44.f, 9.f);
+				FVeilUI::Diamond(this, 48.f, QY + 22.f, 8.f, FLinearColor(1.f, 0.86f, 0.42f));
+				FVeilUI::Diamond(this, 48.f, QY + 22.f, 4.f, FLinearColor(0.06f, 0.08f, 0.14f, 0.95f));
+				DrawText(TEXT("QUEST"), FLinearColor(0.72f, 0.57f, 0.26f), 64.f, QY + 5.f, Med, 0.5f);
+				DrawText(TEXT("THE GOLDEN MIDST"), FLinearColor(1.f, 0.90f, 0.56f), 64.f, QY + 16.f, Med, 0.62f);
 				DrawText(TEXT("Find the hidden phi chamber"), FLinearColor(0.86f, 0.82f, 0.68f),
-					76.f + QW * 0.50f + 14.f, QY + 3.f, Med, 0.48f);
+					64.f + 236.f, QY + 21.f, Med, 0.50f);
 			}
 
 			// COMBAT MODE, bottom centre, with diamond icons above it: the state the
@@ -952,8 +1031,11 @@ void AVEILHudCanvas::DrawHUD()
 			{
 				const float CCX = Canvas->ClipX * 0.5f;
 				const float CY = Canvas->ClipY - 84.f;
-				FVeilUI::Ribbon(this, FLinearColor(0.30f, 0.18f, 0.02f, 0.92f), CCX - 88.f, CY, 176.f, 22.f, false);
-				DrawText(TEXT("COMBAT MODE"), FLinearColor(1.f, 0.92f, 0.62f), CCX - 56.f, CY + 4.f, Med, 0.78f);
+				// THE COMBAT PLATE. Reference: gold fitting, dark body, a live red dot, the
+				// words in warm gold. It is a state, so it should look switched on.
+				FVeilUI::GoldFrame(this, FLinearColor(0.075f, 0.080f, 0.135f, 0.94f), CCX - 92.f, CY - 2.f, 184.f, 28.f, 10.f);
+				FVeilUI::Diamond(this, CCX - 74.f, CY + 12.f, 4.5f, FLinearColor(0.95f, 0.20f, 0.15f, 0.95f));
+				DrawText(TEXT("COMBAT MODE"), FLinearColor(1.f, 0.92f, 0.62f), CCX - 60.f, CY + 4.f, Med, 0.74f);
 				const FLinearColor IconGold(1.f, 0.84f, 0.38f, 0.92f);
 				for (int32 Icon = 0; Icon < 5; ++Icon)
 				{
