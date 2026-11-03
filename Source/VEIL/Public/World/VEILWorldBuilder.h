@@ -91,6 +91,7 @@ private:
 	void BuildLighting();
 	void BuildDistrict();
 	void BuildPhiDistrict();
+	void BuildPhiWhole();
 
 	/** The silhouette the reference frame asks for: crystal range, cliff falls,
 	 *  terraced houses, bridges, phi pillars, beacon shafts. */

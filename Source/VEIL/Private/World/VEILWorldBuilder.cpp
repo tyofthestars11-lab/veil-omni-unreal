@@ -2111,6 +2111,7 @@ void AVEILWorldBuilder::BuildDistrictLayer()
 	BuildDistrict();
 	DressBeaconSites();
 	BuildPhiDistrict();
+	BuildPhiWhole();
 	BuildHorizon();
 	UE_LOG(LogVEIL, Log, TEXT("VEIL: phi street layer laid over the saved district - the level itself was not touched."));
 }
@@ -3417,6 +3418,76 @@ void AVEILWorldBuilder::BuildPhiDistrict()
 	World->GetTimerManager().SetTimer(PhiDistrictHandle, PhiSettle, 6.f, false);
 }
 
+void AVEILWorldBuilder::BuildPhiWhole()
+{
+	// ONCE. Two calls would place the city twice.
+	static bool bPhiWholeBuilt = false;
+	if (bPhiWholeBuilt) { return; }
+	bPhiWholeBuilt = true;
+
+	UWorld* World = GetWorld();
+	if (!World) return;
+	UStaticMesh* Pillar = ColumnMesh ? ColumnMesh.Get() : CylinderMesh.Get();
+	UStaticMesh* House = WallMesh ? WallMesh.Get() : CubeMesh.Get();
+	UStaticMesh* Crystal = PyramidHeadMesh ? PyramidHeadMesh.Get() : MonolithMesh.Get();
+	const FLinearColor Gold(0.85f, 0.66f, 0.28f);
+
+	// PHI PLACE, WHOLE. The law from World-Gen-Simulation-Phi-Whole.py, not a seed and a
+	// hope: angle = i * 137.5077640500378 deg, radius = sqrt(i) * phi * 100 cm. No random
+	// stream, no PCG, no time. Twelve pillars at the Hub, eight houses at the Keeper, five
+	// crystals at the eastern beacon: the same twenty-five pieces on every boot, and every
+	// one of them printed so the Python simulation can be diffed against the game.
+	auto Round2 = [](double V) { return FMath::RoundToDouble(V * 100.0) / 100.0; };
+	auto PhiPlace = [Round2](int32 I, double BaseX, double BaseY, double& OutX, double& OutY)
+	{
+		const double Ang = (double)I * 137.5077640500378 * 3.14159265358979323846 / 180.0;
+		const double Rad = FMath::Sqrt((double)I) * 1.618033988749895 * 100.0;
+		OutX = Round2(BaseX + Rad * FMath::Cos(Ang));
+		OutY = Round2(BaseY + Rad * FMath::Sin(Ang));
+	};
+
+	auto Tag = [](UStaticMeshComponent* Comp)
+	{
+		if (Comp && Comp->GetOwner()) { Comp->GetOwner()->Tags.Add(FName(TEXT("PhiCity"))); }
+	};
+
+	uint32 Hash = 2166136261u;
+	int32 Placed = 0;
+	auto Place = [&](const TCHAR* Type, int32 I, double BaseX, double BaseY,
+		UStaticMesh* Mesh, const FVector& Scale, float Z, float Glow)
+	{
+		double X = 0.0, Y = 0.0;
+		PhiPlace(I + 1, BaseX, BaseY, X, Y);
+		if (Mesh)
+		{
+			Tag(SpawnBlock(FVector((float)X, (float)Y, Z), Scale, Mesh, Gold, Glow));
+		}
+		const FString Line = FString::Printf(TEXT("%s %d %.2f %.2f"), Type, I, X, Y);
+		for (int32 c = 0; c < Line.Len(); ++c)
+		{
+			Hash = (Hash ^ (uint32)Line[c]) * 16777619u;
+		}
+		Hash = (Hash ^ 10u) * 16777619u;   // the newline the Python list carries
+		++Placed;
+		UE_LOG(LogVEIL, Warning, TEXT("PHI_PLACE %s"), *Line);
+	};
+
+	for (int32 i = 0; i < 12; ++i)
+	{
+		Place(TEXT("phi_pillar"), i, 0.0, 0.0, Pillar, FVector(2.2f, 2.2f, 12.5f), 625.f, 0.55f);
+	}
+	for (int32 i = 0; i < 8; ++i)
+	{
+		Place(TEXT("market_house"), i, 900.0, 0.0, House, FVector(9.f, 9.f, 6.f), 300.f, 0.f);
+	}
+	for (int32 i = 0; i < 5; ++i)
+	{
+		Place(TEXT("blue_crystal"), i, 2800.0, 500.0, Crystal, FVector(3.f, 3.f, 8.f), 400.f, 0.2f);
+	}
+
+	UE_LOG(LogVEIL, Warning, TEXT("PHI PLACE: %d placement(s), digest %08x"), Placed, Hash);
+}
+
 void AVEILWorldBuilder::BuildWorld()
 {
 	if (bBuilt) return;
@@ -3452,6 +3523,7 @@ void AVEILWorldBuilder::BuildWorld()
 
 	BuildLighting();
 	BuildDistrict();
+	BuildPhiWhole();
 	DressBeaconSites();
 	BuildPhiDistrict();
 	BuildHorizon();
