@@ -107,7 +107,13 @@ AVEILCharacter::AVEILCharacter()
 	// then sits INSIDE the runner's own body: the opening frame was his back,
 	// not the district. The plaza is dense carved stone by design, so the arm
 	// holds its length and the camera rides the golden pitch above the crowd.
-	CameraBoom->bDoCollisionTest = false;
+	// THE LENS DOES NOT LIVE INSIDE WALLS. Collision was off because a tightening arm
+	// once put the lens in the runner's back; the captures then showed the opposite
+	// failure, half the frame filled by a wall the camera was buried in. Collision is
+	// back on with a probe size, so the arm shortens instead of entering the stone.
+	CameraBoom->bDoCollisionTest = true;
+	CameraBoom->ProbeSize = 18.f;
+	CameraBoom->ProbeChannel = ECC_Visibility;
 
 	FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
 	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);

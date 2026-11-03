@@ -14,7 +14,10 @@ namespace
 	constexpr float ContentGoldenDeg = 137.50776405f;
 	constexpr float ContentPhi = 1.6180339887f;
 	const TCHAR* GoldPath = TEXT("/Game/PHI/Palette/M_PHI_GoldMetallic.M_PHI_GoldMetallic");
-	const TCHAR* BluePath = TEXT("/Game/PHI/Palette/M_PHI_DeepBlue.M_PHI_DeepBlue");
+	// NOT THE PLACEHOLDER PALETTE. This pass dresses props around the RUNNER, so its
+// blue read as the flat purple slab standing beside him in the captures. The
+// content is dressed stone now; the crystal range keeps its own blue elsewhere.
+	const TCHAR* BluePath = TEXT("/Game/StarterContent/Materials/M_Brick_Cut_Stone.M_Brick_Cut_Stone");
 }
 
 AVEILContentPass::AVEILContentPass()

@@ -1,4 +1,5 @@
 // VEIL: THE LAST SIGNAL - game mode + player controller implementation.
+#include "Components/MeshComponent.h"
 #include "Misc/Paths.h"
 #include "UnrealClient.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -4104,6 +4105,27 @@ void AVEILPlayerController::Tick(float DeltaSeconds)
 				{
 					const FString Shot = FPaths::ProjectDir() / FString::Printf(TEXT("Saved/Screenshots/phisnap%d.png"), Snapshots);
 					FScreenshotRequest::RequestScreenshot(Shot, false, false);
+					// NAME WHAT IS IN THE FRAME. Reading spawners did not identify the
+					// flat purple slab, so the actor itself is asked: every mesh within
+					// 30 m of the runner, with the material it is actually wearing.
+					if (Snapshots == 1)
+					{
+						const AVEILCharacter* Me = Cast<AVEILCharacter>(GetPawn());
+						const FVector Mine = Me ? Me->GetActorLocation() : FVector::ZeroVector;
+						int32 Shown = 0;
+						for (TActorIterator<AActor> It(GetWorld()); It && Shown < 20; ++It)
+						{
+							UMeshComponent* Mesh = It->FindComponentByClass<UMeshComponent>();
+							if (!Mesh) { continue; }
+							const float Dist = FVector::Dist(It->GetActorLocation(), Mine);
+							if (Dist > 3000.f) { continue; }
+							FString Mat = TEXT("none");
+							if (UMaterialInterface* M = Mesh->GetMaterial(0)) { Mat = M->GetName(); }
+							UE_LOG(LogVEIL, Warning, TEXT("PHI NEAR: %5.0f cm  %-28s %-22s mat=%s"),
+								Dist, *It->GetName(), *It->GetClass()->GetName(), *Mat);
+							++Shown;
+						}
+					}
 					UE_LOG(LogVEIL, Warning, TEXT("PHI SNAP: %s"), *Shot);
 				}
 				UE_LOG(LogVEIL, Warning, TEXT("PHI SNAP: frame %d requested at %.1f s."), Snapshots, SnapClock);
