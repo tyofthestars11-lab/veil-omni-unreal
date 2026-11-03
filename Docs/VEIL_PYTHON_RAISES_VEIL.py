@@ -1,8 +1,13 @@
 """VEIL OMNI, made BY Python. One game, one map: /Game/Maps/VEILDistrict.
 
-Python is not a demo beside Unreal - this script is the builder. It raises the
-vision into the level with the project's own palette, tags every actor it makes
-so a re-run replaces its own work, and saves the map.
+Composition follows the three plates:
+  1. cliff-side market: stone arcade, rope bridges, waterfalls, blue lanterns,
+     the gold Spire rising behind the town;
+  2. blue-and-gold city at dusk under a gold sky;
+  3. the Deep: a gold ring megastructure overhead and blue crystal spires below.
+
+Every actor it makes is labelled VEIL_PY_ so a re-run replaces its own work and
+nobody else's. The map is saved at the end.
 
 Run:
   UnrealEditor-Cmd.exe "D:\\VEIL-OMNI\\VEIL.uproject" -run=pythonscript \
@@ -12,7 +17,6 @@ import math
 import unreal
 
 MAP = "/Game/Maps/VEILDistrict"
-PHI = 1.618033988749895
 GOLDEN = 137.5077640500378
 TAG = "VEIL_PY_"
 
@@ -24,8 +28,8 @@ def log(m):
     unreal.log("[VEILPY] " + str(m))
 
 
-def asset(path):
-    return unreal.EditorAssetLibrary.load_asset(path)
+def asset(p):
+    return unreal.EditorAssetLibrary.load_asset(p)
 
 
 CUBE = asset("/Engine/BasicShapes/Cube.Cube")
@@ -33,17 +37,16 @@ CYL = asset("/Engine/BasicShapes/Cylinder.Cylinder")
 CONE = asset("/Engine/BasicShapes/Cone.Cone")
 SPHERE = asset("/Engine/BasicShapes/Sphere.Sphere")
 GOLD = asset("/Game/PHI/Palette/M_PHI_Gold.M_PHI_Gold")
-GOLD_METAL = asset("/Game/PHI/Palette/M_PHI_GoldMetallic.M_PHI_GoldMetallic")
+METAL = asset("/Game/PHI/Palette/M_PHI_GoldMetallic.M_PHI_GoldMetallic")
 BLUE = asset("/Game/PHI/Palette/M_PHI_DeepBlue.M_PHI_DeepBlue")
 GLOW = asset("/Game/PHI/Palette/M_PHI_WhiteEmissive.M_PHI_WhiteEmissive")
 
-log("assets cube=%s cyl=%s cone=%s gold=%s metal=%s blue=%s glow=%s"
-    % (bool(CUBE), bool(CYL), bool(CONE), bool(GOLD), bool(GOLD_METAL), bool(BLUE), bool(GLOW)))
+log("assets cube=%s gold=%s metal=%s blue=%s glow=%s"
+    % (bool(CUBE), bool(GOLD), bool(METAL), bool(BLUE), bool(GLOW)))
 
 if not les.load_level(MAP):
     raise SystemExit("VEILPY: could not load " + MAP)
 
-# --- replace our own last build, never anyone else's -----------------------
 removed = 0
 for a in eas.get_all_level_actors():
     if a.get_actor_label().startswith(TAG):
@@ -54,7 +57,7 @@ log("removed %d previous %s actors" % (removed, TAG))
 counts = {}
 
 
-def place(label, m, loc, scale, mat=None, yaw=0.0):
+def put(label, m, loc, scale, mat=None, yaw=0.0):
     if not m:
         return None
     a = eas.spawn_actor_from_class(unreal.StaticMeshActor, unreal.Vector(*loc),
@@ -76,77 +79,143 @@ def place(label, m, loc, scale, mat=None, yaw=0.0):
     return a
 
 
-# --- 1. THE GOLD SPIRE at (0, 3500): the landmark you orient by -----------
-SX, SY = 0.0, 3500.0
-place("SPIRE_base", CYL, (SX, SY, 1400.0), (26.0, 26.0, 28.0), GOLD_METAL)
-place("SPIRE_tier2", CYL, (SX, SY, 4200.0), (16.0, 16.0, 30.0), GOLD_METAL, 22.5)
-place("SPIRE_tier3", CYL, (SX, SY, 6900.0), (9.5, 9.5, 26.0), GOLD_METAL, 45.0)
-place("SPIRE_crown", CONE, (SX, SY, 9000.0), (11.0, 11.0, 22.0), GOLD)
-place("SPIRE_orb", SPHERE, (SX, SY, 10550.0), (5.0, 5.0, 5.0), GLOW)
-place("SPIRE_beam", CYL, (SX, SY, 16000.0), (1.6, 1.6, 110.0), GLOW)
-for i in range(6):
-    ang = math.radians(i * 60.0 + 15.0)
-    place("SPIRE_ring", CUBE, (SX + math.cos(ang) * 700.0, SY + math.sin(ang) * 700.0, 700.0),
-          (3.0, 3.0, 14.0), GOLD, math.degrees(ang))
+def box(label, loc, scale, mat=None, yaw=0.0):
+    return put(label, CUBE, loc, scale, mat, yaw)
 
-# --- 2. HUB MARKET: stalls and houses on golden angles, ropes between ------
+
+def cyl(label, loc, scale, mat=None):
+    return put(label, CYL, loc, scale, mat)
+
+
+def cone(label, loc, scale, mat=None, yaw=0.0):
+    return put(label, CONE, loc, scale, mat, yaw)
+
+
+def ball(label, loc, scale, mat=None):
+    return put(label, SPHERE, loc, scale, mat)
+
+
+def arch(label, x, y, z, span, height, yaw, mat):
+    """A stone arcade arch: two piers, a lintel and a gold keystone."""
+    half = span / 2.0
+    for side in (-1, 1):
+        ox = math.cos(math.radians(yaw)) * half * side
+        oy = math.sin(math.radians(yaw)) * half * side
+        cyl(label + "_pier", (x + ox, y + oy, z + height / 2.0),
+            (1.1, 1.1, height / 100.0), mat)
+    box(label + "_lintel", (x, y, z + height + 30.0), (span / 100.0 + 1.4, 1.5, 1.1), mat, yaw)
+    box(label + "_key", (x, y, z + height + 130.0), (1.2, 1.2, 1.0), GOLD, yaw)
+
+
+# =========================================================== 1. THE SPIRE
+SX, SY = 0.0, 3500.0
+cyl("SPIRE_base", (SX, SY, 1600.0), (30.0, 30.0, 32.0), METAL)
+cyl("SPIRE_tier2", (SX, SY, 4400.0), (20.0, 20.0, 30.0), METAL)
+cyl("SPIRE_tier3", (SX, SY, 6900.0), (12.0, 12.0, 24.0), METAL)
+cyl("SPIRE_ring", (SX, SY, 8100.0), (16.0, 16.0, 1.2), GOLD)
+cone("SPIRE_crown", (SX, SY, 9500.0), (13.0, 13.0, 26.0), GOLD)
+ball("SPIRE_orb", (SX, SY, 11200.0), (5.0, 5.0, 5.0), GLOW)
+cyl("SPIRE_beam", (SX, SY, 17000.0), (1.8, 1.8, 120.0), GLOW)
+for i in range(8):
+    ang = math.radians(i * 45.0 + 12.0)
+    box("SPIRE_fin", (SX + math.cos(ang) * 1150.0, SY + math.sin(ang) * 1150.0, 2400.0),
+        (2.4, 1.0, 22.0), GOLD, math.degrees(ang))
+
+# ================================================ 2. HUB: THE CLIFF MARKET
+# plaza and arcade ring
+cyl("MARKET_plaza", (0.0, 0.0, 40.0), (28.0, 28.0, 0.9), METAL)
+cyl("MARKET_well", (0.0, 0.0, 330.0), (4.5, 4.5, 6.2), BLUE)
+ball("MARKET_well_lamp", (0.0, 0.0, 760.0), (1.8, 1.8, 1.8), GLOW)
+for i in range(8):
+    ang = math.radians(i * 45.0)
+    ax, ay = math.cos(ang) * 1050.0, math.sin(ang) * 1050.0
+    arch("MARKET_arch", ax, ay, 0.0, 700.0, 900.0, math.degrees(ang) + 90.0, METAL)
+
+# stalls on golden angles, with cream cloth roofs, lamps and wares
 for i in range(12):
     ang = math.radians(i * GOLDEN)
-    rad = 1500.0 + 900.0 * (i % 3)
+    rad = 1700.0 + 700.0 * (i % 3)
     x, y = math.cos(ang) * rad, math.sin(ang) * rad
-    h = 6.0 + 2.4 * (i % 4)
-    place("MARKET_house", CUBE, (x, y, h * 50.0), (9.0, 9.0, h),
-          GOLD if i % 2 else BLUE, math.degrees(ang))
-    place("MARKET_roof", CONE, (x, y, h * 100.0 + 420.0), (7.6, 7.6, 6.0),
-          GOLD_METAL, math.degrees(ang))
-    place("MARKET_lamp", CYL, (x * 1.08, y * 1.08, 320.0), (0.7, 0.7, 7.0), GOLD)
-    if i % 2 == 0:
-        ang2 = math.radians((i + 1) * GOLDEN)
-        rad2 = 1500.0 + 900.0 * ((i + 1) % 3)
-        x2, y2 = math.cos(ang2) * rad2, math.sin(ang2) * rad2
-        mx, my = (x + x2) / 2.0, (y + y2) / 2.0
-        span = math.sqrt((x2 - x) ** 2 + (y2 - y) ** 2)
-        place("MARKET_rope", CUBE, (mx, my, 640.0), (span / 100.0, 0.06, 0.06),
-              GOLD_METAL, math.degrees(math.atan2(y2 - y, x2 - x)))
-place("MARKET_plaza", CYL, (0.0, 0.0, 40.0), (24.0, 24.0, 0.8), GOLD_METAL)
-place("MARKET_well", CYL, (0.0, 0.0, 320.0), (4.5, 4.5, 6.0), BLUE)
+    h = 5.0 + 1.8 * (i % 4)
+    box("MARKET_stall", (x, y, h * 50.0), (8.0, 6.0, h), METAL if i % 2 else BLUE, math.degrees(ang))
+    box("MARKET_awning", (x, y, h * 100.0 + 260.0), (10.0, 8.0, 0.5), GOLD, math.degrees(ang))
+    cyl("MARKET_post", (x * 1.02, y * 1.02, 300.0), (0.8, 0.8, 6.5), METAL)
+    ball("MARKET_lantern", (x * 1.02, y * 1.02, 720.0), (1.5, 1.5, 1.5), GLOW)
+    if i % 3 == 0:
+        ball("MARKET_wares", (x - 120.0, y - 90.0, 90.0), (1.2, 1.0, 1.0), BLUE)
 
-# --- 3. CLIFF TOWN at the Nest (-450, 780), with falling water ------------
+# rope bridges out to the cliff town, as in the plates
+for i in range(6):
+    ang = math.radians(i * 60.0 + 30.0)
+    x1, y1 = math.cos(ang) * 2100.0, math.sin(ang) * 2100.0
+    x2, y2 = math.cos(ang) * 3600.0, math.sin(ang) * 3600.0
+    span = math.hypot(x2 - x1, y2 - y1)
+    yaw = math.degrees(math.atan2(y2 - y1, x2 - x1))
+    box("MARKET_bridge", ((x1 + x2) / 2.0, (y1 + y2) / 2.0, 460.0),
+        (span / 100.0, 1.2, 0.35), METAL, yaw)
+    for side in (-1, 1):
+        box("MARKET_rail", ((x1 + x2) / 2.0, (y1 + y2) / 2.0, 640.0 + side * 0.0),
+            (span / 100.0, 0.12, 0.12), GOLD, yaw)
+
+# ============================================ 3. CLIFF TOWN + WATERFALLS
 NX, NY = -450.0, 780.0
-place("CLIFF_rock", CUBE, (NX - 1400.0, NY + 900.0, 2600.0), (34.0, 26.0, 52.0), None)
+box("CLIFF_mass", (NX - 1500.0, NY + 1000.0, 2400.0), (40.0, 30.0, 48.0), None)
+box("CLIFF_mass2", (NX + 2200.0, NY - 1400.0, 2000.0), (34.0, 28.0, 40.0), None)
 for i in range(5):
-    place("CLIFF_terrace", CUBE, (NX - 900.0 + i * 700.0, NY + 500.0, 2600.0 + i * 320.0),
-          (6.0, 6.0, 5.0), GOLD if i % 2 == 0 else BLUE, i * 12.0)
-place("CLIFF_fall", CUBE, (NX - 1750.0, NY + 700.0, 2200.0), (0.6, 16.0, 42.0), GLOW)
-place("CLIFF_pool", CYL, (NX - 1750.0, NY + 700.0, 120.0), (18.0, 18.0, 1.2), BLUE)
+    z = 2500.0 + i * 300.0
+    box("CLIFF_terrace", (NX - 800.0 + i * 760.0, NY + 600.0, z),
+        (6.4, 6.0, 5.2), METAL if i % 2 == 0 else BLUE, i * 14.0)
+    box("CLIFF_roof", (NX - 800.0 + i * 760.0, NY + 600.0, z + 300.0),
+        (7.0, 6.6, 0.5), GOLD, i * 14.0)
+for i, (fx, fy) in enumerate(((-2400.0, 1500.0), (-2600.0, 300.0), (2800.0, -1200.0), (2400.0, 1600.0))):
+    box("CLIFF_fall", (fx, fy, 2300.0), (0.7, 9.0, 46.0), GLOW, i * 22.0)
+    cyl("CLIFF_pool", (fx, fy, 110.0), (16.0, 16.0, 1.0), BLUE)
 
-# --- 4. BLUE-AND-GOLD NIGHT CITY at Omni (2800, 500) ----------------------
+# crystal clusters at the cliff lips
+for i in range(6):
+    ang = math.radians(i * 61.0)
+    x, y = NX + math.cos(ang) * 2600.0, NY + math.sin(ang) * 2600.0
+    cone("CLIFF_crystal", (x, y, 900.0), (3.4, 3.4, 18.0), BLUE, math.degrees(ang))
+    cone("CLIFF_crystal2", (x + 420.0, y + 180.0, 600.0), (2.0, 2.0, 11.0), BLUE)
+    ball("CLIFF_crystal_glow", (x, y, 1900.0), (1.2, 1.2, 1.2), GLOW)
+
+# ============================================== 4. OMNI: BLUE-AND-GOLD CITY
 for i in range(9):
     ang = math.radians(i * GOLDEN + 10.0)
     rad = 1200.0 + 500.0 * (i % 3)
     x, y = 2800.0 + math.cos(ang) * rad, 500.0 + math.sin(ang) * rad
-    h = 14.0 + 6.0 * (i % 4)
-    place("OMNI_tower", CUBE, (x, y, h * 50.0), (7.0, 7.0, h), BLUE, math.degrees(ang) + 45.0)
-    place("OMNI_crown", CUBE, (x, y, h * 100.0 + 180.0), (7.4, 7.4, 1.4), GOLD)
-    place("OMNI_light", SPHERE, (x, y, h * 100.0 + 700.0), (1.4, 1.4, 1.4), GLOW)
-place("OMNI_beacon", CYL, (2800.0, 500.0, 7000.0), (2.0, 2.0, 60.0), GLOW)
+    h = 16.0 + 7.0 * (i % 4)
+    box("OMNI_tower", (x, y, h * 50.0), (7.0, 7.0, h), BLUE, math.degrees(ang) + 45.0)
+    box("OMNI_band", (x, y, h * 100.0 + 120.0), (7.6, 7.6, 0.9), GOLD)
+    ball("OMNI_lamp", (x, y, h * 100.0 + 620.0), (1.4, 1.4, 1.4), GLOW)
+cyl("OMNI_beacon", (2800.0, 500.0, 7200.0), (2.2, 2.2, 62.0), GLOW)
 
-# --- 5. MEGASTRUCTURE DEEP at (0, -5000) ---------------------------------
+# ================================== 5. THE DEEP: GOLD RING + CRYSTAL SPIRES
+DX, DY = 0.0, -5000.0
+cyl("DEEP_ring", (DX, DY, 9600.0), (62.0, 62.0, 2.4), METAL)
+cyl("DEEP_ring_inner", (DX, DY, 9600.0), (48.0, 48.0, 2.6), BLUE)
+cone("DEEP_ring_spire", (DX, DY, 11200.0), (26.0, 26.0, 34.0), GOLD)
+cone("DEEP_hang", (DX, DY, 8200.0), (18.0, 18.0, 22.0), METAL)
+ball("DEEP_core", (DX, DY, 9600.0), (7.0, 7.0, 7.0), GLOW)
+cyl("DEEP_floor", (DX, DY, 80.0), (48.0, 48.0, 1.0), BLUE)
 for i in range(5):
-    ang = math.radians(i * 72.0 + 20.0)
-    x, y = math.cos(ang) * 1400.0, -5000.0 + math.sin(ang) * 1400.0
-    place("DEEP_monolith", CUBE, (x, y, 3200.0), (8.0, 8.0, 64.0), BLUE, math.degrees(ang))
-    place("DEEP_tip", CONE, (x, y, 6800.0), (6.0, 6.0, 8.0), GLOW)
-place("DEEP_floor", CYL, (0.0, -5000.0, 80.0), (40.0, 40.0, 0.8), BLUE)
+    ang = math.radians(i * 72.0 + 18.0)
+    x, y = math.cos(ang) * 2600.0, DY + math.sin(ang) * 2600.0
+    cone("DEEP_spire", (x, y, 2600.0), (7.0, 7.0, 52.0), BLUE, math.degrees(ang))
+    ball("DEEP_spire_glow", (x, y, 5300.0), (2.0, 2.0, 2.0), GLOW)
+for i in range(4):
+    ang = math.radians(i * 90.0 + 40.0)
+    box("DEEP_bridge", (math.cos(ang) * 1300.0, DY + math.sin(ang) * 1300.0, 2400.0),
+        (26.0, 0.5, 0.25), GOLD, math.degrees(ang))
 
-# --- 6. THE DUSK RIG: gold sun, sky, fog, bloom --------------------------
+# ================================================= 6. GOLDEN-HOUR LIGHT
 try:
     sun = eas.spawn_actor_from_class(unreal.DirectionalLight, unreal.Vector(0, 0, 6000),
-                                     unreal.Rotator(-32.0, 145.0, 0.0))
+                                     unreal.Rotator(-7.0, 155.0, 0.0))
     sun.set_actor_label(TAG + "Sun")
     lc = sun.directional_light_component
-    lc.set_intensity(9.0)
-    lc.set_light_color(unreal.LinearColor(1.0, 0.84, 0.62, 1.0))
+    lc.set_intensity(14.0)
+    lc.set_light_color(unreal.LinearColor(1.0, 0.82, 0.58, 1.0))
     lc.set_mobility(unreal.ComponentMobility.MOVABLE)
     lc.set_editor_property("atmosphere_sun_light", True)
     counts["LIGHT"] = 1
@@ -157,8 +226,8 @@ try:
     sky = eas.spawn_actor_from_class(unreal.SkyLight, unreal.Vector(0, 0, 4000))
     sky.set_actor_label(TAG + "Sky")
     sc = sky.light_component
-    sc.set_intensity(1.6)
-    sc.set_light_color(unreal.LinearColor(0.72, 0.8, 1.0, 1.0))
+    sc.set_intensity(3.2)
+    sc.set_light_color(unreal.LinearColor(0.9, 0.86, 1.0, 1.0))
     sky.set_editor_property("real_time_capture", True)
     counts["SKY"] = 1
 except Exception as e:
@@ -172,11 +241,11 @@ except Exception as e:
     log("atmosphere failed " + str(e))
 
 try:
-    fog = eas.spawn_actor_from_class(unreal.ExponentialHeightFog, unreal.Vector(0, 0, 300))
+    fog = eas.spawn_actor_from_class(unreal.ExponentialHeightFog, unreal.Vector(0, 0, 200))
     fog.set_actor_label(TAG + "Fog")
     fc = fog.get_editor_property("component")
-    fc.set_editor_property("fog_density", 0.012)
-    fc.set_editor_property("fog_inscattering_luminance", unreal.LinearColor(0.45, 0.36, 0.2, 1.0))
+    fc.set_editor_property("fog_density", 0.028)
+    fc.set_editor_property("fog_inscattering_luminance", unreal.LinearColor(0.95, 0.68, 0.34, 1.0))
     counts["FOG"] = 1
 except Exception as e:
     log("fog failed " + str(e))
@@ -186,29 +255,35 @@ try:
     ppv.set_actor_label(TAG + "Post")
     ppv.set_editor_property("unbound", True)
     st = ppv.get_editor_property("settings")
-    st.set_editor_property("bloom_intensity", 1.35)
-    st.set_editor_property("auto_exposure_min_brightness", 0.6)
-    st.set_editor_property("auto_exposure_max_brightness", 1.1)
+    st.set_editor_property("bloom_intensity", 1.9)
+    st.set_editor_property("auto_exposure_min_brightness", 1.0)
+    st.set_editor_property("auto_exposure_max_brightness", 1.0)
+    st.set_editor_property("auto_exposure_bias", 1.4)
+    st.set_editor_property("vignette_intensity", 0.25)
     ppv.set_editor_property("settings", st)
     counts["POST"] = 1
 except Exception as e:
     log("post failed " + str(e))
 
-# --- 7. save, then state the vision as counts ----------------------------
 saved = bool(les.save_current_level())
 log("saved %s -> %s" % (MAP, saved))
 for k in sorted(counts):
-    log("  %-16s %d" % (k, counts[k]))
+    log("  %-18s %d" % (k, counts[k]))
 
-spire_parts = sum(v for k, v in counts.items() if k.startswith("SPIRE"))
-vision_ok = (spire_parts >= 10 and counts.get("MARKET_house", 0) >= 12
-             and counts.get("OMNI_tower", 0) >= 9 and counts.get("DEEP_monolith", 0) == 5
-             and counts.get("CLIFF_terrace", 0) == 5 and saved)
-print("VEILPY: saved=%s spire=%d market=%d omni=%d deep=%d cliff=%d"
-      % (saved, spire_parts, counts.get("MARKET_house", 0), counts.get("OMNI_tower", 0),
-         counts.get("DEEP_monolith", 0), counts.get("CLIFF_terrace", 0)))
-print("VEILPY: VISION %s - Spire (0,3500) gold, market 12 stalls, Omni 9 towers, "
-      "Deep 5 monoliths, cliff town 5 terraces, dusk rig"
+spire = sum(v for k, v in counts.items() if k.startswith("SPIRE"))
+vision_ok = (spire >= 12 and counts.get("MARKET_stall", 0) >= 12
+             and counts.get("MARKET_arch", 0) >= 8 and counts.get("MARKET_bridge", 0) >= 6
+             and counts.get("CLIFF_fall", 0) >= 4 and counts.get("CLIFF_crystal", 0) >= 6
+             and counts.get("OMNI_tower", 0) >= 9 and counts.get("DEEP_spire", 0) >= 5
+             and counts.get("DEEP_ring", 0) >= 1 and saved)
+print("VEILPY: saved=%s spire=%d stalls=%d arches=%d bridges=%d falls=%d crystals=%d "
+      "towers=%d deep_spires=%d ring=%d"
+      % (saved, spire, counts.get("MARKET_stall", 0), counts.get("MARKET_arch", 0),
+         counts.get("MARKET_bridge", 0), counts.get("CLIFF_fall", 0),
+         counts.get("CLIFF_crystal", 0), counts.get("OMNI_tower", 0),
+         counts.get("DEEP_spire", 0), counts.get("DEEP_ring", 0)))
+print("VEILPY: VISION %s - arcade market, rope bridges, waterfalls, crystals, gold Spire, "
+      "blue-and-gold city, Deep gold ring, golden-hour rig"
       % ("WHOLE" if vision_ok else "INCOMPLETE"))
 if not vision_ok:
     raise SystemExit(1)
