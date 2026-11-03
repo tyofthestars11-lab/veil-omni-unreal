@@ -1727,6 +1727,11 @@ void AVEILHudCanvas::DrawHUD()
 	// "click here to type" chip and a separate "ready - hold B to speak" line floating above
 	// it, both on screen at once, both about the same conversation. They are one control now:
 	// click it and you speak or type to ONE from that click, and nothing pops up until you do.
+	// A CONVERSATION OWNS THE FRAME. The chip was drawn over the dialogue box, so a line
+	// of Sera Vahl's arrived with "ONE - click to speak or type" printed across the middle
+	// of it. While the box is open the chip stands down; it comes back when the box closes.
+	const UVEILDialogue* OneDlg = W->GetSubsystem<UVEILDialogue>();
+	if (!OneDlg || !OneDlg->IsActive())
 	{
 		const VEILTypeBar::FZone Zone = VEILTypeBar::ForScreen(Canvas->ClipX, Canvas->ClipY);
 		const AVEILPlayerController* VPC = Cast<AVEILPlayerController>(PC);
@@ -1754,7 +1759,10 @@ void AVEILHudCanvas::DrawHUD()
 			: TEXT("ONE  -  click to speak or type");
 		DrawText(Label, (bTypingNow || bListening) ? FLinearColor(1.f, 0.90f, 0.55f) : FLinearColor(0.88f, 0.82f, 0.64f),
 			Zone.X + 26.f, Zone.Y + 5.f, Med, 0.60f);
-		if (One && !bBusy)
+		// SAY IT ONCE. The label above already says "click to speak or type"; the state
+		// line said it again whenever ONE was idle, so the chip was one instruction printed
+		// twice. The second row exists to report work, listening or an answer - nothing else.
+		if (One && !bBusy && OneState != EONEState::Ready)
 		{
 			const FString OneLine = One->StateLine();
 			DrawText(OneLine, bSpeaking ? FLinearColor(1.f, 0.92f, 0.72f) : FLinearColor(0.82f, 0.88f, 1.f),

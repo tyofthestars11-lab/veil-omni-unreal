@@ -204,7 +204,7 @@ void UPHIONE::Tick(float DeltaTime)
 // ---------------------------------------------------------------------------
 FString UPHIONE::StateLine() const
 {
-	const TCHAR* StateWord = State == EONEState::Ready ? TEXT("ready - click to speak or type")
+	const TCHAR* StateWord = State == EONEState::Ready ? TEXT("ready")
 		: State == EONEState::Listening ? TEXT("listening")
 		: State == EONEState::Thinking ? TEXT("working") : TEXT("speaking");
 	if (Reply.IsEmpty()) { return FString::Printf(TEXT("ONE  %s"), StateWord); }
@@ -236,7 +236,7 @@ void UPHIONE::BeginTalk()
 	bTalking = true;
 	TalkStart = W->GetTimeSeconds();
 	State = EONEState::Listening;
-	Reply = TEXT("Listening - let go to send.");
+	Reply = TEXT("Listening. Say it, or type it.");
 	UE_LOG(LogVEIL, Warning,
 		TEXT("PHI ONE: TALK DOWN. microphone %s. Nothing is captured before this key goes down."),
 		bMicOpened ? TEXT("open") : TEXT("could not be opened"));
@@ -323,14 +323,14 @@ bool UPHIONE::RunSkill(const FString& In, FString& OutReply, FString& OutHand)
 	if (U.Contains(TEXT("keeper")) && (U.Contains(TEXT("fly")) || U.Contains(TEXT("take")) || U.Contains(TEXT("go")) || U.Contains(TEXT("to"))))
 	{
 		FlyToKeeper();
-		OutReply = TEXT("On my way. Keeper beacon.");
+		OutReply = TEXT("On my way. The Keeper is expecting a number.");
 		OutHand = TEXT("fly");
 		return true;
 	}
 	if (U.Contains(TEXT("land")) || U.Contains(TEXT("set me down")) || U.Contains(TEXT("put me down")))
 	{
 		Land();
-		OutReply = TEXT("Down.");
+		OutReply = TEXT("Down. The ground was where you left it.");
 		OutHand = TEXT("fly");
 		return true;
 	}
@@ -343,14 +343,14 @@ bool UPHIONE::RunSkill(const FString& In, FString& OutReply, FString& OutHand)
 	if (U.Contains(TEXT("spiral")))
 	{
 		SpawnSpiral();
-		OutReply = TEXT("Spiral raised. Golden angle.");
+		OutReply = TEXT("Spiral raised. Golden angle held.");
 		OutHand = TEXT("spiral");
 		return true;
 	}
 	if (U.Contains(TEXT("beacon")) && !U.Contains(TEXT("keeper")))
 	{
 		ActivateBeacon();
-		OutReply = TEXT("Beacon lit.");
+		OutReply = TEXT("Beacon lit. That is one the dark does not get.");
 		OutHand = TEXT("beacon");
 		return true;
 	}
@@ -367,14 +367,14 @@ bool UPHIONE::RunSkill(const FString& In, FString& OutReply, FString& OutHand)
 		if (AVEILCharacter* C = OneRunner(GetWorld()))
 		{
 			if (!C->IsFlyingNow()) { C->ToggleFlight(); }
-			OutReply = TEXT("Airborne.");
+			OutReply = TEXT("Airborne. Mind the rings.");
 			OutHand = TEXT("fly");
 			return true;
 		}
 	}
 
 	// Honest, not magic: an intent no skill owns says so instead of pretending.
-	OutReply = TEXT("No skill owns that yet.");
+	OutReply = TEXT("No hand of mine owns that. Yet.");
 	OutHand = TEXT("none");
 	return false;
 }
