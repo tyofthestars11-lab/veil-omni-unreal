@@ -1,0 +1,62 @@
+{
+  "map": "VEILDistrict",
+  "pieces": 500,
+  "groups": {
+    "spire": 10,
+    "deck": 128,
+    "terrace_face": 128,
+    "terrace_fall": 24,
+    "crystal": 42,
+    "cliff": 28,
+    "cliff_fall": 10,
+    "river": 24,
+    "bridge": 4,
+    "deep": 5,
+    "region_prop": 96,
+    "wing": 1
+  },
+  "spire": {
+    "x": 0.0,
+    "y": 3500.0,
+    "base_cm": 380.0,
+    "top_cm": 99073.4955049954,
+    "deck_cm": 320
+  },
+  "faults": [
+    [
+      "crystal",
+      "deck",
+      5763,
+      -2416,
+      1664,
+      820
+    ],
+    [
+      "crystal",
+      "deck",
+      5222,
+      -143,
+      2692,
+      320
+    ],
+    [
+      "crystal",
+      "deck",
+      5372,
+      -2516,
+      2692,
+      820
+    ]
+  ],
+  "assets": [
+    "/Game/Sicka_EnvPack2",
+    "/Game/Polyart",
+    "/Game/Iceland_Environment",
+    "/Game/ParagonCountess",
+    "/Game/ParagonMurdock",
+    "/Game/MetaHumans",
+    "/Game/PHI/Palette",
+    "/Game/StarterContent",
+    "/Game/Maps/VEILDistrict"
+  ]
+}

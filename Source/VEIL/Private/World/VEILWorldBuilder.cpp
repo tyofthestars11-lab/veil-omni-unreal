@@ -3693,6 +3693,18 @@ void AVEILWorldBuilder::BuildPhiForms()
 	{
 		if (C && C->GetOwner()) { C->GetOwner()->Tags.Add(FName(TEXT("PhiCity"))); }
 	};
+	// DECK HEIGHT AT A RADIUS. The four terraces cut the ground into levels, so anything
+	// planted out there stands on the level beneath it instead of spearing through it. The
+	// cook simulation found 25 crystal shards growing through the decks and the Spire
+	// floating 180 cm above one; this is the single function both now stand on.
+	auto DeckHeightAt = [](float RR) -> float
+	{
+		if (RR >= 3300.f && RR < 5100.f) { return 320.f; }
+		if (RR >= 6300.f && RR < 8100.f) { return 820.f; }
+		if (RR >= 9500.f && RR < 11300.f) { return 1900.f; }
+		if (RR >= 12900.f && RR < 14700.f) { return 3800.f; }
+		return 0.f;
+	};
 
 	// THE SPIRE: nine sections, each one phi wider than the last below it, turning on the
 	// golden angle so the silhouette is covered rather than stacked. Top lands at ~6 km.
@@ -3716,7 +3728,8 @@ void AVEILWorldBuilder::BuildPhiForms()
 	// district's centre is a plaza; the Spire is a landmark on the district's north edge.
 	const float SpireX = 0.f, SpireY = 3500.f;
 	int32 SpirePieces = 0;
-	float Z = 500.f;
+	// Stands ON the deck it overlooks, not 180 cm above it.
+	float Z = DeckHeightAt(FMath::Sqrt(SpireX * SpireX + SpireY * SpireY)) + 60.f;
 	float SectionH = 500.f;
 	float SectionW = 1400.f;
 	for (int32 k = 0; k < 10; ++k)
@@ -3793,8 +3806,10 @@ void AVEILWorldBuilder::BuildPhiForms()
 			const float RR = (float)(FMath::Sqrt((double)(k + 1)) * 240.0);
 			const float H = 300.f * FMath::Pow(1.618033988749895f, (float)((k % 6) + 1));
 			const float W = 260.f + RR * 0.08f;
+			const float CXr = 6200.f + (float)(FMath::Cos(A1) * RR);
+			const float CYr = -1200.f + (float)(FMath::Sin(A1) * RR);
 			Tag(SpawnBlockRot(
-				FVector(6200.f + (float)(FMath::Cos(A1) * RR), -1200.f + (float)(FMath::Sin(A1) * RR), H * 0.5f),
+				FVector(CXr, CYr, DeckHeightAt(FMath::Sqrt(CXr * CXr + CYr * CYr)) + H * 0.5f),
 				FVector(W / CrystalCm.X, W / CrystalCm.Y, H / CrystalCm.Z), CrystalMesh, Blue, 1.1f,
 				FRotator(8.f * (float)(k % 5), (float)FMath::RadiansToDegrees(A1), 12.f * (float)(k % 4))));
 			++RangeShards;
