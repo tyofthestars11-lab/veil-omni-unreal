@@ -548,7 +548,8 @@ void AVEILHudCanvas::DrawHUD()
 	{
 		// SPEC, AS LOCKED: 180 x 180 AT 70%. The height/phi ring was my reading of the
 		// law; the brief states 180 and 70%, and the brief is the design.
-		const float MS = 180.f;
+		// MINIMAP DIAMETER = SCREEN HEIGHT / PHI. 720 / 1.618033988749895 = 445 px.
+		const float MS = Canvas->ClipY / UPHIMITO_PHI_SAFE;
 		const float MX = Canvas->ClipX - MS - 26.f, MY = 30.f;
 		const FLinearColor Gold(1.f, 0.78f, 0.3f, 0.92f);
 
@@ -858,7 +859,7 @@ void AVEILHudCanvas::DrawHUD()
 				float QW = 0.f, QH = 0.f;
 				Canvas->StrLen(Med, FString(TEXT("THE GOLDEN MIDST")), QW, QH);
 				// ONE LINE, 480 PX. The band is the specification, not the text length.
-				FVeilUI::Ribbon(this, FLinearColor(0.16f, 0.11f, 0.03f, 0.88f), 30.f, QY, 480.f, 21.f, true);
+				FVeilUI::Ribbon(this, FLinearColor(0.16f, 0.11f, 0.03f, 0.88f), 30.f, QY, Canvas->ClipX / (UPHIMITO_PHI_SAFE * UPHIMITO_PHI_SAFE), 21.f, true);
 				DrawText(TEXT("QUEST"), FLinearColor(0.62f, 0.47f, 0.20f), 38.f, QY + 2.f, Med, 0.5f);
 				DrawText(TEXT("THE GOLDEN MIDST"), FLinearColor(1.f, 0.88f, 0.50f), 76.f, QY + 2.f, Med, 0.58f);
 				// The step rides on the same line, dimmer: two lines of banner was a block.
@@ -1002,7 +1003,7 @@ void AVEILHudCanvas::DrawHUD()
 			const float CX = Canvas->ClipX - CW - 30.f;
 			// Under the map, not on top of it: the round instrument now reaches
 			// 30 + 220 px, so the card starts clear of the ring's halo.
-			const float CY = 30.f + 180.f + 18.f;   // under the 180 px ring
+			const float CY = 30.f + Canvas->ClipY / UPHIMITO_PHI_SAFE + 18.f;   // under the ring
 			const float CH = 90.f;
 			const FVEILTutorialStep& S = Tut->GetStep();
 			const bool bDone = Tut->IsComplete();

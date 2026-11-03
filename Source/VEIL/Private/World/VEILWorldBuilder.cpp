@@ -761,17 +761,24 @@ void AVEILWorldBuilder::BuildDistrict()
 	// EVERY BUILDING IS NOT THE SAME BUILDING. Walls, floors and rock come from
 	// the pack's variants, chosen per plot, so the street has more than one
 	// silhouette in it.
-	auto WallAt = [this, Wall](int32 i) -> UStaticMesh*
+	// GOLDEN ANGLE VARIANT PICK. `i % Count` repeats every Count pieces, so two
+	// neighbours could wear the same wall. Fmod(i * 137.5077640500378, Count) strides
+	// the kit by the golden angle, rung 10.2318, which never lands back on itself.
+	auto GoldenPick = [](int32 Index, int32 Count) -> int32
 	{
-		return WallVariants.Num() ? WallVariants[FMath::Abs(i) % WallVariants.Num()].Get() : Wall;
+		return Count > 0 ? FMath::Abs((int32)FMath::Fmod((float)Index * 137.5077640500378f, (float)Count)) : 0;
 	};
-	auto FloorAt = [this, FloorArt](int32 i) -> UStaticMesh*
+	auto WallAt = [this, Wall, GoldenPick](int32 i) -> UStaticMesh*
 	{
-		return FloorVariants.Num() ? FloorVariants[FMath::Abs(i) % FloorVariants.Num()].Get() : FloorArt;
+		return WallVariants.Num() ? WallVariants[GoldenPick(i, WallVariants.Num())].Get() : Wall;
 	};
-	auto RockAt = [this, Rock](int32 i) -> UStaticMesh*
+	auto FloorAt = [this, FloorArt, GoldenPick](int32 i) -> UStaticMesh*
 	{
-		return CliffVariants.Num() ? CliffVariants[FMath::Abs(i) % CliffVariants.Num()].Get() : Rock;
+		return FloorVariants.Num() ? FloorVariants[GoldenPick(i, FloorVariants.Num())].Get() : FloorArt;
+	};
+	auto RockAt = [this, Rock, GoldenPick](int32 i) -> UStaticMesh*
+	{
+		return CliffVariants.Num() ? CliffVariants[GoldenPick(i, CliffVariants.Num())].Get() : Rock;
 	};
 
 	// Stone, not night-blue: the plain under the city is flagstone in the vision.
