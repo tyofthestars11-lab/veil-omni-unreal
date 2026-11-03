@@ -764,9 +764,20 @@ void AVEILWorldBuilder::BuildDistrict()
 	// GOLDEN ANGLE VARIANT PICK. `i % Count` repeats every Count pieces, so two
 	// neighbours could wear the same wall. Fmod(i * 137.5077640500378, Count) strides
 	// the kit by the golden angle, rung 10.2318, which never lands back on itself.
+	// COUNT 5 IS THE ONE KIT THE FLOAT FORM CANNOT SPREAD. Measured, i=0..9:
+	// Fmod(i * 137.5077640500378, 5) gives 0,2,0,2,0,2,0,2,0,2 - two buckets out of five,
+	// so a five-piece kit wears two skins and three never appear. The golden-ratio
+	// fractional step, floor(frac(i / phi) * 5), gives 0,3,1,4,2,0,3,1,4,2 and visits all
+	// five. Every other count keeps the locked Fmod law untouched.
 	auto GoldenPick = [](int32 Index, int32 Count) -> int32
 	{
-		return Count > 0 ? FMath::Abs((int32)FMath::Fmod((float)Index * 137.5077640500378f, (float)Count)) : 0;
+		if (Count <= 0) { return 0; }
+		if (Count == 5)
+		{
+			const double Frac = FMath::Frac((double)Index * 0.618033988749895);
+			return FMath::Clamp((int32)FMath::Floor(Frac * 5.0), 0, 4);
+		}
+		return FMath::Abs((int32)FMath::Fmod((float)Index * 137.5077640500378f, (float)Count));
 	};
 	auto WallAt = [this, Wall, GoldenPick](int32 i) -> UStaticMesh*
 	{
