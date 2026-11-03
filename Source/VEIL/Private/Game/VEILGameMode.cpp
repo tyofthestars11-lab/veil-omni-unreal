@@ -368,9 +368,22 @@ void AVEILGameMode::BeginPlay()
 			APawn* Runner = UGameplayStatics::GetPlayerPawn(GetWorld(), 0);
 			if (!Runner) { return; }
 			const FVector At = Runner->GetActorLocation();
-			// FRONT-LEFT, THREE METRES OUT: wings and cape read against the street.
-			const FVector Eye = At + FVector(300.f, -260.f, 150.f);
-			const FVector Look = At + FVector(0.f, 0.f, 95.f);
+			const FVector Fwd = Runner->GetActorForwardVector();
+			const FVector Right = FVector::CrossProduct(FVector::UpVector, Fwd);
+			// IN FRONT OF THE FACE, NOT THROUGH THE WALL BESIDE HIM. The first standoff was a
+			// fixed world offset and landed inside a stack of crates; this stands off along
+			// the runner's own facing, then traces the sightline and pulls in until clear, so
+			// the camera is always looking at the body and never at the back of a crate.
+			const FVector Look = At + FVector(0.f, 0.f, 100.f);
+			FVector Eye = At + Fwd * 300.f + Right * 90.f + FVector(0.f, 0.f, 140.f);
+			FHitResult Blocked;
+			FCollisionQueryParams Q(SCENE_QUERY_STAT(LineupSight), false, Runner);
+			if (GetWorld()->LineTraceSingleByChannel(Blocked, Look, Eye, ECC_Visibility, Q))
+			{
+				const float Span = FVector::Dist(Look, Eye);
+				const float Safe = FMath::Max(120.f, Blocked.Distance - 50.f);
+				Eye = Look + (Eye - Look) * (Safe / FMath::Max(1.f, Span));
+			}
 			FActorSpawnParameters CamParams;
 			CamParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 			ACameraActor* Cam = GetWorld()->SpawnActor<ACameraActor>(ACameraActor::StaticClass(),
