@@ -91,6 +91,10 @@ private:
 	void BuildLighting();
 	void BuildDistrict();
 
+	/** The silhouette the reference frame asks for: crystal range, cliff falls,
+	 *  terraced houses, bridges, phi pillars, beacon shafts. */
+	void BuildVista();
+
 	UStaticMeshComponent* SpawnBlock(const FVector& Location, const FVector& Scale,
 		UStaticMesh* Mesh, const FLinearColor& Tint, float EmissiveStrength);
 
