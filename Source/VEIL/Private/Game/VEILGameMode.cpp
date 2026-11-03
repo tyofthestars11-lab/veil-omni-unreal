@@ -431,12 +431,14 @@ void AVEILGameMode::BeginPlay()
 			{
 				const float A = FMath::DegreesToRadians(137.5077640500378f * (float)(i + 1));
 				const FVector Post(FMath::Cos(A) * 1000.f, FMath::Sin(A) * 1000.f, 200.f);
-				FActorSpawnParameters P;
-				P.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-				if (AVEILMount* M = GetWorld()->SpawnActor<AVEILMount>(AVEILMount::StaticClass(), Post,
-					FRotator(0.f, FMath::RadiansToDegrees(A), 0.f), P))
+				// DEFERRED, SO THE KIND AND POST EXIST BEFORE THE BODY STANDS. SpawnActor ran
+				// BeginPlay first, when every mount was still the default Gold Wing at the origin.
+				const FTransform Seat(FRotator(0.f, FMath::RadiansToDegrees(A), 0.f), Post);
+				if (AVEILMount* M = GetWorld()->SpawnActorDeferred<AVEILMount>(AVEILMount::StaticClass(),
+					Seat, nullptr, nullptr, ESpawnActorCollisionHandlingMethod::AlwaysSpawn))
 				{
 					M->Configure((EVEILMountKind)i, Post);
+					M->FinishSpawning(Seat);
 				}
 			}
 		}, 4.f, false);

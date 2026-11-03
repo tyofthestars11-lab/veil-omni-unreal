@@ -46,6 +46,10 @@ public:
 private:
 	void BuildBody();
 
+	/** Stand the configured body on the floor under its post. */
+	void GroundAtPost();
+	bool bConfigured = false;
+
 	UPROPERTY() TObjectPtr<USceneComponent> MountRoot;
 	UPROPERTY() TArray<TObjectPtr<UStaticMeshComponent>> Parts;
 

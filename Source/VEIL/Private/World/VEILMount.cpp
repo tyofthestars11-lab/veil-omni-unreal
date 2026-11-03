@@ -52,7 +52,12 @@ void AVEILMount::Configure(EVEILMountKind InKind, const FVector& Post)
 {
 	Kind = InKind;
 	HomePost = Post;
+	bConfigured = true;
 	BuildBody();
+	// If the actor is already in the world (spawned without deferral), it must stand now:
+	// BeginPlay ran before this call, with the default kind and a post at the origin, which
+	// is how all four mounts first reported as GOLD WING at one height.
+	if (HasActorBegunPlay()) { GroundAtPost(); }
 }
 
 void AVEILMount::BuildBody()
@@ -117,7 +122,11 @@ void AVEILMount::BuildBody()
 void AVEILMount::BeginPlay()
 {
 	Super::BeginPlay();
+	if (bConfigured) { GroundAtPost(); }
+}
 
+void AVEILMount::GroundAtPost()
+{
 	// GROUNDED, MEASURED. The post is where the blueprint puts the mount; the height it
 	// stands at is whatever floor is actually under that post, found by trace, never assumed.
 	FHitResult Floor;
