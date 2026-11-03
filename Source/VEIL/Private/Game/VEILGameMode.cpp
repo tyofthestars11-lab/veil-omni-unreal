@@ -372,16 +372,21 @@ void AVEILGameMode::BeginPlay()
 			// he stands on the Hub's open stone instead, facing the camera with the market
 			// behind him. Photography only: this runs when -philineup is on the command line.
 			FVector At(0.f, 0.f, 120.f);
+			// PROBED FROM JUST ABOVE THE STONE, NOT FROM THE SKY. A trace from 3 km hit a roof
+			// at 3,100 m and stood him in the air; from 4 m it finds the plaza he is meant to
+			// be standing on, or the boot floor if the district has nothing there.
 			FHitResult Ground;
 			FCollisionQueryParams GQ(SCENE_QUERY_STAT(LineupGround), false, Runner);
-			if (GetWorld()->LineTraceSingleByChannel(Ground, FVector(0.f, 0.f, 3000.f), FVector(0.f, 0.f, -500.f), ECC_Visibility, GQ))
+			if (GetWorld()->LineTraceSingleByChannel(Ground, FVector(0.f, 0.f, 400.f), FVector(0.f, 0.f, -200.f), ECC_Visibility, GQ))
 			{
 				At = Ground.ImpactPoint + FVector(0.f, 0.f, 100.f);
+				UE_LOG(LogVEIL, Warning, TEXT("PHI LINEUP PHOTO: staged on %s at Z=%.0f."),
+					*Ground.GetActor()->GetName(), At.Z);
 			}
 			Runner->SetActorLocation(At, false, nullptr, ETeleportType::TeleportPhysics);
 			Runner->SetActorRotation(FRotator(0.f, -90.f, 0.f));
 			const FVector Look = At + FVector(0.f, 0.f, 95.f);
-			FVector Eye = At + FVector(0.f, -560.f, 190.f);
+			FVector Eye = At + FVector(0.f, -520.f, 160.f);
 			FHitResult Blocked;
 			FCollisionQueryParams Q(SCENE_QUERY_STAT(LineupSight), false, Runner);
 			if (GetWorld()->LineTraceSingleByChannel(Blocked, Look, Eye, ECC_Visibility, Q))
