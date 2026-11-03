@@ -11,7 +11,9 @@
 #include "Misc/CommandLine.h"
 #include "Misc/Parse.h"
 #include "Systems/PHIMito.h"
+#include "EngineUtils.h"
 #include "Systems/OMNIQuestSystem.h"
+#include "World/VEILWilds.h"
 #include "Systems/VEILBurstFX.h"
 #include "Engine/SkeletalMesh.h"
 #include "Components/StaticMeshComponent.h"
@@ -1082,6 +1084,24 @@ void AVEILCharacter::LanceBolt()
 void AVEILCharacter::Interact()
 {
 	if (!IsAlive() || IsStoryHoldingInput()) return;
+
+	// A SEAM IS CLAIMED BY PRESSING THE KEY, not by walking near it. The nearest
+	// unclaimed mine within arm's length is what this press is about; the quest book
+	// decides whether it was already taken, so the gold can never be paid twice.
+	if (UWorld* World = GetWorld())
+	{
+		for (TActorIterator<AVEILWildsPopulation> It(World); It; ++It)
+		{
+			AVEILMineNode* Mine = It->NearestUnclaimedMine(GetActorLocation(), 700.f);
+			if (!Mine) { break; }
+			UOMNIQuestSystem* Quest = World->GetSubsystem<UOMNIQuestSystem>();
+			if (Quest && Quest->ClaimMine(FName(*Mine->MineName()), Mine->MineOwner(), Mine->ClaimValue(), 24))
+			{
+				Mine->Claim(this);
+			}
+			break;
+		}
+	}
 
 	// A BEACON IS FORGED BY STANDING AT IT AND PRESSING THE INTERACT KEY, which is
 	// the same key that talks, loots and opens doors. Tried before the trace so a

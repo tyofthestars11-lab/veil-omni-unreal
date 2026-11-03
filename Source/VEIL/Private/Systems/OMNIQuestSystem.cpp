@@ -128,6 +128,37 @@ void UOMNIQuestSystem::PersistToBook()
 	}
 }
 
+void UOMNIQuestSystem::TrackMine(const FString& Name, float Centimetres, const FString& Owner)
+{
+	// Logged on change only: a per-second line would bury the run in itself.
+	if (TrackedMine == Name && FMath::IsNearlyEqual(TrackedCm, Centimetres, 1.f)) { return; }
+	TrackedMine = Name;
+	TrackedCm = Centimetres;
+	TrackedOwner = Owner;
+	if (Name.IsEmpty())
+	{
+		UE_LOG(LogVEIL, Warning, TEXT("PHI TRACK: every named seam in the world is the runner's."));
+		return;
+	}
+	UE_LOG(LogVEIL, Log, TEXT("PHI TRACK: nearest unclaimed seam %s on %s ground, %.0f m away."),
+		*Name, *Owner, Centimetres / 100.f);
+}
+
+bool UOMNIQuestSystem::ClaimMine(const FName& MineName, const FString& Owner, int32 MineGold, int32 Total)
+{
+	if (MineName.IsNone() || ClaimedMines.Contains(MineName)) { return false; }
+	ClaimedMines.Add(MineName);
+	Gold += MineGold;
+	LastClaimName = MineName.ToString();
+	LastClaimOwner = Owner;
+	LastClaimAt = GetWorld() ? GetWorld()->GetTimeSeconds() : 0.f;
+	AwardXP(60, TEXT("a named seam claimed"));
+	PersistToBook();
+	UE_LOG(LogVEIL, Warning, TEXT("PHI CLAIM: %s on %s ground is the runner's - %d of %d seams, +%d gold."),
+		*LastClaimName, *Owner, ClaimedMines.Num(), Total, MineGold);
+	return true;
+}
+
 int32 UOMNIQuestSystem::XPNeedForLevel(int32 InLevel)
 {
 	const double Phi = 1.618033988749895;
@@ -159,6 +190,7 @@ void UOMNIQuestSystem::LoadFromSave()
 		XP = Loaded->XP;
 		Gold = Loaded->Gold;
 		Fragments = Loaded->Fragments;
+		ClaimedMines = Loaded->ClaimedMines;
 		if (const UVEILOmniSave* Omni = Cast<UVEILOmniSave>(Loaded))
 		{
 			Stage = (EOMNIQuestStage)Omni->QuestStage;

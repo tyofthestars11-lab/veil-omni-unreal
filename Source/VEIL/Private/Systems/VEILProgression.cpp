@@ -95,6 +95,7 @@ bool UVEILProgression::SaveGame()
 	Save->XP = XP;
 	Save->Gold = Gold;
 	Save->Fragments = Fragments;
+	Save->ClaimedMines = ClaimedMines;
 	Save->Inventory = Inventory;
 	if (APawn* Player = UGameplayStatics::GetPlayerPawn(World, 0))
 	{
@@ -122,6 +123,7 @@ bool UVEILProgression::LoadGame()
 	XP = Save->XP;
 	Gold = Save->Gold;
 	Fragments = Save->Fragments;
+	ClaimedMines = Save->ClaimedMines;
 	Inventory = Save->Inventory;
 	UE_LOG(LogVEIL, Log, TEXT("PHI LOAD: slot=%s level=%d xp=%d gold=%d fragments=%d"),
 		*SaveSlotName, Level, XP, Gold, Fragments);
@@ -161,6 +163,7 @@ void UVEILProgression::PushToQuest()
 	Quest->XP = XP;
 	Quest->Gold = Gold;
 	Quest->Fragments = Fragments;
+	Quest->ClaimedMines = ClaimedMines;
 }
 
 void UVEILProgression::PullFromQuest()
@@ -173,4 +176,5 @@ void UVEILProgression::PullFromQuest()
 	XP = Quest->XP;
 	Gold = Quest->Gold;
 	Fragments = Quest->Fragments;
+	ClaimedMines = Quest->ClaimedMines;
 }

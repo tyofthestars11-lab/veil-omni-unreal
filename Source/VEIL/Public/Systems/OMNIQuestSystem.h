@@ -99,6 +99,33 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "VEIL|Quest")
 	bool bChoiceOpen = false;
 
+	/** The nearest seam still worth walking to: name, distance, whose ground. */
+	void TrackMine(const FString& Name, float Centimetres, const FString& Owner);
+
+	/** Claim a named seam. False if it is already the runner's - and never pays twice. */
+	bool ClaimMine(const FName& MineName, const FString& Owner, int32 MineGold, int32 Total);
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "VEIL|Quest")
+	TArray<FName> ClaimedMines;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "VEIL|Quest")
+	FString TrackedMine;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "VEIL|Quest")
+	FString TrackedOwner;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "VEIL|Quest")
+	float TrackedCm = 0.f;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "VEIL|Quest")
+	FString LastClaimName;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "VEIL|Quest")
+	FString LastClaimOwner;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "VEIL|Quest")
+	float LastClaimAt = -100.f;
+
 	static int32 XPNeedForLevel(int32 InLevel);
 	void AwardXP(int32 Amount, const TCHAR* Reason);
 	void TalkTo(FName Giver);

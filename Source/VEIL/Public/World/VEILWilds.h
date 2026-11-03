@@ -43,6 +43,13 @@ public:
 	UPROPERTY() UPointLightComponent* Lamp = nullptr;
 	UPROPERTY() USphereComponent* Trigger = nullptr;
 
+	/** Claim this seam. False if it is already someone's. */
+	bool Claim(AActor* Claimant);
+	/** Restore a claim from the save: marked and lit, no gold, no line. */
+	void MarkClaimedSilently();
+	bool IsClaimed() const { return bClaimed; }
+	int32 ClaimValue() const { return Gold; }
+
 	const FString& MineName() const { return Name; }
 	const FString& MineOwner() const { return Owner; }
 	const FString& MineOre() const { return Ore; }
@@ -61,8 +68,8 @@ private:
 	int32 Reserve = 0;
 	int32 Gold = 40;
 	int32 Index = 0;
-	float RespawnAt = 0.f;
-	bool bSpent = false;
+	bool bClaimed = false;
+	bool bPrompted = false;
 };
 
 /**
@@ -124,6 +131,12 @@ public:
 
 	int32 EnemiesSpawned() const { return SpawnedEnemies; }
 	int32 MinesPlaced() const { return SpawnedMines; }
+	int32 MinesClaimed() const;
+
+	/** The nearest seam still worth walking to, inside MaxCm. */
+	AVEILMineNode* NearestUnclaimedMine(const FVector& From, float MaxCm) const;
+
+	UPROPERTY() TArray<TWeakObjectPtr<AVEILMineNode>> MineNodes;
 
 	/** The last decide digit of a camp, for the HUD or a proof. */
 	float IntentOf(int32 Camp) const;
@@ -135,4 +148,7 @@ private:
 	int32 SpawnedMines = 0;
 	float EcoClock = 0.f;
 	float DecideClock = 0.f;
+	/** One a second is enough to point at the next seam. */
+	float TrackClock = 0.f;
+	FString LastTrackedName;
 };

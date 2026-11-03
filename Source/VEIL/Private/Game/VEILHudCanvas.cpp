@@ -464,11 +464,31 @@ void AVEILHudCanvas::DrawHUD()
 		{
 			RegionName = Regions->GetInfo(Regions->Current).Name.ToString();
 		}
-		Shadow(FString::Printf(TEXT("FORGE %d   BEACONS %d/3   %s"),
-			Q->ForgeLevel, Q->ClaimedBeacons.Num(), *RegionName),
+		Shadow(FString::Printf(TEXT("FORGE %d   BEACONS %d/3   SEAMS %d/24   %s"),
+			Q->ForgeLevel, Q->ClaimedBeacons.Num(), Q->ClaimedMines.Num(), *RegionName),
 			FLinearColor(0.78f, 0.84f, 0.92f), TX, Y, Med, 0.56f);
 		Y += 9.f;
 	}
+	// THE NEXT SEAM, NAMED. A name, a distance and whose ground - so the runner can
+	// walk to somewhere the world actually told him about.
+	if (Q && !Q->TrackedMine.IsEmpty())
+	{
+		Shadow(FString::Printf(TEXT("%s   %.0f m   %s ground"), *Q->TrackedMine.ToUpper(),
+			Q->TrackedCm / 100.f, *Q->TrackedOwner),
+			FLinearColor(0.95f, 0.80f, 0.44f), PX, PY + PH + 8.f, Med, 0.60f);
+	}
+
+	// A CLAIM ANNOUNCES ITSELF: six seconds of the name, in the middle of the screen.
+	if (Q && !Q->LastClaimName.IsEmpty() && W->GetTimeSeconds() - Q->LastClaimAt < 6.f)
+	{
+		const FString Line = FString::Printf(TEXT("%s CLAIMED  -  %s GROUND"),
+			*Q->LastClaimName.ToUpper(), *Q->LastClaimOwner.ToUpper());
+		float LW = 0.f, LH = 0.f;
+		Canvas->StrLen(Big, Line, LW, LH);
+		Shadow(Line, FLinearColor(1.f, 0.88f, 0.45f),
+			(Canvas->ClipX - LW * 0.80f) * 0.5f, 132.f, Big, 0.80f);
+	}
+
 	if (LoopSys && LoopSys->Stage != EVEILStage::FindSignal && LoopSys->Stage != EVEILStage::Won)
 	{
 		Shadow(FString::Printf(TEXT("SIGNAL %d/%d   WAVES %d/%d"), LoopSys->Fragments,

@@ -45,6 +45,10 @@ public:
 	UPROPERTY(VisibleAnywhere, Category = "VEIL|Save")
 	int32 Fragments = 0;
 
+	/** Which named seams this run actually took. A claim is progress, so it saves. */
+	UPROPERTY(VisibleAnywhere, Category = "VEIL|Save")
+	TArray<FName> ClaimedMines;
+
 	UPROPERTY(VisibleAnywhere, Category = "VEIL|Save")
 	TArray<FName> Inventory;
 
@@ -84,6 +88,9 @@ public:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "VEIL|Progression")
 	int32 Fragments = 0;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "VEIL|Progression")
+	TArray<FName> ClaimedMines;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "VEIL|Progression")
 	TArray<FName> Inventory;

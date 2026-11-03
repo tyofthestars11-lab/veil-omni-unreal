@@ -271,29 +271,45 @@ void AVEILMineNode::BuildHead()
 void AVEILMineNode::OnEnter(UPrimitiveComponent* OverlappedComp, AActor* Other,
 	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& Sweep)
 {
-	if (bSpent) { return; }
-	bSpent = true;
-	RespawnAt = GetWorld() ? GetWorld()->GetTimeSeconds() + 120.f : 0.f;
+	// Walking past a seam used to pay out by itself, which meant the runner never
+	// had to do anything to own the world. Now standing here only tells you what it
+	// is and that it can be taken; the taking is the key press.
+	if (bClaimed || bPrompted) { return; }
+	bPrompted = true;
+	UE_LOG(LogVEIL, Warning,
+		TEXT("PHI MINE: %02d %s is within reach - %s seam, %.0f m down, %s ground. Press E to claim it."),
+		Index, *Name, *Ore, DepthM, *Owner);
+}
 
-	if (UOMNIQuestSystem* Q = GetWorld() ? GetWorld()->GetSubsystem<UOMNIQuestSystem>() : nullptr)
+bool AVEILMineNode::Claim(AActor* Claimant)
+{
+	if (bClaimed) { return false; }
+	bClaimed = true;
+	if (Lamp)
 	{
-		Q->Gold += Gold;
-		Q->AwardXP(45, TEXT("an ore seam stripped"));
+		Lamp->SetLightColor(FLinearColor(1.f, 0.78f, 0.30f));
+		Lamp->SetIntensity(5200.f);
 	}
-	SetActorHiddenInGame(false);
-	// The seam does not disappear: it is someone's mine. It goes dark and comes
-	// back, and the line names whose ground was worked.
-	UE_LOG(LogVEIL, Warning, TEXT("PHI MINE: %02d %s stripped - %s %s on %s ground, +%d gold."),
-		Index, *Name, *Ore, *Ore, *Owner, Gold);
+	UE_LOG(LogVEIL, Warning,
+		TEXT("PHI MINE CLAIMED: %02d %s - %s seam on %s ground is the runner's, +%d gold."),
+		Index, *Name, *Ore, *Owner, Gold);
+	return true;
+}
+
+void AVEILMineNode::MarkClaimedSilently()
+{
+	bClaimed = true;
+	bPrompted = true;
+	if (Lamp)
+	{
+		Lamp->SetLightColor(FLinearColor(1.f, 0.78f, 0.30f));
+		Lamp->SetIntensity(5200.f);
+	}
 }
 
 void AVEILMineNode::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
-	if (!bSpent || !GetWorld()) { return; }
-	if (GetWorld()->GetTimeSeconds() < RespawnAt) { return; }
-	bSpent = false;
-	UE_LOG(LogVEIL, Log, TEXT("PHI MINE: %02d %s re-formed."), Index, *Name);
 }
 
 // ---------------------------------------------------------------------------
@@ -308,6 +324,29 @@ AVEILWildsPopulation::AVEILWildsPopulation()
 float AVEILWildsPopulation::IntentOf(int32 Camp) const
 {
 	return Camps.IsValidIndex(Camp) ? Camps[Camp].Intent : 0.f;
+}
+
+int32 AVEILWildsPopulation::MinesClaimed() const
+{
+	int32 N = 0;
+	for (const TWeakObjectPtr<AVEILMineNode>& M : MineNodes)
+	{
+		if (M.IsValid() && M->IsClaimed()) { ++N; }
+	}
+	return N;
+}
+
+AVEILMineNode* AVEILWildsPopulation::NearestUnclaimedMine(const FVector& From, float MaxCm) const
+{
+	AVEILMineNode* Best = nullptr;
+	float BestD = MaxCm;
+	for (const TWeakObjectPtr<AVEILMineNode>& M : MineNodes)
+	{
+		if (!M.IsValid() || M->IsClaimed()) { continue; }
+		const float D = FVector::Dist2D(M->GetActorLocation(), From);
+		if (D <= BestD) { BestD = D; Best = M.Get(); }
+	}
+	return Best;
 }
 
 void AVEILWildsPopulation::Populate(int32 Camps_, int32 Mines_)
@@ -496,6 +535,16 @@ void AVEILWildsPopulation::Populate(int32 Camps_, int32 Mines_)
 			FVector(X, Y, Z + 160.f), FRotator::ZeroRotator, Params);
 		if (!Node) { continue; }
 		Node->Init(m);
+
+		// A SEAM ALREADY WON STAYS WON. The save knows which names were claimed, so a
+		// reload lights them gold instead of asking the runner to take the same mine
+		// twice - and never pays the gold a second time.
+		if (UOMNIQuestSystem* Quest = W->GetSubsystem<UOMNIQuestSystem>())
+		{
+			if (Quest->ClaimedMines.Contains(FName(*Node->MineName()))) { Node->MarkClaimedSilently(); }
+		}
+		MineNodes.Add(Node);
+
 		UE_LOG(LogVEIL, Log, TEXT("PHI MINE %02d %s stands %.0f cm inside %s ground at %s."),
 			m, *Node->MineName(), Ring, *Node->MineOwner(), *Node->GetActorLocation().ToCompactString());
 		++SpawnedMines;
@@ -511,6 +560,44 @@ void AVEILWildsPopulation::Populate(int32 Camps_, int32 Mines_)
 void AVEILWildsPopulation::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
+
+	// POINT AT THE NEXT SEAM. Once a second the nearest unclaimed mine is handed to
+	// the quest book, so the HUD can say how far and which way - the difference
+	// between a world with mines in it and a game with something to do.
+	if (UWorld* World = GetWorld())
+	{
+		TrackClock += DeltaSeconds;
+		if (TrackClock >= 1.f)
+		{
+			TrackClock = 0.f;
+			if (UOMNIQuestSystem* Quest = World->GetSubsystem<UOMNIQuestSystem>())
+			{
+				if (const APawn* Runner = UGameplayStatics::GetPlayerPawn(this, 0))
+				{
+					if (const AVEILMineNode* Closest = NearestUnclaimedMine(Runner->GetActorLocation(), 400000.f))
+					{
+						const float Cm = FVector::Dist2D(Closest->GetActorLocation(), Runner->GetActorLocation());
+						// The number the HUD shows has to be checkable, so the two points it came
+						// from are printed with it - once per change of seam, not once per second.
+						if (LastTrackedName != Closest->MineName())
+						{
+							LastTrackedName = Closest->MineName();
+							UE_LOG(LogVEIL, Warning,
+								TEXT("PHI TRACK SRC: %s at (%.0f,%.0f) runner at (%.0f,%.0f) -> %.0f cm."),
+								*LastTrackedName, Closest->GetActorLocation().X, Closest->GetActorLocation().Y,
+								Runner->GetActorLocation().X, Runner->GetActorLocation().Y, Cm);
+						}
+						Quest->TrackMine(Closest->MineName(), Cm, Closest->MineOwner());
+					}
+					else
+					{
+						Quest->TrackMine(FString(), 0.f, FString());
+					}
+				}
+			}
+		}
+	}
+
 	if (Camps.Num() == 0) { return; }
 
 	EcoClock += DeltaSeconds;
