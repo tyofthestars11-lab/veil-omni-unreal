@@ -84,3 +84,16 @@ remove exactly that actor.
 - `Source/VEIL/Private/World/VEILMapCapture.cpp` — live top-down capture for the minimap.
 - `Tools/patch_*.py` — idempotent, count-checked edit scripts.
 - `Docs/proof/*.jpg` — play frames used as evidence.
+
+## Input: where it is decided
+
+The pawn chooses its own input component in code - `AVEILCharacter::CreatePlayerInputComponent()`
+returns a `UEnhancedInputComponent` - so no config file can downgrade the runner to a plain
+`UInputComponent`. `SetupPlayerInputComponent` builds the nine built-in actions **before**
+binding, so the first pass already reports `PHI INPUT BIND: 9 of 9`; it used to report
+`0 of 9` at possession because the actions were built later in `BeginPlay`.
+
+`Config/DefaultInput.ini` must use plain keys. `+DefaultInputComponentClass=...` is an array
+add to the config parser and is dropped on a scalar class property, which is what produced
+the zero-action pawn and, on an older build, the fatal
+`Cast of InputComponent ... to EnhancedInputComponent failed` (Casts.cpp:10).

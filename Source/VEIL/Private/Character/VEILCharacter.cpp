@@ -843,9 +843,30 @@ void AVEILCharacter::BuildFallbackInput()
 		Total, PadKeys, DeadZones);
 }
 
+UInputComponent* AVEILCharacter::CreatePlayerInputComponent()
+{
+	// THE COMPONENT CLASS IS DECIDED HERE, NOT BY AN INI. Config/DefaultInput.ini carried
+	// "+DefaultInputComponentClass", which the parser reads as an array add and drops on a
+	// scalar - so the pawn was handed a plain UInputComponent, all nine Enhanced Input
+	// bindings failed (PHI INPUT BIND: 0 of 9), and the engine's own cast died with
+	// "Cast of InputComponent ... to EnhancedInputComponent failed". Returning the enhanced
+	// component from code makes walking independent of any ini on disk.
+	return NewObject<UEnhancedInputComponent>(this, UEnhancedInputComponent::StaticClass(),
+		TEXT("PawnInputComponent0"));
+}
+
 void AVEILCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
+	// ACTIONS FIRST, THEN BIND. This runs at possession, before BeginPlay, which is why the
+	// first pass used to report "0 of 9": the built-in actions are built in BeginPlay, so at
+	// bind time they did not exist yet and the runner held a mapping context with no
+	// actions - no walking, no look, and every key dead until the pawn re-bound itself.
+	// Building them here makes the very first bind complete.
+	if (!DefaultMappingContext || !MoveAction)
+	{
+		BuildFallbackInput();
+	}
 
 	// FLIGHT: DOUBLE-TAP JUMP. It used to sit on F and on the pad's Y - both of which
 	// are the SWING - so every swing also took off, and the trigger that climbed was

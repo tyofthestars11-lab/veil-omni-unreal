@@ -60,6 +60,9 @@ public:
 	virtual void Tick(float DeltaSeconds) override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
+	/** The pawn chooses its own input component, so no ini can downgrade it. */
+	virtual class UInputComponent* CreatePlayerInputComponent() override;
+
 	/** PUSH TO TALK: B opens ONE's microphone while held, closes it on release. */
 	void OneTalkPressed();
 	void OneTalkReleased();
