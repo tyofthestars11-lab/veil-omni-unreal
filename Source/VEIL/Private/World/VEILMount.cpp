@@ -131,8 +131,11 @@ void AVEILMount::GroundAtPost()
 	// stands at is whatever floor is actually under that post, found by trace, never assumed.
 	FHitResult Floor;
 	FCollisionQueryParams Q(SCENE_QUERY_STAT(MountFloor), false, this);
-	const FVector From = HomePost + FVector(0.f, 0.f, 1200.f);
-	const FVector To = HomePost - FVector(0.f, 0.f, 1200.f);
+	// FROM STREET HEIGHT, NOT THE SKY. A 12 m probe found the market's rooftops at Z~920 and
+	// stood three mounts on them, out of reach; from 250 cm down to -400 cm it finds the
+	// surface a rider can actually walk to.
+	const FVector From = HomePost + FVector(0.f, 0.f, 50.f);
+	const FVector To = HomePost - FVector(0.f, 0.f, 400.f);
 	if (GetWorld() && GetWorld()->LineTraceSingleByChannel(Floor, From, To, ECC_Visibility, Q))
 	{
 		SetActorLocation(FVector(HomePost.X, HomePost.Y, Floor.ImpactPoint.Z));

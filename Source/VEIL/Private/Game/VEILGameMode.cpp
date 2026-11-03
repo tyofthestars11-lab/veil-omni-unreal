@@ -444,6 +444,23 @@ void AVEILGameMode::BeginPlay()
 		}, 4.f, false);
 	}
 
+	// PHI MOUNT PROOF. A ride cannot be exercised without a keyboard in a headless run, so
+	// the toggle itself is issued from the command line after the mounts have stood, and the
+	// resulting speeds are read back from the movement component.
+	if (FParse::Param(FCommandLine::Get(), TEXT("phimount")))
+	{
+		FTimerHandle RideHandle;
+		GetWorldTimerManager().SetTimer(RideHandle, [this]()
+		{
+			if (AVEILPlayerController* RidePC = Cast<AVEILPlayerController>(
+				UGameplayStatics::GetPlayerController(GetWorld(), 0)))
+			{
+				RidePC->ToggleMount();
+				UE_LOG(LogVEIL, Warning, TEXT("PHI MOUNT PROOF: ride toggle issued from the command line."));
+			}
+		}, 9.f, false);
+	}
+
 	// OPEN THE SKY BEFORE ANYONE IS SEATED.
 	//
 	// The seat probe refuses a plaza whose centre is roofed and wakes the runner
