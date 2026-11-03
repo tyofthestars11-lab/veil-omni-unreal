@@ -1,0 +1,86 @@
+# VEIL OMNI — AI handoff
+
+Everything here was measured on Tyree's machine, not assumed. If a number is not in this
+file and not in the source, it is unknown — say so instead of inventing it.
+
+## The rules that actually govern the work
+
+- Tyree's word is the design. Do not redesign his numbers; implement them.
+- Phi is fixed and never guessed: `phi = 1.618033988749895`, `phi^2 = phi + 1`,
+  rung = `ln(v) / ln(phi)` round-tripped, golden angle `137.5077640500378` (rung 10.2318),
+  golden pitch `17.0324` (rung 5.8916, cos 0.9561, sin 0.2929) about **RightVector**,
+  tetrahedral `109.471221`, `c = 299792458`.
+- Never delete `Content/` or `Saved/`. No cook, no package, until the whole thing is done.
+- Authority coordinates are fixed: RUNNER 0,0,100 · Keeper 900,0 · Seer −450,780 ·
+  Cartographer −4150,−780 · Cache 0,−6200 · Vault 0,0,−80.9 · Countess 809,−309,64.7.
+
+## Build and play (the only two commands that matter)
+
+Build **`VEILEditor`**, never `VEIL`:
+
+```
+"/c/Program Files/Epic Games/UE_5.8/Engine/Build/BatchFiles/Build.bat" VEILEditor Win64 Development \
+  -Project="D:\VEIL-OMNI\VEIL.uproject" -WaitMutex -FromMsBuild -MaxParallelActions=12 -NoUBA
+```
+
+The launched editor only loads the `VEILEditor` binaries. Building `VEIL` produces a
+"successful" build that changes nothing on screen — this has already burned several runs.
+
+Play proof (windowed, one shot, log to `temp_play.log`):
+
+```
+Start-Process UnrealEditor.exe 'D:\VEIL-OMNI\VEIL.uproject','/Game/Maps/VEILDistrict' `
+  '-game','-windowed','-resx=1280','-resy=720','-phishot','-log','-abslog=D:\VEIL-OMNI\temp_play.log'
+```
+
+Screenshots land in `Saved/Screenshots/WindowsEditor/HighresScreenshot*.png`. Downscale with
+PowerShell `System.Drawing` to ~900 px wide JPEG (there is no ImageMagick here).
+
+## Measured state at commit `ca66814`
+
+- `Result: Succeeded` (VEILEditor).
+- Boot clears 28–30 worn mesh shells around the spawn column, and the runner is seated on
+  the **market deck** — the slab whose top face is 500 cm — via the open-ground walk
+  (`PHI UNSTICK: … moved to open ground … 368 cm out`). Feet end at z ≈ 598.
+- `PHI SMOOTH PROOF: forward ≈ 431 cm, zero = 0 frames, verdict = SMOOTH`.
+- `PHI SAVE PROOF: slot VEILOMNI_Save0 written=1`, `crash=0`.
+- HUD: one owner, `AVEILHudCanvas::DrawHUD`. Minimap diameter is
+  `UPHIMITO_MAP_DIAM(H) = H / phi^3 * 0.70` → 178 px at 1080p (the spec's 180), 119 px at
+  720p. Quest plate 420×110, one-line quest ribbon width `ClipX / phi^2`, panels 55%.
+
+## Open problem (do not claim this is fixed)
+
+A wide reflective sheet lies across the plaza at eye height and fills the middle of the
+frame. It is not the HUD and not the ocean actor (`APhiOcean` lowering never logged
+`PHI SEA`). Next step is to name the component under the eye point at the seat and sink or
+remove exactly that actor.
+
+## Traps that already cost runs
+
+- `Fix-VEIL-Whole-Muse.py` must **not** be run whole. It builds target `VEIL`, moves
+  `VEILPlayerController.*` (already in `Docs/golden_keep`), restores headers from the
+  oldest `Backup_veil_omni_install_2026-10-3x` snapshots, and rewrites movement and the HUD.
+  Its only verified insight — Count 5 of the golden-angle variant pick collapsing to two
+  buckets — is already applied in `GoldenPick` (`VEILWorldBuilder.cpp`).
+- `Source/VEIL/Public/Game/VEILPlayerController.h.muse-backup` and the `.cpp.muse-backup`
+  beside it are leftovers; any audit that globs `VEILPlayerController.*` under `Source`
+  will report a false duplicate.
+- A separate pasted "whole" script once replaced `VEILGameMode.h` with a 3.8 KB stub and
+  cut `VEILCharacter.cpp` to 66 KB. Recovery was `git checkout -- Source/`. Keep the
+  working tree committed before running anything wholesale.
+- Source files are CRLF. Edit through the count-checked scripts in `Tools/` (they abort
+  without writing when an anchor does not match exactly once); `str_replace` is brittle here.
+- One HUD owner per zone: `AVEILHudCanvas::DrawHUD` owns the play HUD, `VEILHudSpec::Draw`
+  is not called, `VEILOSFace::Draw` only when `AVEILPlayerController::bShowDebug`.
+
+## Where things live
+
+- `Source/VEIL/Private/Character/VEILCharacter.cpp` — input (`Move`, golden pitch about
+  RightVector), boot clear, seat, unstick, `PHI SMOOTH PROOF`, `PHI SAVE PROOF`.
+- `Source/VEIL/Private/Game/VEILGameMode.cpp` — `SpawnDefaultPawnFor`, golden-angle seat,
+  `PlaceAt` dressing.
+- `Source/VEIL/Private/Game/VEILHudCanvas.cpp` — the whole HUD, minimap, bands, panels.
+- `Source/VEIL/Private/World/VEILWorldBuilder.cpp` — `GoldenPick` variant law, stone/gold.
+- `Source/VEIL/Private/World/VEILMapCapture.cpp` — live top-down capture for the minimap.
+- `Tools/patch_*.py` — idempotent, count-checked edit scripts.
+- `Docs/proof/*.jpg` — play frames used as evidence.
