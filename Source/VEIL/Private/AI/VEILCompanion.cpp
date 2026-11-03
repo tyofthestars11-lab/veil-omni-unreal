@@ -161,20 +161,10 @@ void AVEILCompanion::Tick(float DeltaSeconds)
 		}
 		return;
 	}
-	// AAA follower rule: never lost - walking distance we chase, beyond reach we appear.
-	const float FarD = FVector::Dist(GetActorLocation(), Leader->GetActorLocation());
-	if (FarD > 3000.f)
-	{
-		const FVector Behind = Leader->GetActorLocation() - Leader->GetActorForwardVector() * LiveFollowDistance;
-		SetActorLocation(Behind + FVector(0.f, 0.f, 100.f), false, nullptr, ETeleportType::TeleportPhysics);
-		UE_LOG(LogVEIL, Log, TEXT("PHI COMPANION: %s catches up to the Runner."), *CallSign.ToString());
-		return;
-	}
-	const FVector Anchor = Leader->GetActorLocation() - Leader->GetActorForwardVector() * LiveFollowDistance;
-	if (FVector::Dist2D(GetActorLocation(), Anchor) > 90.f)
-	{
-		AI->MoveToLocation(Anchor, 40.f);
-	}
+	// NO FOLLOW, NO ORBIT, NO TELEPORT TO THE PLAYER. A companion that trails the Runner is
+	// the exact circle the vision forbids: every NPC holds its own post, has its own task and
+	// its own tick, and the world does not move because the player did.
+	AI->StopMovement();
 	if (USkeletalMeshComponent* Solo = GetMesh())
 	{
 		UAnimSequence* Want = (GetVelocity().Size2D() > 60.f && JogSeq) ? JogSeq : IdleSeq;

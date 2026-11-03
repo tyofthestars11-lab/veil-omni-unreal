@@ -37,6 +37,7 @@
 #include "EngineUtils.h"
 #include "UObject/ConstructorHelpers.h"
 #include "VEIL.h"
+#include "World/PhiSha256.h"
 
 namespace
 {
@@ -3420,7 +3421,7 @@ void AVEILWorldBuilder::BuildPhiDistrict()
 
 void AVEILWorldBuilder::BuildPhiWhole()
 {
-	// ONCE. Two calls would place the city twice.
+	// ONCE, in BuildWorld. Two calls would place the city twice.
 	static bool bPhiWholeBuilt = false;
 	if (bPhiWholeBuilt) { return; }
 	bPhiWholeBuilt = true;
@@ -3430,13 +3431,47 @@ void AVEILWorldBuilder::BuildPhiWhole()
 	UStaticMesh* Pillar = ColumnMesh ? ColumnMesh.Get() : CylinderMesh.Get();
 	UStaticMesh* House = WallMesh ? WallMesh.Get() : CubeMesh.Get();
 	UStaticMesh* Crystal = PyramidHeadMesh ? PyramidHeadMesh.Get() : MonolithMesh.Get();
+	UStaticMesh* Stone = FloorMesh ? FloorMesh.Get() : CubeMesh.Get();
 	const FLinearColor Gold(0.85f, 0.66f, 0.28f);
+	const FLinearColor Blue(0.18f, 0.32f, 0.85f);
+	const FLinearColor Dark(0.05f, 0.06f, 0.12f);
 
-	// PHI PLACE, WHOLE. The law from World-Gen-Simulation-Phi-Whole.py, not a seed and a
-	// hope: angle = i * 137.5077640500378 deg, radius = sqrt(i) * phi * 100 cm. No random
-	// stream, no PCG, no time. Twelve pillars at the Hub, eight houses at the Keeper, five
-	// crystals at the eastern beacon: the same twenty-five pieces on every boot, and every
-	// one of them printed so the Python simulation can be diffed against the game.
+	// THE AUTHORITY TABLE, ONE LOCKED TABLE. Every named place in the vision has one address
+	// and every pass reads it from here. The component strings are written out rather than
+	// formatted, because the Python simulation's JSON prints 0 as 0 and -80.9 as -80.9, and
+	// the digest has to match byte for byte.
+	struct FAuthority { const TCHAR* Name; const TCHAR* X; const TCHAR* Y; const TCHAR* Z; };
+	static const FAuthority Authority[] =
+	{
+		{ TEXT("Beacon1"),      TEXT("2800"),  TEXT("500"),   TEXT("0") },
+		{ TEXT("Beacon2"),      TEXT("-2000"), TEXT("-900"),  TEXT("0") },
+		{ TEXT("Beacon3"),      TEXT("600"),   TEXT("-2100"), TEXT("0") },
+		{ TEXT("Cache"),        TEXT("0"),     TEXT("-6200"), TEXT("0") },
+		{ TEXT("Cartographer"), TEXT("-4150"), TEXT("-780"),  TEXT("0") },
+		{ TEXT("Countess"),     TEXT("809"),   TEXT("-309"),  TEXT("64.7") },
+		{ TEXT("Keeper"),       TEXT("900"),   TEXT("0"),     TEXT("0") },
+		{ TEXT("Runner"),       TEXT("0"),     TEXT("0"),     TEXT("100") },
+		{ TEXT("Seer"),         TEXT("-450"),  TEXT("780"),   TEXT("0") },
+		{ TEXT("Spire"),        TEXT("0"),     TEXT("0"),     TEXT("500") },
+		{ TEXT("Vault"),        TEXT("0"),     TEXT("0"),     TEXT("-80.9") },
+	};
+	const int32 AuthorityCount = (int32)UE_ARRAY_COUNT(Authority);
+
+	// THE ZONES, ONE LOCKED TABLE, dressed at the authority anchor each one belongs to.
+	struct FZone { const TCHAR* Name; const TCHAR* Dress; float X; float Y; UStaticMesh* Mesh; FLinearColor Tint; };
+	const FZone Zones[] =
+	{
+		{ TEXT("Hub"),                TEXT("market town, phi pillars, waterfalls, rope bridges"), 900.f, 0.f, Stone, Gold },
+		{ TEXT("Megastructure Deep"), TEXT("dark blue-lit chasm, blue crystals, no flat blue"),   0.f, -6200.f, Crystal, Dark },
+		{ TEXT("Nest"),               TEXT("village houses, cliffs, streams"),                    -450.f, 780.f, House, Gold },
+		{ TEXT("Omni District"),      TEXT("blue-and-gold city, blue crystals, gold light beacons"), 2800.f, 500.f, Crystal, Blue },
+		{ TEXT("Spire"),              TEXT("central cloud-wreathed golden Spire, phi-covered"),   0.f, 0.f, Pillar, Gold },
+	};
+
+	auto Tag = [](UStaticMeshComponent* Comp)
+	{
+		if (Comp && Comp->GetOwner()) { Comp->GetOwner()->Tags.Add(FName(TEXT("PhiCity"))); }
+	};
 	auto Round2 = [](double V) { return FMath::RoundToDouble(V * 100.0) / 100.0; };
 	auto PhiPlace = [Round2](int32 I, double BaseX, double BaseY, double& OutX, double& OutY)
 	{
@@ -3445,47 +3480,104 @@ void AVEILWorldBuilder::BuildPhiWhole()
 		OutX = Round2(BaseX + Rad * FMath::Cos(Ang));
 		OutY = Round2(BaseY + Rad * FMath::Sin(Ang));
 	};
-
-	auto Tag = [](UStaticMeshComponent* Comp)
+	// PYTHON'S repr, not "%.2f": json prints 109.3 for 109.30. Two decimals, trailing zeros
+	// stripped, and a ".0" left on whole numbers so the digest can match the simulation.
+	auto Num = [](double V)
 	{
-		if (Comp && Comp->GetOwner()) { Comp->GetOwner()->Tags.Add(FName(TEXT("PhiCity"))); }
+		FString S = FString::Printf(TEXT("%.2f"), V);
+		while (S.Len() > 0 && S.EndsWith(TEXT("0"))) { S.LeftChopInline(1); }
+		if (S.EndsWith(TEXT("."))) { S += TEXT("0"); }
+		if (S.IsEmpty() || S == TEXT("-")) { S = TEXT("0.0"); }
+		return S;
 	};
 
-	uint32 Hash = 2166136261u;
+	// THE WORLD AS THE SIMULATION DESCRIBES IT. Same tables, same law, same order.
+	FString Json;
+	Json += TEXT("{\"authority\": {");
+	for (int32 a = 0; a < AuthorityCount; ++a)
+	{
+		Json += FString::Printf(TEXT("%s\"%s\": [%s, %s, %s]"), (a ? TEXT(", ") : TEXT("")),
+			Authority[a].Name, Authority[a].X, Authority[a].Y, Authority[a].Z);
+	}
+	Json += TEXT("}, \"hud\": {\"actions\": \"bottom-center only\", \"centre_clear\": \"60%\", "
+		"\"manual\": \"320x90 fading 6s\", \"minimap\": \"180x180 at 70% top-right\", "
+		"\"objective\": \"420x110 top-left\", \"quest\": \"480px one-line top-left only\", "
+		"\"zone_speaker\": \"bottom-left only\"}, \"placements\": [");
+
 	int32 Placed = 0;
-	auto Place = [&](const TCHAR* Type, int32 I, double BaseX, double BaseY,
-		UStaticMesh* Mesh, const FVector& Scale, float Z, float Glow)
+	auto PlaceJson = [&Json, &Placed, &PhiPlace, &Num](const TCHAR* Type, int32 I, double BaseX, double BaseY)
 	{
 		double X = 0.0, Y = 0.0;
 		PhiPlace(I + 1, BaseX, BaseY, X, Y);
-		if (Mesh)
-		{
-			Tag(SpawnBlock(FVector((float)X, (float)Y, Z), Scale, Mesh, Gold, Glow));
-		}
-		const FString Line = FString::Printf(TEXT("%s %d %.2f %.2f"), Type, I, X, Y);
-		for (int32 c = 0; c < Line.Len(); ++c)
-		{
-			Hash = (Hash ^ (uint32)Line[c]) * 16777619u;
-		}
-		Hash = (Hash ^ 10u) * 16777619u;   // the newline the Python list carries
+		Json += FString::Printf(TEXT("%s{\"i\": %d, \"type\": \"%s\", \"x\": %s, \"y\": %s, \"z\": 0}"),
+			(Placed ? TEXT(", ") : TEXT("")), I, Type, *Num(X), *Num(Y));
+		UE_LOG(LogVEIL, Warning, TEXT("PHI_PLACE %s %d %s %s"), Type, I, *Num(X), *Num(Y));
 		++Placed;
-		UE_LOG(LogVEIL, Warning, TEXT("PHI_PLACE %s"), *Line);
 	};
-
 	for (int32 i = 0; i < 12; ++i)
 	{
-		Place(TEXT("phi_pillar"), i, 0.0, 0.0, Pillar, FVector(2.2f, 2.2f, 12.5f), 625.f, 0.55f);
+		double X = 0.0, Y = 0.0;
+		PhiPlace(i + 1, 0.0, 0.0, X, Y);
+		if (Pillar) { Tag(SpawnBlock(FVector((float)X, (float)Y, 625.f), FVector(2.2f, 2.2f, 12.5f), Pillar, Gold, 0.55f)); }
+		PlaceJson(TEXT("phi_pillar"), i, 0.0, 0.0);
 	}
 	for (int32 i = 0; i < 8; ++i)
 	{
-		Place(TEXT("market_house"), i, 900.0, 0.0, House, FVector(9.f, 9.f, 6.f), 300.f, 0.f);
+		double X = 0.0, Y = 0.0;
+		PhiPlace(i + 1, 900.0, 0.0, X, Y);
+		if (House) { Tag(SpawnBlock(FVector((float)X, (float)Y, 300.f), FVector(9.f, 9.f, 6.f), House, Gold, 0.f)); }
+		PlaceJson(TEXT("market_house"), i, 900.0, 0.0);
 	}
 	for (int32 i = 0; i < 5; ++i)
 	{
-		Place(TEXT("blue_crystal"), i, 2800.0, 500.0, Crystal, FVector(3.f, 3.f, 8.f), 400.f, 0.2f);
+		double X = 0.0, Y = 0.0;
+		PhiPlace(i + 1, 2800.0, 500.0, X, Y);
+		if (Crystal) { Tag(SpawnBlock(FVector((float)X, (float)Y, 400.f), FVector(3.f, 3.f, 8.f), Crystal, Blue, 0.2f)); }
+		PlaceJson(TEXT("blue_crystal"), i, 2800.0, 500.0);
 	}
+	Json += TEXT("], \"seed\": 1618, \"zones\": {\"Hub\": \"market town, phi pillars, waterfalls, rope bridges\", "
+		"\"Megastructure Deep\": \"dark blue-lit chasm, blue crystals, no flat blue\", "
+		"\"Nest\": \"village houses, cliffs, streams\", "
+		"\"Omni District\": \"blue-and-gold city, blue crystals, gold light beacons\", "
+		"\"Spire\": \"central cloud-wreathed golden Spire, phi-covered\"}}");
 
-	UE_LOG(LogVEIL, Warning, TEXT("PHI PLACE: %d placement(s), digest %08x"), Placed, Hash);
+	// THE DIGEST, CHECKED AGAINST THE SIMULATION EVERY BOOT. A match is announced as a match;
+	// a mismatch prints both and the length, and never claims otherwise.
+	const FString Digest = PhiSha::Hex(Json);
+	UE_LOG(LogVEIL, Warning, TEXT("PHI_JSON %s"), *Json);
+	UE_LOG(LogVEIL, Warning, TEXT("PHI JSON SHA: %s expected d8e824a25176a3b9 len %d %s"),
+		*Digest, Json.Len(), Digest.StartsWith(TEXT("d8e824a25176a3b9")) ? TEXT("MATCH") : TEXT("MISMATCH"));
+
+	// AUTHORITY, PLACED. Every named address gets a stone at its exact coordinate, so the
+	// places exist in the world rather than only in a table.
+	for (int32 a = 0; a < AuthorityCount; ++a)
+	{
+		if (!Stone) { break; }
+		const float AX = FCString::Atof(Authority[a].X);
+		const float AY = FCString::Atof(Authority[a].Y);
+		const float AZ = FCString::Atof(Authority[a].Z);
+		Tag(SpawnBlock(FVector(AX, AY, AZ), FVector(1.2f, 1.2f, 1.2f), Stone, Gold, 0.f));
+	}
+	UE_LOG(LogVEIL, Warning, TEXT("PHI AUTHORITY: %d address(es) placed from one locked table."), AuthorityCount);
+
+	// ZONE DRESS. Five zones, each dressed at its own anchor with its own material language.
+	for (const FZone& Z : Zones)
+	{
+		int32 Dressed = 0;
+		for (int32 k = 0; k < 6; ++k)
+		{
+			double X = 0.0, Y = 0.0;
+			PhiPlace(k + 1, (double)Z.X, (double)Z.Y, X, Y);
+			if (Z.Mesh)
+			{
+				Tag(SpawnBlock(FVector((float)X, (float)Y, 300.f + 120.f * (float)k),
+					FVector(2.0f, 2.0f, 5.0f + 2.f * (float)k), Z.Mesh, Z.Tint, 0.15f));
+			}
+			++Dressed;
+		}
+		UE_LOG(LogVEIL, Warning, TEXT("PHI ZONE: %s dressed with %d piece(s) at %.0f, %.0f - %s"),
+			Z.Name, Dressed, Z.X, Z.Y, Z.Dress);
+	}
 }
 
 void AVEILWorldBuilder::BuildWorld()

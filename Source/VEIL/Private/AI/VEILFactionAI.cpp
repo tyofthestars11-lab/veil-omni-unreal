@@ -362,29 +362,19 @@ void AVEILFactionAgent::StandDown(float Seconds)
 
 void AVEILFactionAgent::OrbitHome()
 {
-	// Radius is the fighting distance one rung down, not a typed number:
-	// 700 / phi = 432.6 cm, so a guard circles at the edge of its own reach.
-	// ROUTINE: on post that is its fighting ring. Off post - the quiet beats of
-	// the Fibonacci day - the machine widens the same ring by phi and walks it
-	// anyway, because a post is a place somebody keeps, not a statue's plinth.
-	const UPHILivingWorld* Living = GetWorld() ? GetWorld()->GetSubsystem<UPHILivingWorld>() : nullptr;
-	const bool bOffDuty = Living && Living->IsOffDuty();
-	const float Radius = AttackRange * UPHIMito::PhiPow(-1.f) * (bOffDuty ? UPHIMito::PhiPow(1.f) : 1.f);
-	const float AngleDeg = OrbitOffsetDeg + OrbitPhase * 360.f;
-	const float Angle = FMath::DegreesToRadians(AngleDeg);
-	const FVector Point = HomeLocation
-		+ FVector(FMath::Cos(Angle) * Radius, FMath::Sin(Angle) * Radius, 0.f);
-	MoveToward(Point, 60.f);
-
-	// Proof that the ring is walked, not claimed: one line per 5s, six per agent.
-	if (GetWorld() && OrbitLogs < 6 && GetWorld()->GetTimeSeconds() - LastOrbitLog > 5.f)
+	// THE POST IS THE POST. This agent used to walk a circle around its home on a clock. A
+	// circle around a point is the same loop the vision forbids; the agent keeps its seat and
+	// its own rung, and the only motion left is what its task asks for.
+	if (AAIController* AIC = Cast<AAIController>(GetController()))
+	{
+		AIC->StopMovement();
+	}
+	if (OrbitLogs < 3 && GetWorld() && GetWorld()->GetTimeSeconds() - LastOrbitLog > 6.f)
 	{
 		LastOrbitLog = (float)GetWorld()->GetTimeSeconds();
 		++OrbitLogs;
-		UE_LOG(LogVEIL, Log, TEXT("PHI ORBIT: %s at %s walking its %s ring (home %s, radius %.1f, phase %.3f, power %.4f)."),
-			*GetActorNameOrLabel(), *GetActorLocation().ToCompactString(),
-			bOffDuty ? TEXT("REST") : TEXT("POST"),
-			*HomeLocation.ToCompactString(), Radius, OrbitPhase, PowerRung);
+		UE_LOG(LogVEIL, Warning, TEXT("PHI POST: %s holds %s at power rung %d, no orbit, no follow."),
+			*GetName(), *HomeLocation.ToCompactString(), (int32)PowerRung);
 	}
 }
 
