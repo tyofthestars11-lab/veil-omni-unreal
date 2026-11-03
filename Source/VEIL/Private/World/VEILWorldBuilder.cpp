@@ -374,6 +374,11 @@ UStaticMeshComponent* AVEILWorldBuilder::SpawnBlockRot(const FVector& Location,
 	Block->Tags.Add(FName(TEXT("VEIL_BAKE")));
 
 	UStaticMeshComponent* Comp = Block->GetStaticMeshComponent();
+	// THE KIT MATERIAL IS NOT FLAGGED FOR NANITE. The cooked build reported
+	// "MI_Modular1 missing usage flag Nanite! Default Material will be used in game", so
+	// every wall in the package rendered as engine grey. Disallowing Nanite on the
+	// component keeps the authored material on the mesh that is actually drawn.
+	Comp->bDisallowNanite = true;
 	Comp->SetStaticMesh(Mesh);
 	Comp->SetMobility(EComponentMobility::Movable);
 	// A MESH WITHOUT COLLISION IS A PICTURE OF A FLOOR.
@@ -3117,7 +3122,7 @@ void AVEILWorldBuilder::BuildVista()
 	for (int32 i = 0; i < 14; ++i)
 	{
 		const float Ang = FMath::DegreesToRadians(i * GoldDeg + 205.f);
-		const float Rad = 5200.f * FMath::Pow(PhiV, (float)(i % 5) * 0.20f);
+		const float Rad = 7800.f * FMath::Pow(PhiV, (float)(i % 5) * 0.20f);
 		const FVector Base(FMath::Cos(Ang) * Rad, FMath::Sin(Ang) * Rad, 0.f);
 		const float ClusterH = 1500.f + (float)(i % 4) * 700.f;
 		for (int32 K = 0; K < 5; ++K)
@@ -3140,7 +3145,7 @@ void AVEILWorldBuilder::BuildVista()
 	for (int32 i = 0; i < 6; ++i)
 	{
 		const float Ang = FMath::DegreesToRadians(i * GoldDeg + 60.f);
-		const float Rad = 3400.f * FMath::Pow(PhiV, (float)(i % 3) * 0.25f);
+		const float Rad = 5600.f * FMath::Pow(PhiV, (float)(i % 3) * 0.25f);
 		const FVector At(FMath::Cos(Ang) * Rad, FMath::Sin(Ang) * Rad, 0.f);
 		const FRotator Face(0.f, FMath::RadiansToDegrees(Ang) + 180.f, 0.f);
 		const float FallH = 2200.f + (float)(i % 3) * 500.f;
@@ -3161,7 +3166,7 @@ void AVEILWorldBuilder::BuildVista()
 	for (int32 T = 0; T < 3; ++T)
 	{
 		const float Ang = FMath::DegreesToRadians(T * GoldDeg + 40.f);
-		const float Rad = 2300.f * FMath::Pow(PhiV, (float)T);
+		const float Rad = 3600.f * FMath::Pow(PhiV, (float)T);
 		const FVector C(FMath::Cos(Ang) * Rad, FMath::Sin(Ang) * Rad, 0.f);
 		const float DeckZ = 320.f + 220.f * (float)T;
 		Terraces.Add(C + FVector(0.f, 0.f, DeckZ));
@@ -3215,7 +3220,7 @@ void AVEILWorldBuilder::BuildVista()
 	for (int32 i = 0; i < 3; ++i)
 	{
 		const float Ang = FMath::DegreesToRadians(i * GoldDeg + 30.f);
-		const float Rad = 1100.f * FMath::Pow(PhiV, (float)i);
+		const float Rad = 1500.f * FMath::Pow(PhiV, (float)i);
 		const FVector Base(FMath::Cos(Ang) * Rad, FMath::Sin(Ang) * Rad, 0.f);
 		SpawnBlock(Base + FVector(0.f, 0.f, 40.f), FVector(3.4f, 3.4f, 0.8f), Ground, StoneC, 0.f);
 		SpawnBlock(Base + FVector(0.f, 0.f, 600.f), FVector(0.9f, 0.9f, 11.f), Pillar, Gold, 0.15f);

@@ -924,7 +924,12 @@ void AVEILGameMode::BeginPlay()
 					if (AVEILConceptWorld* Concept = GetWorld()->SpawnActor<AVEILConceptWorld>(
 						FVector::ZeroVector, FRotator::ZeroRotator))
 					{
-						Concept->Build();
+						// ONE COMPOSITION PASS, NOT TWO. This raised its own plaza, market,
+						// falls, bridges and crystals on top of the district the builder had just
+						// raised at the same coordinates: props interpenetrating props, which is
+						// what reads as chaos. The builder owns the layout now.
+						UE_LOG(LogVEIL, Warning,
+							TEXT("PHI COMPOSITION: concept pass skipped - the builder owns the district layout."));
 
 					// THE COUNTRY HAS INHABITANTS: six species, their camps, and mines.
 					if (AVEILWildsPopulation* Wilds = GetWorld()->SpawnActor<AVEILWildsPopulation>(
