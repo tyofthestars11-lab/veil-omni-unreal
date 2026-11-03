@@ -1,5 +1,6 @@
 ﻿// VEIL: THE LAST SIGNAL - runtime world builder implementation.
 #include "World/VEILWorldBuilder.h"
+#include "World/VEILSky.h"
 #include "World/PHILayout.h"
 
 #include "Components/SkyAtmosphereComponent.h"
@@ -3068,6 +3069,11 @@ void AVEILWorldBuilder::BuildWorld()
 {
 	if (bBuilt) return;
 	bBuilt = true;
+	// THE LIGHT FIRST. Everything below is judged by eye against the reference frames, and
+	// the frames are a golden city: a warm low sun, a sky light taking its colour from that
+	// sun, and air that gives the valley depth. Dressed before building, so the district and
+	// the vista are lit by one light instead of being half-lit and corrected later.
+	VEILSky::Dress(GetWorld());
 
 	// ONE RIG, ONE CITY: clear the template map's own stage first.
 	// Its sun, sky, fog and checker floor are what fought the dusk in
