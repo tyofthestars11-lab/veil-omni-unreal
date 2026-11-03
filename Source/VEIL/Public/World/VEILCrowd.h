@@ -5,6 +5,7 @@
 #include "VEILCrowd.generated.h"
 
 class UInstancedStaticMeshComponent;
+class USkeletalMeshComponent;
 class UStaticMesh;
 class UMaterialInterface;
 
@@ -52,6 +53,7 @@ public:
 
 private:
 	UPROPERTY() UInstancedStaticMeshComponent* Bodies = nullptr;
+	UPROPERTY() TArray<USkeletalMeshComponent*> People;
 	UPROPERTY() UInstancedStaticMeshComponent* Heads = nullptr;
 	UPROPERTY() TArray<FVEILWalker> Walkers;
 
