@@ -25,7 +25,11 @@ namespace
 	const TCHAR* ConceptStonePath = TEXT("/Game/StarterContent/Materials/M_Brick_Cut_Stone.M_Brick_Cut_Stone");
 	const TCHAR* ConceptGoldPath = TEXT("/Game/PHI/Palette/M_PHI_GoldMetallic.M_PHI_GoldMetallic");
 	const TCHAR* ConceptGlowPath = TEXT("/Game/PHI/Palette/M_PHI_WhiteEmissive.M_PHI_WhiteEmissive");
-	const TCHAR* ConceptWaterPath = TEXT("/Game/PHI/Palette/M_PHI_DeepBlue.M_PHI_DeepBlue");
+	// NOT A FLAT BLUE PANEL. Solid geometry wearing the palette's DeepBlue rendered as
+// purple slabs standing in the air in the captures - a placeholder by any other name.
+// The project ships a real water material, and every "water" in this file is a
+// sheet or a cone, so that is what it wears now.
+	const TCHAR* ConceptWaterPath = TEXT("/Game/StarterContent/Materials/M_Water_Lake.M_Water_Lake");
 
 	// The world's addresses, as the Bible fixes them.
 	const FVector Plaza(0.f, 0.f, 0.f);

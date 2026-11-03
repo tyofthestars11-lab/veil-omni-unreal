@@ -1,4 +1,5 @@
 ﻿// VEIL canvas HUD: objectives, health, progression, win/lose.
+#include "VEIL.h"
 #include "Game/VEILHudCanvas.h"
 #include "Game/VEILGameMode.h"
 #include "Game/VEILOSFace.h"
@@ -332,7 +333,7 @@ void AVEILHudCanvas::DrawHUD()
 	const float PX = 14.f;                        // spec margin, was 29.1
 	const float PY = 14.f;
 	const float PW = 420.f;                       // spec max width, was 470
-	const float PH = 110.f;                       // spec max height, was 232
+	const float PH = 140.f;                       // rows need room: 110 held seven lines that collided
 
 	auto Shadow = [this](const FString& S, FLinearColor C, float X, float Yy, UFont* F, float Sc)
 	{
@@ -342,6 +343,24 @@ void AVEILHudCanvas::DrawHUD()
 	// A GAUGE, NOT A SLAB. Rounded trough, lit ribbon of fill, bright cap at the
 	// leading edge - so health reads as a level at a glance instead of a colour
 	// in a box.
+	// LONG LINES ARE FITTED, NOT PAINTED OFF THE PLATE. Every overflowing string in
+	// the capture ("... the ground, not a grid", the stats rows running under the
+	// edge) is the same bug: DrawText does not clip, so the text simply left the card.
+	auto Fitted = [this](const FString& In, UFont* F, float Sc, float MaxW) -> FString
+	{
+		float Wd = 0.f, Ht = 0.f;
+		if (MaxW <= 0.f) { return In; }
+		Canvas->StrLen(F, In, Wd, Ht);
+		if (Wd * Sc <= MaxW) { return In; }
+		FString Cut = In;
+		while (Cut.Len() > 4)
+		{
+			Cut.LeftChopInline(1);
+			Canvas->StrLen(F, Cut, Wd, Ht);
+			if (Wd * Sc + 18.f <= MaxW) { return Cut + TEXT("..."); }
+		}
+		return FString(TEXT("..."));
+	};
 	auto Bar = [this](float X, float Yy, float Wd, float Ht, float Pct, FLinearColor Fill)
 	{
 		const float R = Ht * 0.5f;
@@ -390,6 +409,7 @@ void AVEILHudCanvas::DrawHUD()
 	}
 
 	const float TX = BARX;
+	const float CardW = PW - (TX - PX) - 12.f;
 	float Y = PY + 6.f;
 	// THE DIRECTIVE IS THE ACT, NOT A TODO. The line under CURRENT DIRECTIVE is
 	// written in the spine, in the world's own voice, so what the runner is asked
@@ -410,7 +430,7 @@ void AVEILHudCanvas::DrawHUD()
 	// cut end took the first word, so the objective read "...k to the KEEPER" wherever the
 	// text or the ribbon was moved. At 420 x 110 the sentence is legible on the plate, and
 	// a panel this size has no room for a banner inside a banner.
-	Shadow(Objective, FLinearColor(1.f, 0.90f, 0.46f), TX, Y, Big, 0.62f);
+	Shadow(Fitted(Objective, Big, 0.62f, CardW), FLinearColor(1.f, 0.90f, 0.46f), TX, Y, Big, 0.62f);
 	Y += 22.f;
 
 	// Bars carry the state; the numbers stay for exact reading.
@@ -458,10 +478,10 @@ void AVEILHudCanvas::DrawHUD()
 
 	if (Q)
 	{
-		Shadow(FString::Printf(TEXT("FRAG %d/3   GOLD %d   SHARDS %d"),
-			Q->Fragments, Q->Gold, Q->Shards),
-			FLinearColor(0.78f, 0.84f, 0.92f), TX, Y, Med, 0.56f);
-		Y += 9.f;
+		Shadow(Fitted(FString::Printf(TEXT("FRAG %d/3   GOLD %d   SHARDS %d"),
+			Q->Fragments, Q->Gold, Q->Shards), Med, 0.58f, CardW),
+			FLinearColor(0.78f, 0.84f, 0.92f), TX, Y, Med, 0.58f);
+		Y += 13.f;
 		// THE REGION IS ASKED OF THE WORLD, NOT READ OFF AN EMPTY STRING. The quest
 		// system's RegionMap was never assigned by anything, so this row printed
 		// "REGION " and stopped - a hole in the HUD exactly where a place name
@@ -472,10 +492,10 @@ void AVEILHudCanvas::DrawHUD()
 		{
 			RegionName = Regions->GetInfo(Regions->Current).Name.ToString();
 		}
-		Shadow(FString::Printf(TEXT("FORGE %d   BEACONS %d/3   SEAMS %d/24   %s"),
-			Q->ForgeLevel, Q->ClaimedBeacons.Num(), Q->ClaimedMines.Num(), *RegionName),
-			FLinearColor(0.78f, 0.84f, 0.92f), TX, Y, Med, 0.56f);
-		Y += 9.f;
+		Shadow(Fitted(FString::Printf(TEXT("FORGE %d   BEACONS %d/3   SEAMS %d/24   %s"),
+			Q->ForgeLevel, Q->ClaimedBeacons.Num(), Q->ClaimedMines.Num(), *RegionName), Med, 0.58f, CardW),
+			FLinearColor(0.78f, 0.84f, 0.92f), TX, Y, Med, 0.58f);
+		Y += 13.f;
 	}
 	// THE NEXT SEAM, NAMED. A name, a distance and whose ground - so the runner can
 	// walk to somewhere the world actually told him about.
@@ -499,10 +519,10 @@ void AVEILHudCanvas::DrawHUD()
 
 	if (LoopSys && LoopSys->Stage != EVEILStage::FindSignal && LoopSys->Stage != EVEILStage::Won)
 	{
-		Shadow(FString::Printf(TEXT("SIGNAL %d/%d   WAVES %d/%d"), LoopSys->Fragments,
-			UVEILLoopSubsystem::FragmentsNeeded, LoopSys->WavesCleared, UVEILLoopSubsystem::TotalWaves),
-			FLinearColor(0.55f, 0.92f, 1.f), TX, Y, Med, 0.56f);
-		Y += 9.f;
+		Shadow(Fitted(FString::Printf(TEXT("SIGNAL %d/%d   WAVES %d/%d"), LoopSys->Fragments,
+			UVEILLoopSubsystem::FragmentsNeeded, LoopSys->WavesCleared, UVEILLoopSubsystem::TotalWaves), Med, 0.58f, CardW),
+			FLinearColor(0.55f, 0.92f, 1.f), TX, Y, Med, 0.58f);
+		Y += 13.f;
 	}
 	{
 		FString Lead = TEXT("RUNNER");
@@ -512,8 +532,8 @@ void AVEILHudCanvas::DrawHUD()
 			Lead = Lead.Contains(TEXT("Countess")) ? TEXT("COUNTESS") : TEXT("RUNNER");
 		}
 		const int32 Party = W->GetSubsystem<UPHICompanionParty>() ? W->GetSubsystem<UPHICompanionParty>()->Count() : 0;
-		Shadow(FString::Printf(TEXT("LEAD %s   PARTY %d/5"), *Lead, Party),
-			FLinearColor(0.78f, 0.84f, 0.92f), TX, Y, Med, 0.56f);
+		Shadow(Fitted(FString::Printf(TEXT("LEAD %s   PARTY %d/5"), *Lead, Party), Med, 0.58f, CardW),
+			FLinearColor(0.78f, 0.84f, 0.92f), TX, Y, Med, 0.58f);
 	}
 
 	// THE KEY LIST IS GONE. At 420 x 110 the panel has no room for a permanent line of
@@ -541,7 +561,7 @@ void AVEILHudCanvas::DrawHUD()
 				Canvas->StrLen(Med, Over, OWid, OHigh);
 				FVeilUI::Ribbon(this, FLinearColor(0.06f, 0.07f, 0.11f, 0.55f * A),
 					PX + U * 0.5f, PY + PH + U * 0.75f, OWid * 0.80f + 22.f, U * 1.75f, true);
-				Shadow(Over, FLinearColor(0.82f, 0.88f, 0.97f, A), PX + U * 2.f, PY + PH + U * 1.1f, Med, 0.80f);
+				Shadow(Fitted(Over, Med, 0.80f, Canvas->ClipX - 3.f * PX), FLinearColor(0.82f, 0.88f, 0.97f, A), PX + U * 2.f, PY + PH + U * 1.1f, Med, 0.80f);
 			}
 		}
 	}

@@ -1,4 +1,6 @@
 // VEIL: THE LAST SIGNAL - game mode + player controller implementation.
+#include "Misc/Paths.h"
+#include "UnrealClient.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/HUD.h"
 #include "Components/SkeletalMeshComponent.h"
@@ -2338,7 +2340,8 @@ void AVEILPlayerController::BeginPlay()
 		|| FParse::Param(FCommandLine::Get(), TEXT("phiseat"))
 		|| FParse::Param(FCommandLine::Get(), TEXT("phimemory"))
 		|| FParse::Param(FCommandLine::Get(), TEXT("phiquanta"))
-		|| FParse::Param(FCommandLine::Get(), TEXT("philive"));
+		|| FParse::Param(FCommandLine::Get(), TEXT("philive"))
+		|| FParse::Param(FCommandLine::Get(), TEXT("phisnap"));
 	{
 		// A VALUED SWITCH IS STILL A PROOF RUN. FParse::Param does not match
 		// "-phiregion=0", so the list above missed it and the title screen took the
@@ -4080,6 +4083,33 @@ void AVEILGameMode::Tick(float DeltaSeconds)
 void AVEILPlayerController::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
+
+	// SNAPSHOT (-phisnap): frames of the real game, saved to disk so the look can
+	// be seen instead of argued about. Three of them, spaced, after the world is
+	// dressed.
+	if (FParse::Param(FCommandLine::Get(), TEXT("phisnap")))
+	{
+		static float SnapClock = 0.f;
+		static int32 Snapshots = 0;
+		SnapClock += DeltaSeconds;
+		if (Snapshots < 3 && SnapClock >= 4.f + 6.f * (float)Snapshots)
+		{
+			++Snapshots;
+			if (GEngine)
+			{
+				// THE ENGINE TAKES THE PICTURE. An external screen grab captured the
+				// wrong pixels (a 1:1 crop of a 4K desktop), so the frame is written
+				// from the renderer itself, at the size it really is.
+				if (GEngine)
+				{
+					const FString Shot = FPaths::ProjectDir() / FString::Printf(TEXT("Saved/Screenshots/phisnap%d.png"), Snapshots);
+					FScreenshotRequest::RequestScreenshot(Shot, false, false);
+					UE_LOG(LogVEIL, Warning, TEXT("PHI SNAP: %s"), *Shot);
+				}
+				UE_LOG(LogVEIL, Warning, TEXT("PHI SNAP: frame %d requested at %.1f s."), Snapshots, SnapClock);
+			}
+		}
+	}
 
 	// ONE CAMERA, HELD WHOLE. The rig owns its own pitch (golden rest, phi
 	// envelope) and the arm never re-derives it, so the controller no longer
