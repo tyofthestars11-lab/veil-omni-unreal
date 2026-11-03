@@ -119,7 +119,7 @@ void AVEILCrowd::Populate(int32 Count)
 
 	bReady = true;
 	UE_LOG(LogVEIL, Warning,
-		TEXT("PHI CROWD: %d person(s) standing in the market on golden orbits - %d skeletal bod(ies), anim %s."),
+		TEXT("PHI CROWD: %d person(s) walking the market on golden orbits - %d skeletal bod(ies), anim %s."),
 		Walkers.Num(), People.Num(), WalkAnim ? TEXT("driven") : TEXT("bind pose"));
 }
 

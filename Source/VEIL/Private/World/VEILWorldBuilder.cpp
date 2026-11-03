@@ -1029,6 +1029,23 @@ void AVEILWorldBuilder::BuildDistrict()
 						if (!SCm.IsZero() && SpawnBlockRot(StallAt + FVector(0.f, 0.f, 312.f), SCm,
 							StallCanopy, TowerTintWarm, 0.f, StallRot)) { ++Parts; }
 					}
+					// GOODS ON THE COUNTER. A stall with an empty top is a table. Three pieces of the
+					// kit's own stone, 46 cm, sit in a row on the counter so the stalls read as trading
+					// posts from the street.
+					UStaticMesh* GoodsMesh = RockAt(N + 1);
+					if (GoodsMesh)
+					{
+						const FVector GCm = ScaleForCm(GoodsMesh, FVector(46.f, 46.f, 40.f));
+						if (!GCm.IsZero())
+						{
+							for (int32 G = 0; G < 3; ++G)
+							{
+								const FVector Off = StallRot.RotateVector(FVector(-90.f + 90.f * (float)G, 0.f, 0.f));
+								SpawnBlockRot(StallAt + Off + FVector(0.f, 0.f, 140.f), GCm,
+									GoodsMesh, TowerTintWarm, 0.f, StallRot);
+							}
+						}
+					}
 					if (Parts > 0) { ++Stalls; }
 				}
 				++Shops;
@@ -1101,7 +1118,7 @@ void AVEILWorldBuilder::BuildDistrict()
 	if (Stalls > 0)
 	{
 		UE_LOG(LogVEIL, Warning,
-			TEXT("PHI MARKET: %d stall(s) standing beside the shopfronts - counter, four posts and a canopy each, so the square has somewhere to trade."),
+			TEXT("PHI MARKET: %d stall(s) standing beside the shopfronts - counter, four posts, a canopy and goods on the top, so the square has somewhere to trade."),
 			Stalls);
 	}
 
