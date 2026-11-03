@@ -214,7 +214,7 @@ try:
                                      unreal.Rotator(-7.0, 155.0, 0.0))
     sun.set_actor_label(TAG + "Sun")
     lc = sun.directional_light_component
-    lc.set_intensity(14.0)
+    lc.set_intensity(11.0)
     lc.set_light_color(unreal.LinearColor(1.0, 0.82, 0.58, 1.0))
     lc.set_mobility(unreal.ComponentMobility.MOVABLE)
     lc.set_editor_property("atmosphere_sun_light", True)
@@ -244,7 +244,7 @@ try:
     fog = eas.spawn_actor_from_class(unreal.ExponentialHeightFog, unreal.Vector(0, 0, 200))
     fog.set_actor_label(TAG + "Fog")
     fc = fog.get_editor_property("component")
-    fc.set_editor_property("fog_density", 0.028)
+    fc.set_editor_property("fog_density", 0.02)
     fc.set_editor_property("fog_inscattering_luminance", unreal.LinearColor(0.95, 0.68, 0.34, 1.0))
     counts["FOG"] = 1
 except Exception as e:
@@ -255,10 +255,10 @@ try:
     ppv.set_actor_label(TAG + "Post")
     ppv.set_editor_property("unbound", True)
     st = ppv.get_editor_property("settings")
-    st.set_editor_property("bloom_intensity", 1.9)
+    st.set_editor_property("bloom_intensity", 1.15)
     st.set_editor_property("auto_exposure_min_brightness", 1.0)
     st.set_editor_property("auto_exposure_max_brightness", 1.0)
-    st.set_editor_property("auto_exposure_bias", 1.4)
+    st.set_editor_property("auto_exposure_bias", 0.25)
     st.set_editor_property("vignette_intensity", 0.25)
     ppv.set_editor_property("settings", st)
     counts["POST"] = 1
