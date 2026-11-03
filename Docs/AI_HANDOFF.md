@@ -97,3 +97,15 @@ binding, so the first pass already reports `PHI INPUT BIND: 9 of 9`; it used to 
 add to the config parser and is dropped on a scalar class property, which is what produced
 the zero-action pawn and, on an older build, the fatal
 `Cast of InputComponent ... to EnhancedInputComponent failed` (Casts.cpp:10).
+
+
+## Interior headroom (2026-11-03)
+
+The played map builds no rooms at runtime - it is a saved world, so `BuildRoom`'s clear height
+never runs there and the shells are placed actors. Shells are therefore tallened at boot, after
+3.5 s, as one unit: a roof under 340 cm of measured floor gap rises by exactly its shortfall, and
+every wall under that roof footprint is stretched to the roof's new bottom with its base pinned.
+A blind raise was tried first and detached roofs from walls (min clear fell to 94 cm).
+
+Measured on the last run: 14 roofs lifted, 92 walls stretched, 20 rooms probed, min clear 245 cm,
+1 room under 300 cm, 0 fatal. `PHI CEILING` reports the roof over the runner (open sky at spawn).
