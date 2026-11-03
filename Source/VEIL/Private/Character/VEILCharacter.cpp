@@ -844,12 +844,29 @@ void AVEILCharacter::Tick(float DeltaSeconds)
 						const float Rad = 260.f * FMath::Sqrt((float)i);
 						const float PX = From.X + FMath::Cos(Ang) * Rad;
 						const float PY = From.Y + FMath::Sin(Ang) * Rad;
-						FHitResult Floor;
-						if (!StuckWorld->LineTraceSingleByChannel(Floor, FVector(PX, PY, From.Z + 400.f),
-							FVector(PX, PY, From.Z - 400.f), ECC_Visibility, Probe)) { continue; }
-						const FVector Stand(PX, PY, Floor.ImpactPoint.Z + 98.f);
+						// THE LOWEST FLOOR, NOT THE FIRST ONE. A first-hit trace over the
+						// plaza answers with whatever is highest there - a surface at z=500 that
+						// is a roof, not ground - and the runner was then stood 5 m above the
+						// market and blocked by it. Walk down through every surface and keep the
+						// lowest: that is the plaza the district is built on.
+						bool bFoundFloor = false;
+						float FloorZ = 0.f;
+						AActor* FloorActor = nullptr;
+						FVector Down(PX, PY, From.Z + 400.f);
+						for (int32 Depth = 0; Depth < 5; ++Depth)
+						{
+							FHitResult Hit;
+							if (!StuckWorld->LineTraceSingleByChannel(Hit, Down,
+								FVector(PX, PY, From.Z - 4000.f), ECC_Visibility, Probe)) { break; }
+							FloorZ = (float)Hit.ImpactPoint.Z;
+							FloorActor = Hit.GetActor();
+							bFoundFloor = true;
+							Down = FVector(PX, PY, FloorZ - 5.f);
+						}
+						if (!bFoundFloor) { continue; }
+						const FVector Stand(PX, PY, FloorZ + 98.f);
 						FCollisionQueryParams Free = Probe;
-						Free.AddIgnoredActor(Floor.GetActor());
+						Free.AddIgnoredActor(FloorActor);
 						if (StuckWorld->OverlapBlockingTestByChannel(Stand, FQuat::Identity, ECC_Pawn,
 							FCollisionShape::MakeCapsule(38.f, 92.f), Free)) { continue; }
 						SetActorLocation(Stand, false, nullptr, ETeleportType::TeleportPhysics);
