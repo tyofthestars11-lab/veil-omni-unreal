@@ -1061,11 +1061,14 @@ void AVEILHudCanvas::DrawHUD()
 						PackIcons.Add(LoadObject<UTexture2D>(nullptr, *Path));
 					}
 				}
-				const TCHAR* Labels[] = { TEXT("ARMOR"), TEXT("BELT"), TEXT("BOOTS"), TEXT("GLOVES") };
+				// FIVE SLOTS, THE SHEET'S OWN ROW: ARMOR BELT BOOTS GLOVES WARDEN. WARDEN is the
+				// stance, not a garment, so it carries no pack icon; its slot is labelled in the
+				// same gold and stands last, where the reference puts it.
+				const TCHAR* Labels[] = { TEXT("ARMOR"), TEXT("BELT"), TEXT("BOOTS"), TEXT("GLOVES"), TEXT("WARDEN") };
 				int32 Loaded = 0;
-				for (int32 i = 0; i < 4; ++i)
+				for (int32 i = 0; i < 5; ++i)
 				{
-					const float IX = Canvas->ClipX * 0.5f - 168.f + i * 88.f;
+					const float IX = Canvas->ClipX * 0.5f - 176.f + i * 88.f;
 					const float IY = Canvas->ClipY - 132.f;
 					// A RESOURCE IS NOT A RESIDENT TEXTURE. This drew whenever GetResource()
 					// was non-null, and the run crashed on the render thread in
