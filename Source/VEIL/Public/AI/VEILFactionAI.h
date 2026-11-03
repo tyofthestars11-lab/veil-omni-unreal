@@ -97,6 +97,9 @@ public:
 	/** One-shot guard: the post is logged once per agent, not every frame. */
 	bool bLoggedPost = false;
 
+	/** Which post the machine is keeping: 0 day, 1 night. -1 before the first decision. */
+	int32 RoutinePost = -1;
+
 	/** THE PHI BRAIN. Every machine in the plaza decides with UPHI_NPCProcessor: identity,
 	 *  mood and situation are rungs, and the intent is the nearest rung anchor - not a
 	 *  threshold, not a 0/1 flag. It was only ever attached to the wave enemies, so the

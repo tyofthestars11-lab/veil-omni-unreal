@@ -380,6 +380,30 @@ void AVEILFactionAgent::OrbitHome()
 
 void AVEILFactionAgent::HoldPost()
 {
+	// A POST IS KEPT BY HOUR, NOT FOREVER. The vision wants a place that keeps time, and a
+	// guard who stands on one square for the whole session is furniture. One real minute is
+	// one world hour in this project, so the clock is read from world time: on the day shift
+	// the machine keeps its own ground, at night it walks 600 cm toward the plaza and keeps
+	// the approach instead. Same post, different place to stand - visible without new art.
+	const float Hour = GetWorld() ? FMath::Fmod((float)GetWorld()->GetTimeSeconds() / 60.f, 24.f) : 12.f;
+	const bool bNightShift = (Hour < 6.f || Hour >= 20.f);
+	const FVector ToCentre = (FVector::ZeroVector - HomeLocation).GetSafeNormal2D();
+	const FVector Post = bNightShift ? HomeLocation + ToCentre * 600.f : HomeLocation;
+	if (RoutinePost != (bNightShift ? 1 : 0))
+	{
+		RoutinePost = bNightShift ? 1 : 0;
+		UE_LOG(LogVEIL, Warning,
+			TEXT("PHI ROUTINE: %s takes the %s post at %.0f, %.0f (hour %.1f)."),
+			*GetActorNameOrLabel(), bNightShift ? TEXT("night") : TEXT("day"),
+			Post.X, Post.Y, Hour);
+	}
+	// Walk to the shift's post, then hold it. 220 cm of slack stops the machine hunting
+	// back and forth across one spot every frame, which is the twitch the post rule removed.
+	if (FVector::Dist2D(GetActorLocation(), Post) > 220.f)
+	{
+		MoveToward(Post, 150.f);
+		return;
+	}
 	if (AAIController* AIC = Cast<AAIController>(GetController()))
 	{
 		AIC->StopMovement();
