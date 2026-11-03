@@ -575,7 +575,17 @@ void AVEILCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 		// every other action were never connected: the runner could not walk, the mouse
 		// did nothing and no key reached the game, for the whole session. The wheel is
 		// filtered where it fires, in CameraRingOut / CameraRingIn, not here.
-		if (MoveAction)   EIC->BindAction(MoveAction, ETriggerEvent::Triggered, this, &AVEILCharacter::Move);
+		if (MoveAction)
+		{
+			EIC->BindAction(MoveAction, ETriggerEvent::Triggered, this, &AVEILCharacter::Move);
+			// LET GO MEANS STOP. Triggered fires only while a key is held, and the axis is
+			// EASED toward the input (phi^2). With no completion event the last eased
+			// value stayed in MoveAxis for ever, so the runner kept walking after the key
+			// came up - and because the camera yaw keeps changing under him, "walking by
+			// himself" is what a player reads as being swung around in a circle. Completed
+			// carries a zero value through the same easing, so he slows to a stop.
+			EIC->BindAction(MoveAction, ETriggerEvent::Completed, this, &AVEILCharacter::Move);
+		}
 		if (LookAction)   EIC->BindAction(LookAction, ETriggerEvent::Triggered, this, &AVEILCharacter::Look);
 		if (JumpAction)
 		{

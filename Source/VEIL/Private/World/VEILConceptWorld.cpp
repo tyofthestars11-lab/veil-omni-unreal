@@ -85,10 +85,26 @@ bool AVEILConceptWorld::Build()
 	UStaticMesh* Cone = LoadObject<UStaticMesh>(nullptr, TEXT("/Engine/BasicShapes/Cone.Cone"));
 	if (!Cube || !Cylinder) { return false; }
 
-	UMaterialInterface* Stone = LoadObject<UMaterialInterface>(nullptr, ConceptStonePath);
-	UMaterialInterface* Gold = LoadObject<UMaterialInterface>(nullptr, ConceptGoldPath);
-	UMaterialInterface* Glow = LoadObject<UMaterialInterface>(nullptr, ConceptGlowPath);
-	UMaterialInterface* Water = LoadObject<UMaterialInterface>(nullptr, ConceptWaterPath);
+	// A MISSING MATERIAL IS THE GREY CHECKER, NOT A LOOK. LoadObject returns null on
+	// a bad path and the mesh silently keeps WorldGridMaterial - which is what "random
+	// placeholders" means: every piece is still there, dressed in the editor's grid.
+	// Each slot now falls back to a palette material that ships in this project, and
+	// the log names what actually loaded so a missing path is a sentence, not a guess.
+	auto Mat = [](const TCHAR* Path, const TCHAR* Fallback, const TCHAR* Last) -> UMaterialInterface*
+	{
+		UMaterialInterface* Found = LoadObject<UMaterialInterface>(nullptr, Path);
+		if (!Found && Fallback) { Found = LoadObject<UMaterialInterface>(nullptr, Fallback); }
+		if (!Found && Last) { Found = LoadObject<UMaterialInterface>(nullptr, Last); }
+		return Found;
+	};
+	const TCHAR* EngineDefault = TEXT("/Engine/EngineMaterials/DefaultMaterial.DefaultMaterial");
+	UMaterialInterface* Stone = Mat(ConceptStonePath, ConceptGoldPath, EngineDefault);
+	UMaterialInterface* Gold = Mat(ConceptGoldPath, ConceptGlowPath, EngineDefault);
+	UMaterialInterface* Glow = Mat(ConceptGlowPath, ConceptGoldPath, EngineDefault);
+	UMaterialInterface* Water = Mat(ConceptWaterPath, ConceptGoldPath, EngineDefault);
+	UE_LOG(LogVEIL, Warning, TEXT("PHI CONCEPT MATERIALS: stone=%s gold=%s glow=%s water=%s"),
+		Stone ? *Stone->GetName() : TEXT("MISSING"), Gold ? *Gold->GetName() : TEXT("MISSING"),
+		Glow ? *Glow->GetName() : TEXT("MISSING"), Water ? *Water->GetName() : TEXT("MISSING"));
 
 	BuildTerrain(Cube, Stone);
 
