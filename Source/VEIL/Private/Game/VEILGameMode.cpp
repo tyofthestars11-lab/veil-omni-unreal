@@ -367,28 +367,27 @@ void AVEILGameMode::BeginPlay()
 		{
 			APawn* Runner = UGameplayStatics::GetPlayerPawn(GetWorld(), 0);
 			if (!Runner) { return; }
-			const FVector At = Runner->GetActorLocation();
-			const FVector Fwd = Runner->GetActorForwardVector();
-			const FVector Right = FVector::CrossProduct(FVector::UpVector, Fwd);
-			// IN FRONT OF THE FACE, NOT THROUGH THE WALL BESIDE HIM. The first standoff was a
-			// fixed world offset and landed inside a stack of crates; this stands off along
-			// the runner's own facing, then traces the sightline and pulls in until clear, so
-			// the camera is always looking at the body and never at the back of a crate.
-			const FVector Look = At + FVector(0.f, 0.f, 100.f);
-			// CLEAR STANDOFFS, TRIED IN ORDER. Pulling the camera in along a blocked sightline
-			// put it inside the obstruction and filled half the frame with a wall. These
-			// candidates step up and back over whatever is in the street; the first one with
-			// an unbroken view of the chest wins, and the runner is always centred.
-			FCollisionQueryParams Q(SCENE_QUERY_STAT(LineupSight), false, Runner);
-			auto Clear = [&](const FVector& Candidate)
+			// THE STILL IS TAKEN ON THE OPEN PLAZA, NOT IN THE SPAWN POCKET. The runner wakes
+			// in a walled nook, so every close-up so far was the back of a wall; for this frame
+			// he stands on the Hub's open stone instead, facing the camera with the market
+			// behind him. Photography only: this runs when -philineup is on the command line.
+			FVector At(0.f, 0.f, 120.f);
+			FHitResult Ground;
+			FCollisionQueryParams GQ(SCENE_QUERY_STAT(LineupGround), false, Runner);
+			if (GetWorld()->LineTraceSingleByChannel(Ground, FVector(0.f, 0.f, 3000.f), FVector(0.f, 0.f, -500.f), ECC_Visibility, GQ))
 			{
-				FHitResult H;
-				return !GetWorld()->LineTraceSingleByChannel(H, Look, Candidate, ECC_Visibility, Q);
-			};
-			FVector Eye = At + Fwd * 300.f + Right * 90.f + FVector(0.f, 0.f, 140.f);
-			if (!Clear(Eye)) { Eye = At + Fwd * 240.f + FVector(0.f, 0.f, 300.f); }
-			if (!Clear(Eye)) { Eye = At + Fwd * 200.f + FVector(0.f, 0.f, 440.f); }
-			if (!Clear(Eye)) { Eye = At + Fwd * 520.f + FVector(0.f, 0.f, 520.f); }
+				At = Ground.ImpactPoint + FVector(0.f, 0.f, 100.f);
+			}
+			Runner->SetActorLocation(At, false, nullptr, ETeleportType::TeleportPhysics);
+			Runner->SetActorRotation(FRotator(0.f, -90.f, 0.f));
+			const FVector Look = At + FVector(0.f, 0.f, 95.f);
+			FVector Eye = At + FVector(0.f, -560.f, 190.f);
+			FHitResult Blocked;
+			FCollisionQueryParams Q(SCENE_QUERY_STAT(LineupSight), false, Runner);
+			if (GetWorld()->LineTraceSingleByChannel(Blocked, Look, Eye, ECC_Visibility, Q))
+			{
+				Eye = At + FVector(0.f, -320.f, 430.f);
+			}
 			FActorSpawnParameters CamParams;
 			CamParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 			ACameraActor* Cam = GetWorld()->SpawnActor<ACameraActor>(ACameraActor::StaticClass(),
