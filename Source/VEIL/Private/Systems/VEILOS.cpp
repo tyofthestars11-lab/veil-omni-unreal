@@ -576,7 +576,7 @@ FString UVEILOS::MapLine() const
 
 FString UVEILOS::ControlsLine() const
 {
-	return TEXT("[F1] OS   [G] GODMODE   [E] speak   [SPACE] continue   [TAB] chart   [P] pause");
+	return TEXT("[F1] OS   [G] GODMODE   [E] speak   [E] continue   [TAB] chart   [P] pause");
 }
 
 FString UVEILOS::M1Line() const

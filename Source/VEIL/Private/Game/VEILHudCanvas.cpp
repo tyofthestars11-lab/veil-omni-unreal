@@ -612,7 +612,7 @@ void AVEILHudCanvas::DrawHUD()
 	// where they can be read without leaving the frame. Every key here is bound in
 	// SetupInputComponent, so the row teaches nothing that does not work.
 	{
-		const FString Hints = TEXT("[E] SPEAK   [SPACE] NEXT   [TAB] CHART   [H] MANUAL   [P] PAUSE");
+		const FString Hints = TEXT("[E] SPEAK / NEXT   [TAB] CHART   [H] MANUAL   [P] PAUSE");
 		Shadow(Fitted(Hints, Med, 0.50f, CardW), FLinearColor(0.74f, 0.79f, 0.88f, 0.66f),
 			TX, PY + PH - 17.f, Med, 0.50f);
 	}
@@ -1724,14 +1724,14 @@ void AVEILHudCanvas::DrawHUD()
 			{
 				// What the world did about it, in the same gold as the ledger.
 				ShadowB(Dlg->GetConsequence(), FLinearColor(0.55f, 1.f, 0.72f), BX + 24.f, TY + 8.f, Med, 0.86f);
-				DrawText(TEXT("[SPACE] close"), FLinearColor(0.55f, 0.62f, 0.72f),
+				DrawText(TEXT("[E] close"), FLinearColor(0.55f, 0.62f, 0.72f),
 					BX + BW - 130.f, BY + BH - 20.f, Med, 0.78f);
 			}
 			// Prompt only once the line has finished arriving.
 			else if (!Dlg->IsTyping())
 			{
 				const bool bMore = Dlg->GetLineIndex() < (Dlg->GetSpeaker() ? Dlg->GetSpeaker()->Greetings.Num() - 1 : 0);
-				DrawText(bMore ? TEXT("[SPACE] continue") : TEXT("[SPACE] reply"),
+				DrawText(bMore ? TEXT("[E] continue") : TEXT("[E] reply"),
 					FLinearColor(0.55f, 0.62f, 0.72f), BX + BW - 150.f, BY + BH - 24.f, Med, 0.78f);
 			}
 		}
@@ -1838,9 +1838,23 @@ void AVEILHudCanvas::DrawHUD()
 		const TCHAR* Label = bTypingNow ? TEXT("TYPING TO ONE  -  ENTER SENDS, ESC CLOSES")
 			: bListening ? TEXT("ONE IS LISTENING  -  speak now, or type")
 			: bWorking ? TEXT("ONE IS WORKING")
-			: TEXT("ONE  -  click to speak or type");
+			: TEXT("ONE  -  click the mic to speak, or type");
+		// THE MIC. The reference asks for a microphone, not a sentence: a capsule,
+		// a cradle and a stand, drawn from the primitives so it needs no icon asset and
+		// cannot go missing.
+		{
+			const FLinearColor MicCol = (bTypingNow || bListening)
+				? FLinearColor(1.f, 0.88f, 0.50f) : FLinearColor(0.86f, 0.80f, 0.62f);
+			FVeilUI::RoundRect(this, FLinearColor(0.f, 0.f, 0.f, 0.55f), Zone.X + 13.f, Zone.Y + 8.f, 7.f, 12.f, 3.5f);
+			FVeilUI::RoundRect(this, MicCol, Zone.X + 14.f, Zone.Y + 9.f, 5.f, 10.f, 2.5f);
+			DrawLine(Zone.X + 12.f, Zone.Y + 15.f, Zone.X + 12.f, Zone.Y + 18.f, MicCol, 1.1f);
+			DrawLine(Zone.X + 21.f, Zone.Y + 15.f, Zone.X + 21.f, Zone.Y + 18.f, MicCol, 1.1f);
+			DrawLine(Zone.X + 12.f, Zone.Y + 18.f, Zone.X + 21.f, Zone.Y + 18.f, MicCol, 1.1f);
+			DrawLine(Zone.X + 16.5f, Zone.Y + 18.f, Zone.X + 16.5f, Zone.Y + 21.f, MicCol, 1.1f);
+			DrawLine(Zone.X + 13.f, Zone.Y + 21.f, Zone.X + 20.f, Zone.Y + 21.f, MicCol, 1.1f);
+		}
 		DrawText(Label, (bTypingNow || bListening) ? FLinearColor(1.f, 0.90f, 0.55f) : FLinearColor(0.88f, 0.82f, 0.64f),
-			Zone.X + 26.f, Zone.Y + 5.f, Med, 0.60f);
+			Zone.X + 30.f, Zone.Y + 5.f, Med, 0.60f);
 		// SAY IT ONCE. The label above already says "click to speak or type"; the state
 		// line said it again whenever ONE was idle, so the chip was one instruction printed
 		// twice. The second row exists to report work, listening or an answer - nothing else.
@@ -1848,7 +1862,7 @@ void AVEILHudCanvas::DrawHUD()
 		{
 			const FString OneLine = One->StateLine();
 			DrawText(OneLine, bSpeaking ? FLinearColor(1.f, 0.92f, 0.72f) : FLinearColor(0.82f, 0.88f, 1.f),
-				Zone.X + 26.f, Zone.Y + 22.f, Med, 0.56f);
+				Zone.X + 30.f, Zone.Y + 22.f, Med, 0.56f);
 		}
 	}
 

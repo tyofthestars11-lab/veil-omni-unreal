@@ -1,0 +1,430 @@
+{
+  "authority": {
+    "Beacon1": [
+      2800,
+      500,
+      0
+    ],
+    "Beacon2": [
+      -2000,
+      -900,
+      0
+    ],
+    "Beacon3": [
+      600,
+      -2100,
+      0
+    ],
+    "Cache": [
+      0,
+      -6200,
+      0
+    ],
+    "Cartographer": [
+      -4150,
+      -780,
+      0
+    ],
+    "Countess": [
+      809,
+      -309,
+      64.7
+    ],
+    "Keeper": [
+      900,
+      0,
+      0
+    ],
+    "Runner": [
+      0,
+      0,
+      100
+    ],
+    "Seer": [
+      -450,
+      780,
+      0
+    ],
+    "Spire": [
+      0,
+      3500,
+      500
+    ],
+    "Vault": [
+      0,
+      0,
+      -80.9
+    ]
+  },
+  "build": "Gate 0 Golden Merge WHOLE: PASS, Hub first, one zone at a time, counts vs JSON, Play + screenshot proof, no random, seed 1618",
+  "dialogue": {
+    "continue_key": "E",
+    "enter": false,
+    "keyboard": "E only, not Space, not Enter, prompt [E] continue",
+    "space": false
+  },
+  "floating_blocks": false,
+  "floating_pillars": false,
+  "games": [
+    {
+      "game": 1,
+      "name": "Hub",
+      "x": -119.31,
+      "y": 109.3
+    },
+    {
+      "game": 2,
+      "name": "Nest",
+      "x": 20.01,
+      "y": -227.95
+    },
+    {
+      "game": 3,
+      "name": "Spire",
+      "x": 170.52,
+      "y": 222.41
+    },
+    {
+      "game": 4,
+      "name": "Omni District",
+      "x": -318.66,
+      "y": -56.37
+    },
+    {
+      "game": 5,
+      "name": "Megastructure Deep",
+      "x": 305.27,
+      "y": -194.19
+    },
+    {
+      "game": 6,
+      "name": "Keeper Quest",
+      "x": -102.89,
+      "y": 382.75
+    },
+    {
+      "game": 7,
+      "name": "Seer Quest",
+      "x": -197.31,
+      "y": -379.91
+    },
+    {
+      "game": 8,
+      "name": "Cartographer Quest",
+      "x": 429.88,
+      "y": 156.99
+    },
+    {
+      "game": 9,
+      "name": "Countess Quest",
+      "x": -448.69,
+      "y": 185.21
+    },
+    {
+      "game": 10,
+      "name": "Vault Quest",
+      "x": 216.87,
+      "y": -463.43
+    },
+    {
+      "game": 11,
+      "name": "Crystal Hunt",
+      "x": 160.61,
+      "y": 512.04
+    },
+    {
+      "game": 12,
+      "name": "Beacon Light",
+      "x": -484.95,
+      "y": -281.04
+    },
+    {
+      "game": 13,
+      "name": "Waterfall Run",
+      "x": 569.78,
+      "y": -125.27
+    },
+    {
+      "game": 14,
+      "name": "Rope Bridge",
+      "x": -348.19,
+      "y": 495.27
+    },
+    {
+      "game": 15,
+      "name": "Market Trade",
+      "x": -80.53,
+      "y": -621.47
+    },
+    {
+      "game": 16,
+      "name": "Golden Midst",
+      "x": 494.89,
+      "y": 417.09
+    },
+    {
+      "game": 17,
+      "name": "Phi Chamber",
+      "x": -666.56,
+      "y": 27.56
+    },
+    {
+      "game": 18,
+      "name": "Combat Mode",
+      "x": 486.59,
+      "y": -484.22
+    },
+    {
+      "game": 19,
+      "name": "Glide Wings",
+      "x": -32.58,
+      "y": 704.53
+    },
+    {
+      "game": 20,
+      "name": "Sky Tower",
+      "x": -463.62,
+      "y": -555.57
+    },
+    {
+      "game": 21,
+      "name": "Deep Dive",
+      "x": 734.85,
+      "y": 98.87
+    },
+    {
+      "game": 22,
+      "name": "City Build",
+      "x": -622.97,
+      "y": 433.45
+    },
+    {
+      "game": 23,
+      "name": "Pillar Ring",
+      "x": 170.31,
+      "y": -757.06
+    },
+    {
+      "game": 24,
+      "name": "River Flow",
+      "x": 394.1,
+      "y": 687.76
+    },
+    {
+      "game": 25,
+      "name": "Moss Garden",
+      "x": -770.74,
+      "y": -245.89
+    },
+    {
+      "game": 26,
+      "name": "Gold Rush",
+      "x": 748.96,
+      "y": -346.04
+    },
+    {
+      "game": 27,
+      "name": "Crystal Mountain",
+      "x": -324.58,
+      "y": 775.57
+    },
+    {
+      "game": 28,
+      "name": "Night Watch",
+      "x": -289.78,
+      "y": -805.65
+    },
+    {
+      "game": 29,
+      "name": "Day Watch",
+      "x": 771.3,
+      "y": 405.37
+    },
+    {
+      "game": 30,
+      "name": "Long Walk",
+      "x": -856.96,
+      "y": 225.89
+    },
+    {
+      "game": 31,
+      "name": "First Watch",
+      "x": 487.23,
+      "y": -757.76
+    },
+    {
+      "game": 32,
+      "name": "High Sun",
+      "x": 155.03,
+      "y": 902.07
+    },
+    {
+      "game": 33,
+      "name": "Quiet Half",
+      "x": -734.88,
+      "y": -569.13
+    },
+    {
+      "game": 34,
+      "name": "Listening",
+      "x": 940.25,
+      "y": -77.9
+    },
+    {
+      "game": 35,
+      "name": "Trade Hours",
+      "x": -650.04,
+      "y": 702.68
+    },
+    {
+      "game": 36,
+      "name": "Pale Host",
+      "x": 4.74,
+      "y": -970.81
+    },
+    {
+      "game": 37,
+      "name": "Hollow Answer",
+      "x": 661.28,
+      "y": 728.96
+    },
+    {
+      "game": 38,
+      "name": "Runner Run",
+      "x": -993.17,
+      "y": -92.05
+    },
+    {
+      "game": 39,
+      "name": "Keeper Count",
+      "x": 804.89,
+      "y": -610.89
+    },
+    {
+      "game": 40,
+      "name": "Seer Speak",
+      "x": -183.16,
+      "y": 1006.81
+    },
+    {
+      "game": 41,
+      "name": "Cartographer Map",
+      "x": -551.8,
+      "y": -876.87
+    },
+    {
+      "game": 42,
+      "name": "Countess Hold",
+      "x": 1011.31,
+      "y": 277.16
+    },
+    {
+      "game": 43,
+      "name": "Vault Seal",
+      "x": -943.97,
+      "y": 484.43
+    },
+    {
+      "game": 44,
+      "name": "Beacon 1",
+      "x": 373.09,
+      "y": -1006.35
+    },
+    {
+      "game": 45,
+      "name": "Beacon 2",
+      "x": 409.25,
+      "y": 1005.3
+    },
+    {
+      "game": 46,
+      "name": "Beacon 3",
+      "x": -991.68,
+      "y": -469.97
+    },
+    {
+      "game": 47,
+      "name": "Spire Light",
+      "x": 1060.03,
+      "y": -326.82
+    },
+    {
+      "game": 48,
+      "name": "Hub Plaza",
+      "x": -566.81,
+      "y": 967.15
+    },
+    {
+      "game": 49,
+      "name": "Nest Cliffs",
+      "x": -237.8,
+      "y": -1107.38
+    },
+    {
+      "game": 50,
+      "name": "Omni City",
+      "x": 932.74,
+      "y": 662.58
+    }
+  ],
+  "games_in_1": 50,
+  "golden_angle": 137.5077640500378,
+  "grounded_all": true,
+  "hud": {
+    "boring_text": false,
+    "combat": "COMBAT MODE gold",
+    "cool_text": "gold ribbon, curved, glowing, living UI, gold-trimmed",
+    "lv": "72 diamond",
+    "manual": "320x90 fading 6s",
+    "minimap": "180x180 at 70% top-right",
+    "objective": "420x110 top-left",
+    "one_prompt": "ONE only, mic symbol, click mic or type to One, no duplicate",
+    "quest": "480px QUEST: THE GOLDEN MIDST",
+    "stm": "117/180 green",
+    "vit": "3570/4200 red"
+  },
+  "icon": "gold V, golden spiral, feather/wings both arms, thin gold circle, blue glow, dark navy starfield, rounded-square tile",
+  "name": "VEIL OMNI: THE LAST SIGNAL \u2014 PATH OF LIGHT \u2014 50 GAMES IN 1 \u2014 ALL",
+  "npcs": {
+    "Cartographer": "-4150,-780",
+    "Countess": "809,-309,64.7",
+    "Keeper": "900,0",
+    "Seer": "-450,780",
+    "Sera Vahl": "Keeper of the First Beacon, Lantern Watch, Stand still. I count the living first."
+  },
+  "phi": 1.618033988749895,
+  "placeholders": false,
+  "random": false,
+  "random_floaty_stuff": false,
+  "runner": {
+    "floats": false,
+    "grounded": true,
+    "mesh": "vision Runner, gold phi wings, dark cape, NOT placeholder",
+    "z": 100
+  },
+  "seed": 1618,
+  "vision": "Runner gold phi wings dark cape phi, hooded, gliding, golden Spire phi-covered cloud-wreathed visible everywhere, market town phi pillars, waterfalls, rope bridges, cliffs, blue-and-gold city, blue crystal mountains faceted not flat slab, gold light beacons, Megastructure Deep dark blue-lit chasm, Sera Vahl Keeper of the First Beacon Lantern Watch",
+  "vision_only": true,
+  "zones": {
+    "Hub": [
+      0,
+      0
+    ],
+    "Megastructure Deep": [
+      0,
+      -5000
+    ],
+    "Nest": [
+      -450,
+      780
+    ],
+    "Omni District": [
+      2800,
+      500
+    ],
+    "Spire": [
+      0,
+      3500
+    ]
+  }
+}

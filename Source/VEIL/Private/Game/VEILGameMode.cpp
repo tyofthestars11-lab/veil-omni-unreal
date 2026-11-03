@@ -3572,7 +3572,9 @@ void AVEILPlayerController::SetupInputComponent()
 		// CLICK TO TYPE. Left mouse over the type bar opens the field; everywhere else the
 		// click is left to the world, which is why this tests only the bar's own rectangle.
 		InputComponent->BindKey(EKeys::LeftMouseButton, IE_Pressed, this, &AVEILPlayerController::OnLeftClickType);
-		InputComponent->BindKey(EKeys::SpaceBar, IE_Pressed, this, &AVEILPlayerController::TravelOrAdvance);
+		// SPACE IS THE JUMP, NOT THE CONVERSATION. The vision's dialogue spec is E only:
+		// Space was bound here as well, so a line could be advanced by the same key that
+		// leaves the ground. Travel stays on the chart's Enter and the pad's A.
 		InputComponent->BindKey(EKeys::Escape, IE_Pressed, this, &AVEILPlayerController::TogglePauseMenu);
 		InputComponent->BindKey(EKeys::Gamepad_Special_Right, IE_Pressed, this, &AVEILPlayerController::TogglePauseMenu);
 
