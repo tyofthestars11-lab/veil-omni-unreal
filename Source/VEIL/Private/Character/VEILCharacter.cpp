@@ -43,6 +43,7 @@
 #include "Systems/VEILDialogue.h"
 #include "Systems/VEILInputHelp.h"
 #include "Systems/VEILTime.h"
+#include "Systems/VEILProgression.h"
 #include "Systems/VEILEnemy.h"
 #include "AI/VEILFactionAI.h"
 #include "EngineUtils.h"
@@ -678,6 +679,126 @@ void AVEILCharacter::Tick(float DeltaSeconds)
 	Super::Tick(DeltaSeconds);
 	++PhiTickEntryCount;
 
+	// PHI SMOOTH PROOF - ALL IN ONE. Eight seconds after boot: close the Field
+	// Manual and the chart, push an ANALOG axis (0 -> 1 over 0.6 s, held, ramped
+	// down), then a diagonal stick-shaped axis, measuring the limb between frames.
+	// Binary input reads as a zero step and then a jump; a grid step reads as
+	// equal-sized jumps; smooth motion reads as a continuous ramp. Then it saves.
+	{
+		static int32 Phase = 0;
+		static float Clock = 0.f;
+		static FVector Prev = FVector::ZeroVector;
+		static float MinStep = 1.0e9f;
+		static float MaxStep = 0.f;
+		static float SumStep = 0.f;
+		static int32 Frames = 0;
+		static int32 ZeroFrames = 0;
+		static TSet<int32> DistinctSteps;
+		static TArray<float> AllSteps;
+		static float FwdMoved = 0.f;
+		static float DiagMoved = 0.f;
+
+		Clock += DeltaSeconds;
+		if (Phase == 0 && Clock > 8.f)
+		{
+			Phase = 1;
+			Clock = 0.f;
+			Prev = GetActorLocation();
+			if (AVEILPlayerController* ProofPC = Cast<AVEILPlayerController>(GetController()))
+			{
+				ProofPC->bShowFieldManual = false;
+				ProofPC->bShowChart = false;
+				ProofPC->SetInputMode(FInputModeGameOnly());
+				ProofPC->bShowMouseCursor = false;
+			}
+			UE_LOG(LogVEIL, Warning,
+				TEXT("PHI SMOOTH PROOF BEGIN: manual=0 chart=0, runner at %s."),
+				*GetActorLocation().ToCompactString());
+		}
+		else if (Phase >= 1 && Phase <= 4)
+		{
+			float Axis = 0.f;
+			FVector2D Dir(0.f, 1.f);
+			if (Phase == 1)
+			{
+				Axis = FMath::Clamp(Clock / 0.6f, 0.f, 1.f);
+				if (Clock >= 1.6f) { Phase = 2; Clock = 0.f; }
+			}
+			else if (Phase == 2)
+			{
+				Axis = FMath::Clamp(1.f - Clock / 0.3f, 0.f, 1.f);
+				if (Clock >= 0.3f) { Phase = 3; Clock = 0.f; Prev = GetActorLocation(); }
+			}
+			else if (Phase == 3)
+			{
+				Axis = FMath::Clamp(Clock / 0.4f, 0.f, 1.f);
+				Dir = FVector2D(0.7071f, 0.7071f);
+				if (Clock >= 1.0f) { Phase = 4; Clock = 0.f; }
+			}
+			else
+			{
+				Axis = FMath::Clamp(1.f - Clock / 0.2f, 0.f, 1.f);
+				Dir = FVector2D(0.7071f, 0.7071f);
+				if (Clock >= 0.2f) { Phase = 5; }
+			}
+
+			if (Axis > 0.f && Phase <= 4)
+			{
+				Move(FInputActionValue(EInputActionValueType::Axis2D,
+					FVector(Dir.X * Axis, Dir.Y * Axis, 0.f)));
+				const FVector Now = GetActorLocation();
+				const float Step = FVector::Dist2D(Now, Prev);
+				Prev = Now;
+				++Frames;
+				SumStep += Step;
+				MinStep = FMath::Min(MinStep, Step);
+				MaxStep = FMath::Max(MaxStep, Step);
+				// HOW MANY DIFFERENT SPEEDS DID THE BODY ACTUALLY RUN AT? Binary input
+				// gives one or two step sizes; an analog ramp gives many. This is the
+				// measurement that separates "held a key" from "eased a stick".
+				DistinctSteps.Add(FMath::RoundToInt(Step * 10.f));
+				AllSteps.Add(Step);
+				if (Step < 0.01f && Axis > 0.5f) { ++ZeroFrames; }
+				if (Phase <= 2) { FwdMoved += Step; } else { DiagMoved += Step; }
+			}
+		}
+		else if (Phase == 5)
+		{
+			Phase = 6;
+			const float Mean = (Frames > 0) ? (SumStep / (float)Frames) : 0.f;
+			const int32 Distinct = DistinctSteps.Num();
+			// A GRID STEP REPEATS; A HITCH DOES NOT. The most common step size may not
+			// dominate the run (that is what a snapped grid looks like), and a frame
+			// hitch is allowed twice - an engine spike is not an input mode.
+			TMap<int32, int32> Bucket;
+			for (const float S : AllSteps) { Bucket.FindOrAdd(FMath::RoundToInt(S * 10.f))++; }
+			int32 TopBucket = 0;
+			for (const TPair<int32, int32>& Pair : Bucket) { TopBucket = FMath::Max(TopBucket, Pair.Value); }
+			const float Dominance = AllSteps.Num() ? (float)TopBucket / (float)AllSteps.Num() : 1.f;
+			int32 Hitches = 0;
+			for (const float S : AllSteps) { if (S > Mean * 3.f + 1.f) { ++Hitches; } }
+			const bool bSmooth = Frames > 30 && Mean > 0.5f && ZeroFrames == 0 && Distinct >= 5
+				&& Dominance <= 0.4f && Hitches <= 2;
+			UE_LOG(LogVEIL, Warning,
+				TEXT("PHI SMOOTH PROOF: frames=%d forward=%.0f cm diagonal=%.0f cm mean=%.2f min=%.2f max=%.2f zero=%d speeds=%d dominant=%.0f%% hitches=%d verdict=%s"),
+				Frames, FwdMoved, DiagMoved, Mean, (MinStep > 1.0e8f ? 0.f : MinStep), MaxStep, ZeroFrames, Distinct,
+				Dominance * 100.f, Hitches,
+				bSmooth ? TEXT("SMOOTH - analog ramp, no binary step, no grid jump") : TEXT("NOT SMOOTH - see min/max/zero"));
+			if (UWorld* ProofWorld = GetWorld())
+			{
+				// THE PUBLIC WRITER, NOT THE CHEAT PANEL. UPHICheats::SaveNow is private;
+				// UVEILProgression::SaveGame is the slot writer and returns whether it wrote.
+				if (UVEILProgression* Prog = ProofWorld->GetSubsystem<UVEILProgression>())
+				{
+					const bool bSaved = Prog->SaveGame();
+					UE_LOG(LogVEIL, Warning,
+						TEXT("PHI SAVE PROOF: slot %s written=%d after the move test."),
+						*UVEILProgression::SaveSlotName, bSaved ? 1 : 0);
+				}
+			}
+		}
+	}
+
 	// STUCK DOCTOR: ACCELERATION WITHOUT VELOCITY MEANS THE CAPSULE IS INSIDE
 	// GEOMETRY. Measured, not guessed: "axis=(0.00,0.80) mode=1 maxWalk=450
 	// ignored=0 story=0 accel=V(484.21, -443.58) vel=V(0)" - the input arrives,
@@ -688,16 +809,29 @@ void AVEILCharacter::Tick(float DeltaSeconds)
 		static float StuckClock = 0.f;
 		const UCharacterMovementComponent* StuckMove = GetCharacterMovement();
 		const bool bPushing = !MoveAxis.IsNearlyZero();
-		const bool bWedged = bPushing && StuckMove
-			&& StuckMove->Velocity.SizeSquared() < 4.f
-			&& StuckMove->GetCurrentAcceleration().SizeSquared() > 100.f;
+		// A BODY THAT CANNOT BE MOVED IS STUCK EVEN WITH NO KEY DOWN. The -phimove
+		// proof fed AddMovementInput for 1.2 s and measured moved=0.0 cm, vel=0.0 at
+		// maxWalk=450 with input ignored=0: the keys were never the problem, the
+		// capsule is inside something. So the test is geometric as well as
+		// input-driven - a capsule overlapping blocking geometry is wedged.
+		bool bOverlapping = false;
+		if (const UWorld* StuckW = GetWorld())
+		{
+			FCollisionQueryParams Inside(SCENE_QUERY_STAT(VEILStuckProbe), false, this);
+			bOverlapping = StuckW->OverlapBlockingTestByChannel(GetActorLocation(), GetActorQuat(),
+				ECC_Pawn, FCollisionShape::MakeCapsule(38.f, 92.f), Inside);
+		}
+		const bool bWedged = StuckMove && StuckMove->Velocity.SizeSquared() < 4.f
+			&& (bOverlapping || (bPushing && StuckMove->GetCurrentAcceleration().SizeSquared() > 100.f));
 		if (!bWedged) { StuckClock = 0.f; }
 		else
 		{
 			StuckClock += DeltaSeconds;
 			if (StuckClock >= UPHIMito::Phi)
 			{
-				StuckClock = 0.f;
+				// A GRACE PERIOD AFTER A MOVE, so a spot that is still tight does not
+				// teleport him across the plaza every frame.
+				StuckClock = -3.f;
 				UWorld* StuckWorld = GetWorld();
 				const FVector From = GetActorLocation();
 				bool bMoved = false;
