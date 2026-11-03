@@ -2118,6 +2118,7 @@ void AVEILWorldBuilder::BuildDistrictLayer()
 	DressBeaconSites();
 	BuildPhiDistrict();
 	BuildPhiWhole();
+	BuildPhiForms();
 	BuildHorizon();
 	UE_LOG(LogVEIL, Log, TEXT("VEIL: phi street layer laid over the saved district - the level itself was not touched."));
 }
@@ -3652,6 +3653,92 @@ void AVEILWorldBuilder::BuildPhiWhole()
 		UE_LOG(LogVEIL, Warning, TEXT("PHI ZONE: %s dressed with %d piece(s) at %.0f, %.0f - %s"),
 			Z.Name, Dressed, Z.X, Z.Y, Z.Dress);
 	}
+}
+
+void AVEILWorldBuilder::BuildPhiForms()
+{
+	// FORMS, NOT TINTS. The vision names silhouettes: a golden Spire visible from the plaza,
+	// faceted crystals instead of flat slabs, waterfalls and rope bridges in the Hub. A tint
+	// cannot make a cube read as a crystal, so these are built as geometry out of the meshes
+	// the project owns, on the same golden law as the placement.
+	static bool bFormsBuilt = false;
+	if (bFormsBuilt) { return; }
+	bFormsBuilt = true;
+
+	UWorld* World = GetWorld();
+	if (!World) return;
+	UStaticMesh* Stone = FloorMesh ? FloorMesh.Get() : CubeMesh.Get();
+	UStaticMesh* Col = ColumnMesh ? ColumnMesh.Get() : (CylinderMesh ? CylinderMesh.Get() : Stone);
+	UStaticMesh* CrystalMesh = MonolithMesh ? MonolithMesh.Get() : (PyramidHeadMesh ? PyramidHeadMesh.Get() : Stone);
+	UStaticMesh* Water = FloorMesh ? FloorMesh.Get() : Stone;
+	const FLinearColor Gold(0.92f, 0.72f, 0.30f);
+	const FLinearColor Blue(0.16f, 0.38f, 0.95f);
+	const FLinearColor WaterBlue(0.40f, 0.66f, 0.98f);
+	auto Tag = [](UStaticMeshComponent* C)
+	{
+		if (C && C->GetOwner()) { C->GetOwner()->Tags.Add(FName(TEXT("PhiCity"))); }
+	};
+
+	// THE SPIRE: nine sections, each one phi wider than the last below it, turning on the
+	// golden angle so the silhouette is covered rather than stacked. Top lands at ~6 km.
+	int32 SpirePieces = 0;
+	float Z = 500.f, W = 900.f, H = 900.f;
+	for (int32 k = 0; k < 9; ++k)
+	{
+		Tag(SpawnBlockRot(FVector(0.f, 0.f, Z + H * 0.5f),
+			FVector(W / 100.f, W / 100.f, H / 100.f), Col, Gold, 2.2f,
+			FRotator(0.f, (float)k * 137.5077640500378f, 0.f)));
+		Z += H;
+		W /= 1.618033988749895f;
+		H *= 1.618033988749895f;
+		++SpirePieces;
+	}
+
+	int32 Falls = 0;
+	for (int32 k = 0; k < 4; ++k)
+	{
+		const double A1 = (double)k * 137.5077640500378 * 3.14159265358979323846 / 180.0;
+		const float R = 1200.f;
+		Tag(SpawnBlockRot(FVector(FMath::Cos(A1) * R, FMath::Sin(A1) * R, 900.f),
+			FVector(6.f, 0.25f, 18.f), Water, WaterBlue, 0.8f,
+			FRotator(0.f, (float)FMath::RadiansToDegrees(A1), 0.f)));
+		++Falls;
+	}
+
+	int32 Bridges = 0;
+	for (int32 k = 0; k < 4; ++k)
+	{
+		const double A2 = ((double)k + 0.5) * 137.5077640500378 * 3.14159265358979323846 / 180.0;
+		const float R = 1500.f;
+		for (int32 seg = 0; seg < 5; ++seg)
+		{
+			const float t = (float)seg / 4.f - 0.5f;
+			Tag(SpawnBlockRot(FVector(FMath::Cos(A2) * R * (1.f + t * 0.25f),
+				FMath::Sin(A2) * R * (1.f + t * 0.25f), 700.f - 60.f * FMath::Sin(t * 3.14159265f)),
+				FVector(3.f, 0.4f, 0.4f), Stone, Gold, 0.2f,
+				FRotator(0.f, (float)FMath::RadiansToDegrees(A2) + 90.f, 0.f)));
+			++Bridges;
+		}
+	}
+
+	int32 Shards = 0;
+	for (int32 k = 0; k < 5; ++k)
+	{
+		const double A3 = (double)(k + 1) * 137.5077640500378 * 3.14159265358979323846 / 180.0;
+		const double R = FMath::Sqrt((double)(k + 1)) * 1.618033988749895 * 100.0;
+		const float X = (float)(2800.0 + R * FMath::Cos(A3));
+		const float Y = (float)(500.0 + R * FMath::Sin(A3));
+		for (int32 sh = 0; sh < 3; ++sh)
+		{
+			Tag(SpawnBlockRot(FVector(X, Y, 450.f + 260.f * (float)sh),
+				FVector(1.1f, 0.8f, 4.2f), CrystalMesh, Blue, 0.6f,
+				FRotator(20.f * (float)sh, (float)(k * 137.5 + sh * 40.0), 15.f * (float)sh)));
+			++Shards;
+		}
+	}
+	UE_LOG(LogVEIL, Warning,
+		TEXT("PHI FORM: spire %d section(s), waterfalls %d, bridge segments %d, crystal shards %d - silhouettes, not tints."),
+		SpirePieces, Falls, Bridges, Shards);
 }
 
 void AVEILWorldBuilder::BuildWorld()
