@@ -356,6 +356,49 @@ void AVEILGameMode::BeginPlay()
 		}, 6.f, false);
 	}
 
+	// PHI LINEUP PHOTO. The overlay frames are 720p legs and rooftops; a wing or a
+	// lantern staff at 12 m is four pixels. This flag puts a camera three metres in
+	// front of the runner, at chest height, and lights the shot, so the silhouette the
+	// lineup is built on can be seen instead of asserted.
+	if (FParse::Param(FCommandLine::Get(), TEXT("philineup")))
+	{
+		FTimerHandle LineupShot;
+		GetWorldTimerManager().SetTimer(LineupShot, [this]()
+		{
+			APawn* Runner = UGameplayStatics::GetPlayerPawn(GetWorld(), 0);
+			if (!Runner) { return; }
+			const FVector At = Runner->GetActorLocation();
+			// FRONT-LEFT, THREE METRES OUT: wings and cape read against the street.
+			const FVector Eye = At + FVector(300.f, -260.f, 150.f);
+			const FVector Look = At + FVector(0.f, 0.f, 95.f);
+			FActorSpawnParameters CamParams;
+			CamParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+			ACameraActor* Cam = GetWorld()->SpawnActor<ACameraActor>(ACameraActor::StaticClass(),
+				Eye, (Look - Eye).Rotation(), CamParams);
+			if (!Cam) { return; }
+			if (APlayerController* ViewPC = UGameplayStatics::GetPlayerController(GetWorld(), 0))
+			{
+				ViewPC->SetViewTargetWithBlend(Cam, 0.f);
+			}
+			if (ADirectionalLight* Key = GetWorld()->SpawnActor<ADirectionalLight>(
+				ADirectionalLight::StaticClass(), FVector(0.f, 0.f, 4000.f), FRotator(-34.f, 120.f, 0.f)))
+			{
+				if (UDirectionalLightComponent* DL = Cast<UDirectionalLightComponent>(Key->GetLightComponent()))
+				{
+					DL->SetIntensity(7.f);
+					DL->SetLightColor(FLinearColor(1.f, 0.94f, 0.84f));
+				}
+			}
+			UE_LOG(LogVEIL, Warning, TEXT("PHI LINEUP PHOTO: runner at %s, camera at %s."),
+				*At.ToCompactString(), *Eye.ToCompactString());
+			FTimerHandle LineupShot2;
+			GetWorldTimerManager().SetTimer(LineupShot2, []()
+			{
+				FScreenshotRequest::RequestScreenshot(FPaths::ProjectDir() / TEXT("Saved/Screenshots/lineup.png"), false, false);
+			}, 6.f, false);
+		}, 5.f, false);
+	}
+
 	// OPEN THE SKY BEFORE ANYONE IS SEATED.
 	//
 	// The seat probe refuses a plaza whose centre is roofed and wakes the runner
