@@ -15,6 +15,8 @@ import math
 import os
 import sys
 
+import veil_ui
+
 PHI = 1.618033988749895
 GOLDEN = 137.5077640500378
 SEED = 1618
@@ -467,7 +469,7 @@ def draw_prop(cv, p, cam):
         cv.oval(x - 140, y - 900, 280, 280, outline="#8fd0ff", width=2)
 
 
-def draw_world(cv, zone, runner, cam, dlg):
+def draw_world(cv, zone, runner, cam, dlg, ui=None):
     # sky
     for i in range(12):
         band = i / 12.0
@@ -498,7 +500,7 @@ def draw_world(cv, zone, runner, cam, dlg):
         if not m.ridden:
             draw_mount(cv, m.kind, sx(m.x, cam), sy(m.z, cam))
     draw_runner(cv, runner, cam)
-    draw_hud(cv, zone, runner, dlg)
+    veil_ui.draw_hud(cv, ui or veil_ui.UIState(), dlg, zone.name, runner)
 
 
 def draw_hud(cv, zone, r, dlg):
@@ -568,6 +570,7 @@ class Game:
         self.zone_i = 0
         self.runner = Runner(0, 0)
         self.dlg = Dialogue()
+        self.ui = veil_ui.UIState()
         self.keys = set()
         self.jump_edge = False
         self.root = tk.Tk()
@@ -585,6 +588,17 @@ class Game:
 
     def on_down(self, e):
         k = e.keysym.lower()
+        # TAB opens the gold menu; while it is open the world keys are parked and
+        # 1-4 walk the tabs, Escape closes. Nothing in the menu moves the runner.
+        if k == "tab":
+            self.ui.menu_open = not self.ui.menu_open
+            return
+        if self.ui.menu_open:
+            if k == "escape":
+                self.ui.menu_open = False
+            elif k in ("1", "2", "3", "4"):
+                self.ui.tab = int(k) - 1
+            return
         key = {"left": "a", "right": "d", "shift_l": "shift", "shift_r": "shift",
                "space": "space"}.get(k, k)
         if key == "e":
@@ -640,7 +654,9 @@ class Game:
             self.jump_edge = False
         self.canvas.delete("all")
         cam = (self.runner.x - 760 / SCALE, self.runner.z - 150)
-        draw_world(self.cv, self.zone(), self.runner, cam, self.dlg)
+        draw_world(self.cv, self.zone(), self.runner, cam, self.dlg, self.ui)
+        if self.ui.menu_open:
+            veil_ui.draw_menu(self.cv, self.ui, self.zone().name)
         self.root.after(16, self.tick)
 
     def run(self):
@@ -648,18 +664,22 @@ class Game:
 
 
 # ---------------------------------------------------------------- proof
-def render_frame(zone_i, dlg=None, path="shot.png", runner=None, seconds=0.0):
+def render_frame(zone_i, dlg=None, path="shot.png", runner=None, seconds=0.0, menu=False):
     zones = build_zones()
     zone = zones[zone_i]
     r = runner or Runner(0.0, 0.0)
     d = dlg or Dialogue()
+    ui = veil_ui.UIState()
+    ui.menu_open = menu
     if seconds:
         keys = {"d"}
         for _ in range(int(seconds * 120)):
             r.step(1 / 120.0, keys, zone, False)
     cv = PilCanvas()
     cam = (r.x - 760 / SCALE, r.z - 150)
-    draw_world(cv, zone, r, cam, d)
+    draw_world(cv, zone, r, cam, d, ui)
+    if menu:
+        veil_ui.draw_menu(cv, ui, zone.name)
     cv.save(path)
     return path
 
@@ -712,6 +732,13 @@ def selftest():
         any(n.name.startswith(w) for z in zones for n in z.npcs)
         for w in ("SERA", "ILVA", "COUNTESS", "DOMEN")))
 
+    ui = veil_ui.UIState()
+    check("four menu tabs", len(ui.tabs) == 4)
+    check("eight wheel slots", len(ui.wheel) == 8)
+    check("loadout four slots", [x[0] for x in ui.loadout] == ["ARMOR", "BELT", "BOOTS", "GLOVES"])
+    check("WARDEN in the wheel", "WARDEN" in ui.wheel)
+    check("quest progress 1/3", ui.progress == (1, 3))
+
     failed = [n for n, ok in checks if not ok]
     for name, ok in checks:
         print(("  PASS  " if ok else "  FAIL  ") + name)
@@ -735,7 +762,8 @@ def main():
         made = [render_frame(0, d, os.path.join(out, "hub.png"), r),
                 render_frame(2, None, os.path.join(out, "spire.png")),
                 render_frame(4, None, os.path.join(out, "deep.png")),
-                render_frame(1, None, os.path.join(out, "nest.png"))]
+                render_frame(1, None, os.path.join(out, "nest.png")),
+                render_frame(0, None, os.path.join(out, "menu.png"), Runner(520.0, 0.0), menu=True)]
         print("SHOTS: " + ", ".join(made))
         return 0
     Game().run()

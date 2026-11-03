@@ -1,0 +1,338 @@
+"""VEIL OMNI - gold ribbon HUD and menu, drawn from primitives on any backend.
+
+Every panel here is built from rectangles, diamonds and lines, so the same code
+draws the tkinter window and the PNG proof shots. No textures, no placeholders.
+"""
+import math
+
+GOLD = "#e8c368"
+GOLD_DEEP = "#8f7a44"
+PALE = "#f6ecd2"
+INK = "#070d18"
+PANEL = "#0d1626"
+PANEL_2 = "#101c30"
+RED = "#c8382f"
+BLUE = "#3f8fd8"
+TEAL = "#35c9b8"
+GREEN = "#3f9a5c"
+
+
+class UIState:
+    """What the HUD shows. One object, so the window and the shots agree."""
+
+    def __init__(self):
+        self.menu_open = False
+        self.tab = 0
+        self.tabs = ("SETTINGS", "QUESTS", "MAP", "INVENTORY")
+        self.hp, self.hp_max = 320, 320
+        self.shield, self.shield_max = 150, 150
+        self.level, self.cls = 14, "WARDEN"
+        self.credits = 12450
+        self.quest = "SECURE THE RELIC"
+        self.objective = "Retrieve the Warden's Sigil in the Lower District"
+        self.progress = (1, 3)
+        self.ammo = (28, 120)
+        self.threat = "MODERATE"
+        self.ability = "OVERCHARGE"
+        self.ability_ready = True
+        self.player = "ARIN SKYWARD"
+        self.gold, self.load, self.power = 12450, (48, 60), 1240
+        self.loadout = [
+            ("ARMOR", "PLATED ARMOR MK-II", "98% DURABILITY", "PROTECTED"),
+            ("BELT", "UTILITY BELT", "4/4 POUCHES", "FULL"),
+            ("BOOTS", "STEALTH BOOTS", "MOVE SPEED +10%", "ENHANCED"),
+            ("GLOVES", "GRIP GLOVES", "MELEE BONUS +5", "ENHANCED"),
+        ]
+        self.wheel = ["MEDKIT", "GRENADE", "SCAN PULSE", "EMP DISCHARGE",
+                      "CLOAK", "SCOUT DRONE", "SIGNAL LANCE", "WARDEN"]
+        self.sliders = [("MASTER VOLUME", 0.80), ("MUSIC VOLUME", 0.65),
+                        ("SFX VOLUME", 0.72), ("BRIGHTNESS", 0.55), ("BLOOM EFFECT", 0.60)]
+        self.inventory = [
+            ("CRYSTAL SWORD", "DMG 124 - RARE"),
+            ("GOLDEN PLATE", "ARMOR 86 - RARE"),
+            ("CRYSTAL BOW", "DMG 98 - RARE"),
+            ("GUARDIAN SHIELD", "BLOCK 45 - RARE"),
+            ("CRYSTAL DAGGER", "DMG 52 - UNCOMMON"),
+            ("GOLD GREAVES", "ARMOR 40 - RARE"),
+            ("SHARD AMULET", "MAGIC +12 - RARE"),
+        ]
+        self.quests = [
+            ("The Shattered Crystal", "Recover the Crystal of Veil from the Sunken Ruins", 2, 3),
+            ("Bandit Camp Clearance", "Defeat 5 Bandit Captains in Whispering Woods", 3, 5),
+            ("Escort the Caravan", "Safely escort caravan to Dawnreach Port", 7, 10),
+        ]
+
+
+# ------------------------------------------------------------------ pieces
+def frame(b, x, y, w, h, fill=PANEL, thick=2):
+    b.rect(x, y, x + w, y + h, fill=fill, outline=GOLD, width=thick)
+    b.rect(x + 4, y + 4, x + w - 4, y + h - 4, outline=GOLD_DEEP)
+    for cx, cy in ((x, y), (x + w, y), (x, y + h), (x + w, y + h)):
+        b.poly([(cx - 6, cy), (cx, cy - 6), (cx + 6, cy), (cx, cy + 6)], fill=GOLD)
+
+
+def ribbon(b, x, y, w, h, text, size=18):
+    b.rect(x, y, x + w, y + h, fill=PANEL_2, outline=GOLD, width=2)
+    b.rect(x + 6, y + 6, x + w - 6, y + h - 6, outline=GOLD_DEEP)
+    for side in (-1, 1):
+        cx = x if side < 0 else x + w
+        b.poly([(cx, y + h * 0.3), (cx + side * 26, y + h * 0.15),
+                (cx + side * 26, y + h * 0.85), (cx, y + h * 0.7)], fill=GOLD_DEEP, outline=GOLD)
+    b.text(x + w / 2, y + h * 0.5 - size * 0.6, text, fill=GOLD, size=size, anchor="center", bold=True)
+
+
+def bar(b, x, y, w, h, frac, fill, back="#241a1c"):
+    b.rect(x, y, x + w, y + h, fill=back, outline="#4a2a2a")
+    frac = max(0.0, min(1.0, frac))
+    if frac > 0:
+        b.rect(x, y, x + w * frac, y + h, fill=fill)
+
+
+def mic(b, cx, cy, s=1.0):
+    b.rect(cx - 9 * s, cy - 20 * s, cx + 9 * s, cy + 4 * s, fill=GOLD)
+    b.oval(cx - 14 * s, cy - 4 * s, cx + 14 * s, cy + 16 * s, outline=GOLD, width=2)
+    b.line([(cx, cy + 16 * s), (cx, cy + 24 * s)], fill=GOLD, width=2)
+    b.line([(cx - 10 * s, cy + 24 * s), (cx + 10 * s, cy + 24 * s)], fill=GOLD, width=2)
+
+
+def waveform(b, x, y, w, h, seed=0):
+    for i in range(18):
+        t = i / 17.0
+        a = abs(math.sin(t * 9.0 + seed)) * 0.7 + 0.15
+        px = x + t * w
+        b.line([(px, y + h / 2 - a * h / 2), (px, y + h / 2 + a * h / 2)], fill=GOLD_DEEP, width=1)
+
+
+def diamond(b, cx, cy, r, fill=GOLD):
+    b.poly([(cx, cy - r), (cx + r, cy), (cx, cy + r), (cx - r, cy)], fill=fill)
+
+
+def item_glyph(b, kind, cx, cy, s=1.0):
+    if kind == "ARMOR":
+        b.poly([(cx - 22 * s, cy - 18 * s), (cx, cy - 30 * s), (cx + 22 * s, cy - 18 * s),
+                (cx + 16 * s, cy + 22 * s), (cx - 16 * s, cy + 22 * s)], fill="#6d6a63", outline=GOLD)
+        b.poly([(cx, cy - 20 * s), (cx, cy + 14 * s)], fill=GOLD)
+    elif kind == "BELT":
+        b.rect(cx - 26 * s, cy - 10 * s, cx + 26 * s, cy + 10 * s, fill="#5a4a32", outline=GOLD)
+        b.rect(cx - 8 * s, cy - 12 * s, cx + 8 * s, cy + 12 * s, fill=GOLD, outline=GOLD_DEEP)
+    elif kind == "BOOTS":
+        for side in (-1, 1):
+            b.rect(cx + side * 8 * s - 7 * s, cy - 24 * s, cx + side * 8 * s + 7 * s, cy + 8 * s,
+                   fill="#4a4740", outline=GOLD)
+            b.rect(cx + side * 8 * s - 11 * s, cy + 8 * s, cx + side * 8 * s + 11 * s, cy + 16 * s,
+                   fill="#6b5636", outline=GOLD)
+    elif kind == "GLOVES":
+        b.rect(cx - 18 * s, cy - 8 * s, cx + 18 * s, cy + 18 * s, fill="#4a4740", outline=GOLD)
+        for i in range(4):
+            b.rect(cx - 16 * s + i * 9 * s, cy - 26 * s, cx - 10 * s + i * 9 * s, cy - 8 * s,
+                   fill="#5a564c", outline=GOLD_DEEP)
+
+
+# ------------------------------------------------------------------ HUD
+def draw_hud(b, st, dlg=None, zone_name="HUB", runner=None):
+    W, H = 1280, 720
+
+    # player status, 360x150
+    frame(b, 20, 18, 360, 150)
+    b.text(36, 26, "PLAYER STATUS", fill=GOLD_DEEP, size=9, bold=True)
+    b.text(36, 44, "HP %d/%d" % (st.hp, st.hp_max), fill=PALE, size=13, bold=True)
+    bar(b, 36, 64, 250, 12, st.hp / st.hp_max, RED)
+    b.poly([(300, 60), (308, 68), (300, 76), (292, 68)], fill="#e0605a")
+    b.text(36, 84, "SHIELD %d/%d" % (st.shield, st.shield_max), fill=PALE, size=13, bold=True)
+    bar(b, 36, 104, 250, 12, st.shield / st.shield_max, BLUE, back="#16202e")
+    b.poly([(300, 98), (308, 100), (306, 110), (300, 116), (294, 110), (292, 100)], fill="#7fb8ff")
+    b.text(36, 122, "LEVEL %d  -  %s" % (st.level, st.cls), fill=GOLD, size=13, bold=True)
+    b.text(36, 140, "CLASS: TACTICAL %s" % st.cls, fill=GOLD_DEEP, size=9)
+    b.oval(34, 150, 46, 162, fill="#e8c368")
+    b.text(52, 150, "CREDITS: %s CR" % format(st.credits, ","), fill=PALE, size=9)
+
+    # title ribbon
+    ribbon(b, W / 2 - 190, 14, 380, 54, "VEIL OMNI", 22)
+
+    # compass minimap, 220 ring
+    cx, cy, r = W - 148, 128, 106
+    b.oval(cx - r, cy - r, cx + r, cy + r, fill="#0a1424", outline=GOLD, width=3)
+    b.oval(cx - r + 14, cy - r + 14, cx + r - 14, cy + r - 14, outline=GOLD_DEEP)
+    b.oval(cx - r + 34, cy - r + 34, cx + r - 34, cy + r - 34, outline="#2a3b52")
+    for i in range(24):
+        a = math.radians(i * 15)
+        x0, y0 = cx + math.cos(a) * (r - 10), cy + math.sin(a) * (r - 10)
+        x1, y1 = cx + math.cos(a) * (r - 20), cy + math.sin(a) * (r - 20)
+        b.line([(x0, y0), (x1, y1)], fill=GOLD_DEEP, width=2 if i % 6 == 0 else 1)
+    for lab, a in (("N", -90), ("E", 0), ("S", 90), ("W", 180)):
+        ax = cx + math.cos(math.radians(a)) * (r - 34)
+        ay = cy + math.sin(math.radians(a)) * (r - 34)
+        b.text(ax, ay - 5, lab, fill=GOLD, size=10, anchor="center", bold=True)
+    b.poly([(cx, cy - 44), (cx + 10, cy + 12), (cx, cy + 4), (cx - 10, cy + 12)], fill="#d8c07a")
+    b.oval(cx - 5, cy - 5, cx + 5, cy + 5, fill=GOLD)
+    b.text(cx, cy + r + 8, "MINIMAP - SECTOR 07", fill=GOLD_DEEP, size=9, anchor="center", bold=True)
+
+    # quest panel, 360x120
+    qx, qy = W - 390, 262
+    frame(b, qx, qy, 360, 120)
+    b.text(qx + 16, qy + 10, "QUEST: %s" % st.quest, fill=GOLD, size=12, bold=True)
+    b.text(qx + 16, qy + 32, "Objective", fill=GOLD_DEEP, size=9, bold=True)
+    b.text(qx + 16, qy + 46, st.objective, fill=PALE, size=9)
+    b.text(qx + 16, qy + 70, "PROGRESS: %d/%d" % st.progress, fill=GOLD_DEEP, size=9, bold=True)
+    done, total = st.progress
+    bar(b, qx + 16, qy + 86, 240, 10, done / max(1, total), GOLD)
+    b.text(qx + 330, qy + 84, "%d%%" % int(100 * done / max(1, total)), fill=GOLD, size=11, anchor="e")
+
+    # armour loadout, 300x340
+    ax, ay = 20, 190
+    frame(b, ax, ay, 300, 340)
+    b.text(ax + 16, ay + 10, "ARMOR LOADOUT", fill=GOLD, size=12, bold=True)
+    for i, (slot, name, stat, state) in enumerate(st.loadout):
+        col, row = i % 2, i // 2
+        sx = ax + 14 + col * 140
+        sy = ay + 36 + row * 148
+        b.rect(sx, sy, sx + 128, sy + 90, fill="#0a1424", outline=GOLD_DEEP)
+        item_glyph(b, slot, sx + 64, sy + 38, 1.0)
+        b.text(sx + 64, sy + 88, slot, fill=GOLD, size=10, anchor="center", bold=True)
+        b.text(sx + 64, sy + 100, name, fill=PALE, size=8, anchor="center")
+        b.text(sx + 64, sy + 112, stat, fill=GOLD_DEEP, size=8, anchor="center")
+        b.text(sx + 64, sy + 126, state, fill=TEAL, size=8, anchor="center", bold=True)
+
+    # item wheel
+    wx, wy, wr = W / 2, H - 200, 148
+    b.oval(wx - wr, wy - wr, wx + wr, wy + wr, fill="#0a1424", outline=GOLD, width=3)
+    b.oval(wx - wr + 16, wy - wr + 16, wx + wr - 16, wy + wr - 16, outline=GOLD_DEEP)
+    for i, name in enumerate(st.wheel):
+        a0 = math.radians(-90 + i * 45)
+        a1 = math.radians(-90 + (i + 1) * 45)
+        b.line([(wx + math.cos(a0) * 56, wy + math.sin(a0) * 56),
+                (wx + math.cos(a0) * (wr - 20), wy + math.sin(a0) * (wr - 20))], fill=GOLD_DEEP, width=2)
+        am = math.radians(-90 + i * 45 + 22.5)
+        lx = wx + math.cos(am) * (wr - 54)
+        ly = wy + math.sin(am) * (wr - 54)
+        b.text(lx, ly - 4, name, fill=PALE, size=8, anchor="center", bold=True)
+        ix = wx + math.cos(am) * (wr - 94)
+        iy = wy + math.sin(am) * (wr - 94)
+        diamond(b, ix, iy, 6, GOLD_DEEP)
+    b.oval(wx - 34, wy - 34, wx + 34, wy + 34, fill="#14213a", outline=GOLD)
+    b.rect(wx - 8, wy - 12, wx + 8, wy + 4, fill=GOLD)
+    b.oval(wx - 5, wy - 18, wx + 5, wy - 6, outline=GOLD, width=2)
+    b.text(wx, wy + 12, "SELECT - [R]", fill=GOLD_DEEP, size=8, anchor="center")
+
+    # combat panel, 340x170
+    kx, ky = W - 380, H - 300
+    frame(b, kx, ky, 340, 170)
+    b.text(kx + 16, ky + 10, "COMBAT MODE", fill=GOLD, size=13, bold=True)
+    b.text(kx + 250, ky + 10, "- ACTIVE -", fill=TEAL, size=9)
+    b.text(kx + 16, ky + 36, "! THREAT LEVEL: %s" % st.threat, fill="#e0a03a", size=10)
+    b.text(kx + 16, ky + 60, "WEAPON: PULSE RIFLE", fill=PALE, size=11)
+    b.text(kx + 320, ky + 60, "%d / %d" % st.ammo, fill=GOLD, size=11, anchor="e")
+    b.text(kx + 16, ky + 78, "AMMO: %d/%d" % st.ammo, fill=GOLD_DEEP, size=9)
+    b.text(kx + 16, ky + 104, "ABILITY Q: %s" % st.ability, fill=PALE, size=10)
+    b.text(kx + 16, ky + 122, "READY" if st.ability_ready else "CHARGING", fill=TEAL, size=9, bold=True)
+    for i in range(4):
+        diamond(b, kx + 20 + i * 22, ky + 146, 6, GOLD if i < 3 else GOLD_DEEP)
+
+    # ONE prompt, one bar, one mic, no duplicate
+    ow, oh = 560, 64
+    ox, oy = (W - ow) / 2, H - 92
+    frame(b, ox, oy, ow, oh)
+    mic(b, ox + 34, oy + 30, 1.0)
+    b.text(ox + 62, oy + 12, "ONE - SPEAK COMMAND", fill=GOLD, size=13, bold=True)
+    waveform(b, ox + 62, oy + 32, 210, 20, seed=1.7)
+    b.text(ox + ow - 16, oy + 40, "Hold [V] to activate voice - Listening...", fill=GOLD_DEEP, size=8, anchor="e")
+
+    if dlg is not None and dlg.active():
+        pw, ph = 620, 168
+        px, py = 20, H - 336
+        frame(b, px, py, pw, ph)
+        b.text(px + 22, py + 16, dlg.npc.name, fill=GOLD, size=14, bold=True)
+        b.text(px + 22, py + 36, dlg.npc.title, fill=GOLD_DEEP, size=9)
+        b.text(px + 22, py + 62, dlg.npc.lines[dlg.index], fill=PALE, size=12)
+        b.text(px + pw - 22, py + ph - 24, "[E] continue", fill=GOLD, size=10, anchor="e")
+
+
+# ------------------------------------------------------------------ menu
+def draw_menu(b, st, zone_name="HUB"):
+    W, H = 1280, 720
+    b.rect(0, 0, W, H, fill="#050b16")
+    for i in range(8):
+        t = i / 8.0
+        b.rect(0, i * H / 8.0, W, (i + 1) * H / 8.0 + 1,
+               fill="#%02x%02x%02x" % (int(6 + t * 10), int(13 + t * 18), int(26 + t * 30)))
+
+    ribbon(b, W / 2 - 250, 12, 500, 58, "VEIL OMNI", 24)
+
+    # tabs
+    for i, tab in enumerate(st.tabs):
+        tw = 150
+        tx = W / 2 - 2 * tw + i * tw
+        active = (i == st.tab)
+        b.rect(tx + 4, 82, tx + tw - 4, 114, fill=PANEL_2 if active else PANEL,
+               outline=GOLD if active else GOLD_DEEP, width=2 if active else 1)
+        b.text(tx + tw / 2, 90, tab, fill=GOLD if active else GOLD_DEEP, size=11,
+               anchor="center", bold=active)
+
+    # left: settings with sliders
+    frame(b, 28, 132, 380, 306)
+    b.text(48, 142, "SETTINGS", fill=GOLD, size=15, anchor="center", bold=True)
+    for i, (label, val) in enumerate(st.sliders):
+        y = 172 + i * 44
+        b.text(48, y, label, fill=PALE, size=10)
+        b.text(356, y, "%d%%" % int(val * 100), fill=GOLD, size=10, anchor="e")
+        b.rect(48, y + 18, 340, y + 26, fill="#16202e", outline=GOLD_DEEP)
+        b.rect(48, y + 18, 48 + 292 * val, y + 26, fill=GOLD)
+        diamond(b, 48 + 292 * val, y + 22, 6, PALE)
+    b.rect(48, 386, 140, 418, fill=PANEL_2, outline=GOLD)
+    b.text(118, 392, "APPLY", fill=GOLD, size=10, anchor="center", bold=True)
+    b.rect(200, 386, 360, 418, fill=PANEL_2, outline=GOLD_DEEP)
+    b.text(280, 392, "RESET TO DEFAULTS", fill=GOLD_DEEP, size=9, anchor="center")
+
+    # middle: quests
+    frame(b, 428, 132, 380, 306)
+    b.text(448, 142, "QUESTS", fill=GOLD, size=15, anchor="center", bold=True)
+    for i, (name, desc, done, total) in enumerate(st.quests):
+        y = 176 + i * 86
+        b.rect(448, y, 788, y + 74, fill="#0a1424", outline=GOLD_DEEP)
+        diamond(b, 462, y + 18, 7, GOLD)
+        b.text(476, y + 8, name, fill=PALE, size=11, bold=True)
+        b.text(476, y + 26, desc, fill=GOLD_DEEP, size=8)
+        b.text(476, y + 44, "%d/%d" % (done, total), fill=GOLD, size=9)
+        bar(b, 520, y + 46, 240, 8, done / max(1, total), GOLD)
+    b.text(618, 412, "Active Quests: 3/6", fill=GOLD_DEEP, size=9, anchor="center")
+
+    # right: map
+    frame(b, 828, 132, 424, 306)
+    b.text(848, 142, "MAP", fill=GOLD, size=15, anchor="center", bold=True)
+    b.rect(848, 172, 1232, 386, fill="#0f2a24", outline=GOLD_DEEP)
+    for i in range(6):
+        b.poly([(860 + i * 62, 380), (900 + i * 62, 250 + (i % 3) * 24), (940 + i * 62, 380)],
+               fill="#1d3f33", outline="#2f5a44")
+    b.line([(880, 350), (980, 320), (1080, 340), (1180, 300)], fill=GOLD_DEEP, width=2)
+    b.poly([(1040, 240), (1052, 262), (1028, 262)], fill=RED, outline=GOLD)
+    b.text(1040, 266, "YOU", fill=PALE, size=8, anchor="center")
+    for lab, lx, ly in (("Sunken Ruins", 900, 200), ("Whispering Woods", 1030, 190),
+                        ("Dawnreach Port", 1010, 360)):
+        b.text(lx, ly, lab, fill=PALE, size=8, anchor="center")
+    b.text(1030, 396, "REGION: VALE OF DAWN - LEVEL 30-40 AREA", fill=GOLD, size=8, anchor="center")
+
+    # inventory strip
+    frame(b, 28, 452, 1224, 132)
+    b.text(48, 460, "INVENTORY - GOLD VAULT", fill=GOLD, size=12, bold=True)
+    for i, (name, stat) in enumerate(st.inventory):
+        sx = 44 + i * 132
+        b.rect(sx, 486, sx + 116, 566, fill="#0a1424", outline=GOLD_DEEP)
+        diamond(b, sx + 58, 508, 12, GOLD_DEEP)
+        b.text(sx + 58, 532, name, fill=PALE, size=8, anchor="center", bold=True)
+        b.text(sx + 58, 548, stat, fill=GOLD_DEEP, size=7, anchor="center")
+    sx = 44 + 7 * 132
+    b.rect(sx, 486, sx + 116, 566, fill="#0a1424", outline=GOLD_DEEP)
+    b.text(sx + 58, 520, "+", fill=GOLD_DEEP, size=22, anchor="center")
+
+    # bottom bar
+    b.rect(0, H - 84, W, H, fill="#070d18", outline=GOLD, width=2)
+    diamond(b, 40, H - 42, 12, GOLD)
+    b.text(60, H - 58, "LVL %d" % st.level, fill=GOLD, size=10, bold=True)
+    b.text(60, H - 42, "PLAYER: %s" % st.player, fill=PALE, size=10)
+    b.text(300, H - 50, "GOLD: %s" % format(st.gold, ","), fill=GOLD, size=12, bold=True)
+    b.text(520, H - 50, "LOAD: %d/%d" % st.load, fill=PALE, size=11)
+    b.text(660, H - 50, "POWER: %s" % format(st.power, ","), fill=PALE, size=11)
+    for i, lab in enumerate(("EQUIP", "SORT", "CLOSE")):
+        bx = 860 + i * 132
+        b.rect(bx, H - 66, bx + 116, H - 22, fill=PANEL_2, outline=GOLD)
+        b.text(bx + 58, H - 54, lab, fill=GOLD, size=10, anchor="center", bold=True)
