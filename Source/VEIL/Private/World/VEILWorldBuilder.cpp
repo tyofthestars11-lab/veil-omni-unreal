@@ -3683,6 +3683,7 @@ void AVEILWorldBuilder::BuildPhiForms()
 	const FLinearColor Gold(0.92f, 0.72f, 0.30f);
 	const FLinearColor Blue(0.16f, 0.38f, 0.95f);
 	const FLinearColor WaterBlue(0.40f, 0.66f, 0.98f);
+	const FLinearColor CliffFace(0.42f, 0.40f, 0.36f);
 	auto Tag = [](UStaticMeshComponent* C)
 	{
 		if (C && C->GetOwner()) { C->GetOwner()->Tags.Add(FName(TEXT("PhiCity"))); }
@@ -3796,11 +3797,9 @@ void AVEILWorldBuilder::BuildPhiForms()
 	int32 TerrainCliffs = 0, CliffFalls = 0;
 	if (CliffMesh)
 	{
-		// Cliff faces take a stone grey, not the floor MESH: the tint argument is a colour.
-		const FLinearColor CliffTint(0.42f, 0.40f, 0.36f);
 		FVector CliffCm(100.f, 100.f, 100.f);
 		{
-			UStaticMeshComponent* Probe = SpawnBlock(FVector(0.f, 0.f, -90000.f), FVector(1.f, 1.f, 1.f), CliffMesh, CliffTint, 0.f);
+			UStaticMeshComponent* Probe = SpawnBlock(FVector(0.f, 0.f, -90000.f), FVector(1.f, 1.f, 1.f), CliffMesh, CliffFace, 0.f);
 			if (Probe)
 			{
 				const FVector B = Probe->Bounds.BoxExtent * 2.f;
@@ -3815,7 +3814,7 @@ void AVEILWorldBuilder::BuildPhiForms()
 			const float H = 700.f * FMath::Pow(1.618033988749895f, (float)(k % 3));
 			const FVector At((float)(FMath::Cos(A1) * R2), (float)(FMath::Sin(A1) * R2), H * 0.5f);
 			Tag(SpawnBlockRot(At, FVector(1400.f / CliffCm.X, 600.f / CliffCm.Y, H / CliffCm.Z),
-				CliffMesh, CliffTint, 0.f, FRotator(0.f, (float)FMath::RadiansToDegrees(A1) + 90.f, 0.f)));
+				CliffMesh, CliffFace, 0.f, FRotator(0.f, (float)FMath::RadiansToDegrees(A1) + 90.f, 0.f)));
 			++TerrainCliffs;
 			if (k % 3 == 0)
 			{
@@ -3880,6 +3879,101 @@ void AVEILWorldBuilder::BuildPhiForms()
 	UE_LOG(LogVEIL, Warning,
 		TEXT("PHI RIVER: %d water piece(s), %d bridge(s); PHI DEEP: %d step(s) descending."),
 		RiverPieces, RiverBridges, DeepSteps);
+
+	// TERRACED GROUND. The measured fault is four flat slabs of 6.4 km: everything stood on
+	// one plane, which is why the world read flat at eye level and from the air. Four decks
+	// now rise outward on phi heights, each with a cliff face at its inner edge and water
+	// coming off the lip, so the market sits low and the city sits high.
+	int32 TerraceDecks = 0, TerraceFaces = 0, TerraceFalls = 0;
+	if (CliffMesh)
+	{
+		const FLinearColor DeckStone(0.52f, 0.48f, 0.40f);
+		const float DeckR[4] = { 4200.f, 7200.f, 10400.f, 13800.f };
+		const float DeckH[4] = { 320.f, 820.f, 1900.f, 3800.f };
+		FVector CliffCm2(100.f, 100.f, 100.f);
+		{
+			UStaticMeshComponent* Probe = SpawnBlock(FVector(0.f, 0.f, -95000.f), FVector(1.f, 1.f, 1.f), CliffMesh, DeckStone, 0.f);
+			if (Probe)
+			{
+				const FVector B = Probe->Bounds.BoxExtent * 2.f;
+				if (B.Z > 1.f) { CliffCm2 = B; }
+				if (Probe->GetOwner()) { Probe->GetOwner()->Destroy(); }
+			}
+		}
+		for (int32 band = 0; band < 4; ++band)
+		{
+			const float RR = DeckR[band];
+			const float HH = DeckH[band];
+			const int32 Seg2 = FMath::Max(16, (int32)FMath::CeilToFloat((float)(2.0 * 3.14159265358979323846 * (double)RR / 1800.0)));
+			const float PieceLen = (float)(2.0 * 3.14159265358979323846 * (double)RR / (double)Seg2) * 1.06f;
+			for (int32 i2 = 0; i2 < Seg2; ++i2)
+			{
+				const double A2 = (double)i2 * (2.0 * 3.14159265358979323846 / (double)Seg2);
+				const float CX = (float)(FMath::Cos(A2) * RR);
+				const float CY = (float)(FMath::Sin(A2) * RR);
+				const float YA = (float)FMath::RadiansToDegrees(A2) + 90.f;
+				Tag(SpawnBlockRot(FVector(CX, CY, HH),
+					FVector(PieceLen / 100.f, 18.f, 0.3f), Stone, DeckStone, 0.f, FRotator(0.f, YA, 0.f)));
+				++TerraceDecks;
+				Tag(SpawnBlockRot(FVector(CX, CY, HH * 0.5f),
+					FVector(PieceLen / CliffCm2.X, 700.f / CliffCm2.Y, HH / CliffCm2.Z),
+					CliffMesh, CliffFace, 0.f, FRotator(0.f, YA, 0.f)));
+				++TerraceFaces;
+				if (i2 % 6 == 0)
+				{
+					Tag(SpawnBlockRot(FVector(CX, CY, HH - 240.f), FVector(2.2f, 0.4f, 5.4f),
+						Water, WaterBlue, 0.9f, FRotator(0.f, YA, 0.f)));
+					++TerraceFalls;
+				}
+			}
+		}
+	}
+	UE_LOG(LogVEIL, Warning,
+		TEXT("PHI TERRACE: %d deck(s), %d cliff face(s), %d fall(s) - four levels, not one plane."),
+		TerraceDecks, TerraceFaces, TerraceFalls);
+
+	// FOUR REGIONS DRESSED FROM ART ALREADY PAID FOR. Sicka's 215 meshes and Iceland's 14
+	// mountains are imported and mostly unplaced, while Hub, Nest, Omni and Deep hold almost
+	// no geometry. Each region gets a honed ring on the golden angle, with a budget so it is
+	// dressed and not flooded; a missing kit path is counted, never silently skipped.
+	int32 RegionProps = 0, KitMissing = 0;
+	if (CliffMesh)
+	{
+		const TCHAR* KitPaths[] = {
+			TEXT("/Game/Sicka_EnvPack2/Sicka_Ancient_Kit/Mesh/Props/SM_AncientColumn_Big.SM_AncientColumn_Big"),
+			TEXT("/Game/Sicka_EnvPack2/Sicka_Ancient_Kit/Mesh/Cliff/SM_CliffBig.SM_CliffBig"),
+			TEXT("/Game/Sicka_EnvPack2/Sicka_Ancient_Kit/Mesh/Cliff/SM_CliffMed.SM_CliffMed"),
+			TEXT("/Game/Sicka_EnvPack2/Sicka_Ancient_Kit/Mesh/Cliff/SM_CliffSlate1.SM_CliffSlate1")
+		};
+		TArray<UStaticMesh*> Kits;
+		for (const TCHAR* KP : KitPaths)
+		{
+			if (UStaticMesh* Kit = LoadObject<UStaticMesh>(nullptr, KP)) { Kits.Add(Kit); }
+			else { ++KitMissing; }
+		}
+		const FVector RegionAt[4] = {
+			FVector(900.f, 0.f, 0.f), FVector(-450.f, 780.f, 0.f),
+			FVector(600.f, -2100.f, 0.f), FVector(0.f, -5000.f, 0.f)
+		};
+		for (int32 R4 = 0; R4 < 4; ++R4)
+		{
+			for (int32 i4 = 0; i4 < 24 && Kits.Num() > 0; ++i4)
+			{
+				const double A4 = (double)(i4 + 1) * 137.5077640500378 * 3.14159265358979323846 / 180.0;
+				const float Rad4 = (float)(FMath::Sqrt((double)(i4 + 1)) * 260.0);
+				UStaticMesh* Kit = Kits[i4 % Kits.Num()];
+				Tag(SpawnBlockRot(
+					FVector(RegionAt[R4].X + (float)(FMath::Cos(A4) * Rad4),
+						RegionAt[R4].Y + (float)(FMath::Sin(A4) * Rad4), 160.f),
+					FVector(1.6f, 1.6f, 2.0f), Kit, (i4 % 3 == 0) ? Gold : Blue, 0.22f,
+					FRotator(0.f, (float)FMath::RadiansToDegrees(A4), 0.f)));
+				++RegionProps;
+			}
+		}
+	}
+	UE_LOG(LogVEIL, Warning,
+		TEXT("PHI REGIONS: %d prop(s) across Hub/Nest/Omni/Deep, %d kit path(s) missing."),
+		RegionProps, KitMissing);
 
 	UE_LOG(LogVEIL, Warning,
 		TEXT("PHI TERRAIN: crystal range %d shard(s), terrace cliffs %d, cliff falls %d - relief, not a slab."),
