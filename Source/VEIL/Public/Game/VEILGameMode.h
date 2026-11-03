@@ -132,6 +132,27 @@ public:
 	/** Fires only if the world's timer manager advances: the timer cross-check. */
 	void PhiOnTimerCheck();
 
+	/** CLICK TO TYPE TO ONE. The bar the HUD draws opens a real text field; Enter sends the
+	 *  line through UPHIONE::Say, the same door a spoken sentence uses, so the skill, the
+	 *  hand and the ledger come out identical either way. */
+	void OpenTypeToONE();
+	void CloseTypeToONE();
+	bool IsTypingToONE() const { return bTypingToONE; }
+
+	/** Send a typed line to ONE. This is the door both Enter and the proof hook use,
+	 *  and it ends in UPHIONE::Say - the same call a spoken sentence makes. */
+	void SubmitTypedLine(const FString& Line);
+
+private:
+	/** Slate objects are not UObjects, so these are plain pointers, not UPROPERTY. */
+	bool bTypingToONE = false;
+	TSharedPtr<class SWidget> TypeContainer;
+	TSharedPtr<class SEditableTextBox> TypeBox;
+	void OnLeftClickType();
+	void OnOneTextCommitted(const FText& Text, ETextCommit::Type CommitType);
+
+public:
+
 	/** Device of the last real press. Everything on screen that names a button
 	 *  asks this, so a pad player is never told to press TAB. */
 	virtual bool InputKey(const FInputKeyEventArgs& Params) override;

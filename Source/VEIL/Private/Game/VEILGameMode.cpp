@@ -28,6 +28,13 @@
 #include "Systems/PHILivingWorld.h"
 #include "Systems/VEILDialogue.h"
 #include "World/VEILMapCapture.h"
+#include "UI/VEILTypeBar.h"
+#include "Widgets/Input/SEditableTextBox.h"
+#include "Widgets/Layout/SBox.h"
+#include "Framework/Application/SlateApplication.h"
+#include "Styling/CoreStyle.h"
+#include "Engine/GameViewportClient.h"
+
 #include "Systems/VEILInputHelp.h"
 #include "InputKeyEventArgs.h"
 #include "Systems/VEILTutorial.h"
@@ -2325,6 +2332,39 @@ void AVEILPlayerController::BeginPlay()
 		}
 	}
 
+	// -phitype: THE CLICK, WITHOUT A MOUSE. The proof run opens the field through
+	// OpenTypeToONE - the click handler's own door - and sends through SubmitTypedLine, the
+	// door Enter uses. Nothing here bypasses the field; it exercises it.
+	if (FParse::Param(FCommandLine::Get(), TEXT("phitype")))
+	{
+		FTimerHandle TypeOpen;
+		GetWorldTimerManager().SetTimer(TypeOpen, FTimerDelegate::CreateWeakLambda(this, [this]()
+		{
+			if (UWorld* W = GetWorld())
+			{
+				if (AVEILPlayerController* TypePC = Cast<AVEILPlayerController>(W->GetFirstPlayerController()))
+				{
+					TypePC->OpenTypeToONE();
+					UE_LOG(LogVEIL, Warning, TEXT("PHI TYPE PROOF: field opened through OpenTypeToONE."));
+				}
+			}
+		}), 4.f, false);
+
+		FTimerHandle TypeSend;
+		GetWorldTimerManager().SetTimer(TypeSend, FTimerDelegate::CreateWeakLambda(this, [this]()
+		{
+			if (UWorld* W = GetWorld())
+			{
+				if (AVEILPlayerController* TypePC = Cast<AVEILPlayerController>(W->GetFirstPlayerController()))
+				{
+					TypePC->SubmitTypedLine(TEXT("fly me to the keeper"));
+					TypePC->CloseTypeToONE();
+					UE_LOG(LogVEIL, Warning, TEXT("PHI TYPE PROOF: line submitted and field closed."));
+				}
+			}
+		}), 7.f, false);
+	}
+
 	// -phione: speaks to ONE through the same Say() a spoken sentence reaches,
 	// so the proof run proves the skill, the hand and the ledger - not a shortcut.
 	if (FParse::Param(FCommandLine::Get(), TEXT("phione")))
@@ -3104,6 +3144,112 @@ void AVEILPlayerController::PadRight()
 	SwitchLead();
 }
 
+// ---------------------------------------------------------------------------
+// CLICK TO TYPE TO ONE. A key you have to hold is not a conversation; a field you
+// click and type into is. The HUD draws the bar from VEILTypeBar::ForScreen and
+// this hit-tests the very same rectangle, so the click and the drawing agree.
+// ---------------------------------------------------------------------------
+void AVEILPlayerController::OnLeftClickType()
+{
+	float MX = 0.f, MY = 0.f;
+	if (!GetMousePosition(MX, MY)) { return; }
+
+	float ClipX = 1920.f, ClipY = 1080.f;
+	if (GEngine && GEngine->GameViewport && GEngine->GameViewport->Viewport)
+	{
+		const FIntPoint Size = GEngine->GameViewport->Viewport->GetSizeXY();
+		ClipX = (float)Size.X;
+		ClipY = (float)Size.Y;
+	}
+	const VEILTypeBar::FZone Zone = VEILTypeBar::ForScreen(ClipX, ClipY);
+	if (!Zone.Contains(MX, MY)) { return; }
+
+	OpenTypeToONE();
+}
+
+void AVEILPlayerController::OpenTypeToONE()
+{
+	if (!GEngine || !GEngine->GameViewport || !GEngine->GameViewport->Viewport) { return; }
+	if (bTypingToONE && TypeBox.IsValid())
+	{
+		FSlateApplication::Get().SetKeyboardFocus(TypeBox, EFocusCause::SetDirectly);
+		return;
+	}
+
+	SAssignNew(TypeBox, SEditableTextBox)
+		.HintText(FText::FromString(TEXT("Type to ONE, then press Enter")))
+		.Font(FCoreStyle::GetDefaultFontStyle("Regular", 14))
+		.ForegroundColor(FSlateColor(FLinearColor(1.f, 0.88f, 0.45f)))
+		.BackgroundColor(FSlateColor(FLinearColor(0.035f, 0.045f, 0.075f, 0.95f)))
+		.Padding(FMargin(10.f, 5.f))
+		.SelectAllTextWhenFocused(true)
+		.OnTextCommitted_UObject(this, &AVEILPlayerController::OnOneTextCommitted);
+
+	const FIntPoint Size = GEngine->GameViewport->Viewport->GetSizeXY();
+	const VEILTypeBar::FZone Zone = VEILTypeBar::ForScreen((float)Size.X, (float)Size.Y);
+	SAssignNew(TypeContainer, SBox)
+		.HAlign(HAlign_Center)
+		.VAlign(VAlign_Top)
+		.Padding(FMargin(0.f, Zone.Y, 0.f, 0.f))
+		.WidthOverride(Zone.W)
+		[ TypeBox.ToSharedRef() ];
+
+	GEngine->GameViewport->AddViewportWidgetContent(TypeContainer.ToSharedRef(), 100);
+
+	FInputModeGameAndUI Mode;
+	Mode.SetWidgetToFocus(TypeBox);
+	Mode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
+	Mode.SetHideCursorDuringCapture(false);
+	SetInputMode(Mode);
+	bShowMouseCursor = true;
+	bTypingToONE = true;
+	UE_LOG(LogVEIL, Warning, TEXT("PHI TYPE: field open - click landed in the type bar."));
+}
+
+void AVEILPlayerController::CloseTypeToONE()
+{
+	if (TypeContainer.IsValid() && GEngine && GEngine->GameViewport)
+	{
+		GEngine->GameViewport->RemoveViewportWidgetContent(TypeContainer.ToSharedRef());
+	}
+	TypeContainer.Reset();
+	TypeBox.Reset();
+	bTypingToONE = false;
+	SetInputMode(FInputModeGameOnly());
+	bShowMouseCursor = false;
+}
+
+void AVEILPlayerController::SubmitTypedLine(const FString& Line)
+{
+	const FString Clean = Line.TrimStartAndEnd();
+	if (Clean.IsEmpty())
+	{
+		UE_LOG(LogVEIL, Warning, TEXT("PHI TYPE: empty line, nothing sent."));
+		return;
+	}
+	if (UWorld* W = GetWorld())
+	{
+		if (UPHIONE* One = W->GetSubsystem<UPHIONE>())
+		{
+			One->Say(Clean);
+			UE_LOG(LogVEIL, Warning, TEXT("PHI TYPE: sent to ONE - %s (%d chars)"), *Clean, Clean.Len());
+			return;
+		}
+	}
+	UE_LOG(LogVEIL, Error, TEXT("PHI TYPE: ONE subsystem is missing, the line went nowhere."));
+}
+
+void AVEILPlayerController::OnOneTextCommitted(const FText& Text, ETextCommit::Type CommitType)
+{
+	if (CommitType == ETextCommit::OnEnter)
+	{
+		SubmitTypedLine(Text.ToString());
+	}
+	CloseTypeToONE();
+	UE_LOG(LogVEIL, Warning, TEXT("PHI TYPE: field closed after %s."),
+		CommitType == ETextCommit::OnEnter ? TEXT("Enter") : TEXT("focus loss"));
+}
+
 void AVEILPlayerController::SetupInputComponent()
 {
 	Super::SetupInputComponent();
@@ -3124,6 +3270,9 @@ void AVEILPlayerController::SetupInputComponent()
 		// The living map: wheel on a mouse, D-pad up/down on a pad.
 		InputComponent->BindKey(EKeys::MouseScrollUp, IE_Pressed, this, &AVEILPlayerController::MapZoomIn);
 		InputComponent->BindKey(EKeys::MouseScrollDown, IE_Pressed, this, &AVEILPlayerController::MapZoomOut);
+		// CLICK TO TYPE. Left mouse over the type bar opens the field; everywhere else the
+		// click is left to the world, which is why this tests only the bar's own rectangle.
+		InputComponent->BindKey(EKeys::LeftMouseButton, IE_Pressed, this, &AVEILPlayerController::OnLeftClickType);
 		InputComponent->BindKey(EKeys::SpaceBar, IE_Pressed, this, &AVEILPlayerController::TravelOrAdvance);
 		InputComponent->BindKey(EKeys::Escape, IE_Pressed, this, &AVEILPlayerController::TogglePauseMenu);
 		InputComponent->BindKey(EKeys::Gamepad_Special_Right, IE_Pressed, this, &AVEILPlayerController::TogglePauseMenu);
@@ -3341,6 +3490,9 @@ void AVEILPlayerController::GodMenuActivate()
 
 bool AVEILPlayerController::UIWantsCursor() const
 {
+	// The type bar owns the pointer while it is open, or the cursor is hidden the
+	// same frame it is needed and the player cannot click into the field at all.
+	if (bTypingToONE) { return true; }
 	// Only three pages in this game take the pointer: the title, the pause page
 	// and the ending. The chart, the field manual and the GODMODE page are
 	// keyboard / pad pages by design, so they never steal the mouse.

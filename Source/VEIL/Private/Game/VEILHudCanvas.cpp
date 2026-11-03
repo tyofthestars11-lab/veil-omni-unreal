@@ -37,6 +37,8 @@
 #include "Systems/PHILivingWorld.h"
 #include "Systems/VEILRegionSubsystem.h"
 #include "World/VEILMapCapture.h"
+#include "UI/VEILTypeBar.h"
+#include "Game/VEILGameMode.h"
 #include "Engine/Canvas.h"
 #include "SceneView.h"
 
@@ -1682,6 +1684,25 @@ void AVEILHudCanvas::DrawHUD()
 	// Hidden while a conversation owns the plate, because two voices at once is
 	// neither.
 	// ------------------------------------------------------------------
+	// CLICK HERE TO TYPE TO ONE. A push-to-talk key is not a conversation; this is the door
+	// you can see. The controller hit-tests this exact rectangle, so the bar that is drawn is
+	// the bar that opens the field, and it lights while the field owns the pointer so a click
+	// never happens without an answer.
+	{
+		const VEILTypeBar::FZone Zone = VEILTypeBar::ForScreen(Canvas->ClipX, Canvas->ClipY);
+		// PC is the base controller here; the type-bar state lives on the VEIL controller.
+		const AVEILPlayerController* VPC = Cast<AVEILPlayerController>(PC);
+		const bool bTypingNow = VPC && VPC->IsTypingToONE();
+		FVeilUI::Chip(this, FLinearColor(0.035f, 0.045f, 0.075f, bTypingNow ? 0.92f : 0.70f),
+			Zone.X, Zone.Y, Zone.W, Zone.H);
+		const FLinearColor Edge(1.f, 0.78f, 0.30f, bTypingNow ? 0.95f : 0.55f);
+		DrawRect(Edge, Zone.X, Zone.Y, Zone.W, 1.4f);
+		DrawRect(Edge, Zone.X, Zone.Y + Zone.H - 1.4f, Zone.W, 1.4f);
+		DrawText(bTypingNow ? TEXT("TYPING TO ONE  -  ENTER SENDS") : TEXT("CLICK HERE TO TYPE TO ONE"),
+			bTypingNow ? FLinearColor(1.f, 0.90f, 0.55f) : FLinearColor(0.88f, 0.82f, 0.64f),
+			Zone.X + 12.f, Zone.Y + 6.f, Med, 0.62f);
+	}
+
 	if (const UPHIONE* One = W->GetSubsystem<UPHIONE>())
 	{
 		const UVEILDialogue* DlgNow = W->GetSubsystem<UVEILDialogue>();
