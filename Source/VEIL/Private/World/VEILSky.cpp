@@ -31,6 +31,7 @@ void VEILSky::Dress(UWorld* World)
 	// that looks like a lighting taste.
 	ADirectionalLight* Sun = nullptr;
 	for (TActorIterator<ADirectionalLight> It(World); It; ++It) { Sun = *It; break; }
+	const bool bSpawnedSun = (Sun == nullptr);
 	if (!Sun)
 	{
 		Sun = World->SpawnActor<ADirectionalLight>(ADirectionalLight::StaticClass(), FVector(0.f, 0.f, 12000.f), SunAngle, Params);
@@ -40,10 +41,10 @@ void VEILSky::Dress(UWorld* World)
 
 	if (Sun)
 	{
-		Sun->SetActorRotation(SunAngle);
+		if (bSpawnedSun) { Sun->SetActorRotation(SunAngle); }
 		if (UDirectionalLightComponent* Light = Cast<UDirectionalLightComponent>(Sun->GetLightComponent()))
 		{
-			Light->SetMobility(EComponentMobility::Movable);
+			if (bSpawnedSun) { Light->SetMobility(EComponentMobility::Movable); }
 			Light->SetIntensity(7.0f);
 			Light->SetLightColor(SunColor);
 			Light->SetCastShadows(true);
@@ -54,6 +55,7 @@ void VEILSky::Dress(UWorld* World)
 	// instead of leaving every shadow face black.
 	ASkyLight* Sky = nullptr;
 	for (TActorIterator<ASkyLight> It(World); It; ++It) { Sky = *It; break; }
+	const bool bSpawnedSky = (Sky == nullptr);
 	if (!Sky)
 	{
 		Sky = World->SpawnActor<ASkyLight>(ASkyLight::StaticClass(), FVector(0.f, 0.f, 8000.f), FRotator::ZeroRotator, Params);
@@ -65,7 +67,7 @@ void VEILSky::Dress(UWorld* World)
 	{
 		if (USkyLightComponent* Light = Sky->GetLightComponent())
 		{
-			Light->SetMobility(EComponentMobility::Movable);
+			if (bSpawnedSky) { Light->SetMobility(EComponentMobility::Movable); }
 			Light->SourceType = ESkyLightSourceType::SLS_CapturedScene;
 			Light->SetIntensity(1.6f);
 			Light->SetLightColor(SkyTint);
