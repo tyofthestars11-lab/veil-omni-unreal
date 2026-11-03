@@ -34,8 +34,12 @@ class VEIL_API AVEILContentPass : public AActor
 public:
 	AVEILContentPass();
 
-	/** Build every missing family once, in a ring around the runner. */
-	void Populate();
+	/**
+	 * Build the missing families in a ring around the runner. When the concept
+	 * composition is already present it owns the market, the bridges and the crystal
+	 * peaks, so this pass builds only the family no other system places: trees.
+	 */
+	void Populate(bool bCompositionExists);
 
 	int32 Crystals = 0;
 	int32 Trees = 0;

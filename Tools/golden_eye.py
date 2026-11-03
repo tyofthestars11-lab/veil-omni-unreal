@@ -74,6 +74,16 @@ for _m in re.finditer(
     BUILT["tent"] = max(BUILT["tent"], int(_m.group(4)))
     BUILT["bridge"] = max(BUILT["bridge"], int(_m.group(5)))
 
+# THE COMPOSITION IS AN AUTHOR TOO. The concept world lays the market, the bridges,
+# the crystal peaks and the wings from phi rules and names them in one line, so a
+# family it builds is present even though no asset library holds it.
+CONCEPT = ""
+_cm = re.search(r"PHI CONCEPT: composition laid[^\n]*\((.*?)\)", LOG)
+if _cm:
+    CONCEPT = _cm.group(1).lower()
+CONCEPT_NAMES = {"crystal": "crystals", "bridge": "bridges", "stall": "market",
+                 "tent": "market", "wing": "wings"}
+
 pillars = []
 
 
@@ -112,8 +122,12 @@ for word, _n, miss in families:
     n = assets(word, mesh_only=(word not in ("niagara",)))
     # "crystal meshes" is a label, not a key: the family word is the first token.
     built = BUILT.get(word.split()[0], 0)
-    if n > 0 or built > 0:
+    concept = CONCEPT_NAMES.get(word.split()[0], "")
+    composed = bool(concept) and concept in CONCEPT
+    if n > 0 or built > 0 or composed:
         note = []
+        if composed:
+            note.append("laid by the concept composition")
         if built:
             note.append("%d built by phi rule" % built)
         if n:

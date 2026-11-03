@@ -199,7 +199,7 @@ void AVEILContentPass::BuildBridge(const FVector& A, const FVector& B)
 	++Bridges;
 }
 
-void AVEILContentPass::Populate()
+void AVEILContentPass::Populate(bool bCompositionExists)
 {
 	UWorld* W = GetWorld();
 	if (!W) { return; }
@@ -258,6 +258,12 @@ void AVEILContentPass::Populate()
 		}
 	};
 
+	// ONE AUTHOR PER FAMILY. The concept composition already lays this district's
+	// market, bridges and crystal peaks - 236 pieces - so when it is present this
+	// pass adds only what nothing else places: the trees. Two systems laying
+	// crystals on the same plaza is exactly the clutter this pass was meant to cure.
+	if (!bCompositionExists)
+	{
 	// STALLS ring the runner at 9-12 m, facing him.
 	Sweep(TEXT("stall"), 8, 900.f, 90.f, 620.f, 0.f, [this](const FVector& Spot, float Ang)
 	{
@@ -274,10 +280,6 @@ void AVEILContentPass::Populate()
 		BuildCrystal(Spot);
 	});
 	// TREES at 32-40 m, the edge of the open ground.
-	Sweep(TEXT("tree"), 18, 3200.f, 130.f, 700.f, 101.f, [this](const FVector& Spot, float)
-	{
-		BuildTree(Spot);
-	});
 	// BRIDGES: pairs of open spots on the outer ring, joined across what the market
 	// does not already fill.
 	// A BRIDGE NEEDS TWO OPEN SPOTS, so it walks outward instead of demanding the
@@ -298,8 +300,17 @@ void AVEILContentPass::Populate()
 			break;
 		}
 	}
+	}
+
+	// TREES SHIP IN EVERY DISTRICT. Nothing else in the game lays them, so this is
+	// the one sweep that runs whether or not the composition is already present.
+	Sweep(TEXT("tree"), 18, 3200.f, 130.f, 700.f, 101.f, [this](const FVector& Spot, float)
+	{
+		BuildTree(Spot);
+	});
 
 	UE_LOG(LogVEIL, Warning,
-		TEXT("PHI CONTENT: crystals=%d trees=%d stalls=%d tents=%d bridges=%d built by phi rule around the runner at %s, %d parts total (tried=%d, refused=%d)."),
-		Crystals, Trees, Stalls, Tents, Bridges, *Anchor.ToCompactString(), Parts.Num(), Tried, Refused);
+		TEXT("PHI CONTENT: crystals=%d trees=%d stalls=%d tents=%d bridges=%d built by phi rule around the runner at %s, %d parts total (tried=%d, refused=%d, composition=%d)."),
+		Crystals, Trees, Stalls, Tents, Bridges, *Anchor.ToCompactString(), Parts.Num(), Tried, Refused,
+		bCompositionExists ? 1 : 0);
 }

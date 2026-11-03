@@ -724,7 +724,13 @@ void AVEILGameMode::BeginPlay()
 				ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 			AVEILContentPass* Pass = GetWorld()->SpawnActor<AVEILContentPass>(
 				AVEILContentPass::StaticClass(), FVector::ZeroVector, FRotator::ZeroRotator, ContentParams);
-			if (Pass) { Pass->Populate(); }
+			// WHO ALREADY OWNS THE DISTRICT? The concept composition lays 236 pieces
+			// of market, bridges and crystal peaks by phi rule. Where it is present it
+			// keeps those families and this pass builds only the trees.
+			int32 Composition = 0;
+			for (TActorIterator<AVEILConceptWorld> It(GetWorld()); It; ++It) { Composition += It->GetPieces(); }
+			if (Pass) { Pass->Populate(Composition > 0); }
+			UE_LOG(LogTemp, Display, TEXT("PHI CONTENT OWNER: concept composition holds %d piece(s)."), Composition);
 		}, 3.2f, false);
 	}
 
