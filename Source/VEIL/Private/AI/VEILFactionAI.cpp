@@ -564,6 +564,7 @@ void AVEILFactionAgent::BindStoneBody()
 		// own velocity, lerps idle into run, and matches stride to speed.
 		GetMesh()->SetAnimationMode(EAnimationMode::AnimationBlueprint);
 		GetMesh()->SetAnimInstanceClass(UVEILLocomotionAnimInstance::StaticClass());
+	VEILCastBody::DressParts(this, GetMesh(), GetName());
 		for (UActorComponent* Comp : GetComponents())
 		{
 			if (Comp && (Comp->GetName() == TEXT("MachineBody") || Comp->GetName() == TEXT("MachineEye")))

@@ -3,6 +3,7 @@
 #include "Animation/AnimInstance.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Engine/SkeletalMesh.h"
+#include "Animation/Skeleton.h"
 #include "VEIL.h"
 
 namespace
@@ -151,6 +152,86 @@ VEILCastBody::EBody VEILCastBody::ForRole(const FString& Role)
 	return (EBody)FMath::Clamp((int32)FMath::Floor(Frac * (double)Total), 0, Total - 1);
 }
 
+namespace
+{
+	struct FPartDef
+	{
+		const TCHAR* Mesh;
+		const TCHAR* Name;
+	};
+}
+
+void VEILCastBody::DressParts(AActor* Owner, USkeletalMeshComponent* Body, const FString& Role)
+{
+	if (!Owner || !Body || !Body->GetSkeletalMeshAsset()) { return; }
+	USkeleton* BodySkel = Body->GetSkeletalMeshAsset()->GetSkeleton();
+	if (!BodySkel) { return; }
+
+	// PARTS THAT ADD, NOT REPLACE. Hair, hoods, shoulders, belts and armour sit ON the body,
+	// so nothing here has to hide the body's own head to avoid z-fighting. Every path below
+	// was listed on disk, and a part on a different skeleton is refused by name rather than
+	// dragged into a broken pose.
+	static const FPartDef Parts[] = {
+		{ TEXT("/Game/Polyart/ModularStylizedChars/Meshes/SkeletalMeshes/CharacterModularParts/Female/SK_FemaleBelt.SK_FemaleBelt"), TEXT("FemaleBelt.") },
+		{ TEXT("/Game/Polyart/ModularStylizedChars/Meshes/SkeletalMeshes/CharacterModularParts/Female/SK_FemaleHair.SK_FemaleHair"), TEXT("FemaleHair.") },
+		{ TEXT("/Game/Polyart/ModularStylizedChars/Meshes/SkeletalMeshes/CharacterModularParts/Female/SK_FemaleHood.SK_FemaleHood"), TEXT("FemaleHood.") },
+		{ TEXT("/Game/Polyart/ModularStylizedChars/Meshes/SkeletalMeshes/CharacterModularParts/Female/SK_FemaleShoulders.SK_FemaleShoulders"), TEXT("FemaleShoulders.") },
+		{ TEXT("/Game/Polyart/ModularStylizedChars/Meshes/SkeletalMeshes/CharacterModularParts/Female/SK_Female_Armor.SK_Female_Armor"), TEXT("Female_Armor.") },
+		{ TEXT("/Game/Polyart/ModularStylizedChars/Meshes/SkeletalMeshes/CharacterModularParts/Male/SK_MaleBelt.SK_MaleBelt"), TEXT("MaleBelt.") },
+		{ TEXT("/Game/Polyart/ModularStylizedChars/Meshes/SkeletalMeshes/CharacterModularParts/Male/SK_MaleHair.SK_MaleHair"), TEXT("MaleHair.") },
+		{ TEXT("/Game/Polyart/ModularStylizedChars/Meshes/SkeletalMeshes/CharacterModularParts/Male/SK_MaleHood.SK_MaleHood"), TEXT("MaleHood.") },
+		{ TEXT("/Game/Polyart/ModularStylizedChars/Meshes/SkeletalMeshes/CharacterModularParts/Male/SK_MaleShoulders.SK_MaleShoulders"), TEXT("MaleShoulders.") },
+		{ TEXT("/Game/Polyart/ModularStylizedChars/Meshes/SkeletalMeshes/CharacterModularParts/Male/SK_Male_Armor.SK_Male_Armor"), TEXT("Male_Armor.") },
+		{ TEXT("/Game/Polyart/ModularStylizedChars/Meshes/SkeletalMeshes/CharacterModularParts/Male/SK_Male_Armor_New.SK_Male_Armor_New"), TEXT("Male_Armor_New.") },
+	};
+	const int32 PartCount = (int32)UE_ARRAY_COUNT(Parts);
+	if (PartCount == 0) { return; }
+
+	const uint32 Hash = GetTypeHash(Role.ToLower());
+	int32 Added = 0;
+	FString Worn;
+	for (int32 k = 0; k < 2; ++k)
+	{
+		// Two parts, stepped by the golden ratio from the role's own name, so two people in
+		// the same body do not wear the same hair and the same shoulders.
+		const double Frac = FMath::Frac((double)Hash * 0.618033988749895 + (double)k * 0.381966011250105);
+		const int32 Pick = FMath::Clamp((int32)FMath::Floor(Frac * (double)PartCount), 0, PartCount - 1);
+		USkeletalMesh* PartMesh = LoadObject<USkeletalMesh>(nullptr, Parts[Pick].Mesh);
+		if (!PartMesh)
+		{
+			UE_LOG(LogVEIL, Warning, TEXT("PHI CAST PARTS: %s -> %s did not load from %s."),
+				*Role, Parts[Pick].Name, Parts[Pick].Mesh);
+			continue;
+		}
+		if (PartMesh->GetSkeleton() != BodySkel)
+		{
+			// NAME BOTH SKELETONS. A part that rides the body's bones has to be built on the
+			// same skeleton; when it is not, the log says which two rigs disagree instead of
+			// leaving the character bare and unexplained.
+			UE_LOG(LogVEIL, Warning,
+				TEXT("PHI CAST PARTS: %s -> %s refused: part on %s, body on %s."),
+				*Role, Parts[Pick].Name,
+				PartMesh->GetSkeleton() ? *PartMesh->GetSkeleton()->GetName() : TEXT("none"),
+				BodySkel ? *BodySkel->GetName() : TEXT("none"));
+			continue;
+		}
+		USkeletalMeshComponent* Part = NewObject<USkeletalMeshComponent>(Owner);
+		if (!Part) { continue; }
+		Part->SetupAttachment(Body);
+		Part->SetSkeletalMeshAsset(PartMesh);
+		Part->bDisableMorphTarget = true;
+		Part->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		Part->SetMobility(EComponentMobility::Movable);
+		Part->RegisterComponent();
+		// Master pose: the part rides the body's bones instead of animating on its own.
+		Part->SetLeaderPoseComponent(Body, true);
+		Worn += FString::Printf(TEXT("%s "), Parts[Pick].Name);
+		++Added;
+	}
+	UE_LOG(LogVEIL, Warning, TEXT("PHI CAST PARTS: %s wears %d part(s): %s"),
+		*Role, Added, Added ? *Worn : TEXT("none"));
+}
+
 void VEILCastBody::Apply(USkeletalMeshComponent* Comp, EBody Body, const FString& Role, float Scale)
 {
 	if (!Comp)
@@ -203,6 +284,8 @@ void VEILCastBody::Apply(USkeletalMeshComponent* Comp, EBody Body, const FString
 			TEXT("PHI CAST BODY: %s wears %s with NO locomotion graph - standing pose, named honestly."),
 			*Role, Def.Name);
 	}
+
+	DressParts(Comp->GetOwner(), Comp, Role);
 
 	UE_LOG(LogVEIL, Warning, TEXT("PHI CAST BODY: %s -> %s (scale %.2f, graph %s)."),
 		*Role, *Mesh->GetName(), Scale * RoleScale, Graph ? TEXT("bound") : TEXT("none"));

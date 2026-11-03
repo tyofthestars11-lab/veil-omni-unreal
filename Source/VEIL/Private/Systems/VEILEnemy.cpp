@@ -129,6 +129,7 @@ void AVEILEnemy::BeginPlay()
 		GetMesh()->SetAnimationMode(EAnimationMode::AnimationBlueprint);
 		GetMesh()->SetAnimInstanceClass(UVEILLocomotionAnimInstance::StaticClass());
 	}
+	VEILCastBody::DressParts(this, GetMesh(), GetName());
 
 	Super::BeginPlay();
 	// Hand the clips to the blended instance that the constructor installed.

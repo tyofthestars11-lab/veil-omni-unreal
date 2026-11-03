@@ -68,6 +68,10 @@ namespace VEILCastBody
 	 *  body are still not the same silhouette at the same size. */
 	VEIL_API void Apply(USkeletalMeshComponent* Comp, EBody Body, const FString& Role, float Scale = 1.f);
 
+	/** Hair, hood, shoulders, belt and armour from the modular pack, ridden on the body's
+	 *  own bones, chosen from the role's name so two people in one body differ. */
+	VEIL_API void DressParts(AActor* Owner, USkeletalMeshComponent* Body, const FString& Role);
+
 	/** Short name for the log: "Garret", "Elara", ... */
 	VEIL_API const TCHAR* NameOf(EBody Body);
 }

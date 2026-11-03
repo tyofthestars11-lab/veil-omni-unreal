@@ -365,7 +365,8 @@ void AVEILGameMode::BeginPlay()
 		FTimerHandle CensusTimer;
 		GetWorldTimerManager().SetTimer(CensusTimer, [this]()
 		{
-			int32 Total = 0; int32 Floaters = 0;
+			int32 Total = 0;
+			int32 Parts = 0; int32 Floaters = 0;
 			for (TActorIterator<AStaticMeshActor> It(GetWorld()); It; ++It)
 			{
 				FVector Origin; FVector Extent;
@@ -4292,7 +4293,8 @@ void AVEILPlayerController::Tick(float DeltaSeconds)
 		if (!bCastCensusDone && CastCensusClock >= 9.f)
 		{
 			bCastCensusDone = true;
-			TMap<FString, int32> ByMesh;
+			int32 Parts = 0;
+TMap<FString, int32> ByMesh;
 			int32 Total = 0;
 			for (TActorIterator<AActor> ItCast(GetWorld()); ItCast; ++ItCast)
 			{
@@ -4301,6 +4303,13 @@ void AVEILPlayerController::Tick(float DeltaSeconds)
 				for (USkeletalMeshComponent* Skel : Skels)
 				{
 					if (!Skel || !Skel->GetSkeletalMeshAsset()) { continue; }
+										// AN ATTACHED PART IS NOT A BODY. Hair, hoods and armour ride a body's bones,
+					// so counting them as people would inflate the cast and hide a clone inside it.
+					if (Skel->GetAttachParent() && Skel->GetAttachParent()->IsA(USkeletalMeshComponent::StaticClass()))
+					{
+						++Parts;
+						continue;
+					}
 					ByMesh.FindOrAdd(Skel->GetSkeletalMeshAsset()->GetName()) += 1;
 					++Total;
 				}
@@ -4310,8 +4319,8 @@ void AVEILPlayerController::Tick(float DeltaSeconds)
 			{
 				Tally += FString::Printf(TEXT("%s x%d  "), *Pair.Key, Pair.Value);
 			}
-			UE_LOG(LogVEIL, Warning, TEXT("PHI CAST CENSUS: %d skeletal bod(ies) across %d distinct mesh(es): %s"),
-				Total, ByMesh.Num(), *Tally);
+			UE_LOG(LogVEIL, Warning, TEXT("PHI CAST CENSUS: %d bod(ies) across %d distinct mesh(es), %d attached part(s): %s"),
+				Total, ByMesh.Num(), Parts, *Tally);
 		}
 	}
 
