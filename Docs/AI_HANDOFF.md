@@ -109,3 +109,21 @@ A blind raise was tried first and detached roofs from walls (min clear fell to 9
 
 Measured on the last run: 14 roofs lifted, 92 walls stretched, 20 rooms probed, min clear 245 cm,
 1 room under 300 cm, 0 fatal. `PHI CEILING` reports the roof over the runner (open sky at spawn).
+
+
+## Placeholders (2026-11-03)
+
+Measured: 45 call sites still load `/Engine/BasicShapes/Cube|Cylinder|Sphere|Cone`, and several
+are components (crowd instances, agent bodies, statue parts, ocean skin, gear), which is why no
+spawn-time fix ever covered them. `/Game/Sicka_EnvPack2/Sicka_Ancient_Kit` meshes load fine:
+`SM_Floor1_Big`, `SM_Floor2_Big`, `SM_AncientColumn_Big`, `SM_HlafDome` (under `Mesh/Props`, NOT
+`Mesh/Modular`), `SM_AncientMonolith`, `SM_HolderRoof`.
+
+`VEILKit::Shape/ShapePath/Redress` (`World/VEILKitMesh.h`) is the one mapping. A boot pass walks
+every actor's static mesh components, swaps each engine shape for its kit mesh and fits that mesh
+to the exact volume the placeholder occupied. Last run: 356 components re-dressed, 0 refused,
+0 engine primitives left, verdict NO PLACEHOLDER IN THE FRAME.
+
+Known limit: fitting kit art into a placeholder's volume stretches it (a floor slab stretched to
+a 3 m cube reads as a board), and `Cylinder -> SM_AncientColumn_Big` is right for a post and
+wrong for a humanoid body. Those call sites need real bodies, not a better cube.
