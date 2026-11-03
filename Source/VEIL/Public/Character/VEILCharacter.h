@@ -33,6 +33,10 @@ class VEIL_API AVEILCharacter : public ACharacter
 {
 	GENERATED_BODY()
 
+	/** The two phi panels bound in BeginPlay: they flap with speed in Tick. */
+	UPROPERTY()
+	TArray<UStaticMeshComponent*> Wings;
+
 public:
 
 	/** Claim the nearest named seam within arm's reach - the same call the

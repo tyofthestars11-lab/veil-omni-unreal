@@ -297,6 +297,7 @@ void AVEILCharacter::BeginPlay()
 				Wing->SetMobility(EComponentMobility::Movable);
 				if (WingGold) { Wing->SetMaterial(0, WingGold); }
 				Wing->RegisterComponent();
+				Wings.Add(Wing);
 				++Made;
 			}
 			UE_LOG(LogVEIL, Warning,
@@ -1030,6 +1031,21 @@ void AVEILCharacter::LogInputAudit() const
 
 void AVEILCharacter::Tick(float DeltaSeconds)
 {
+
+	// THE WINGS MOVE. Two fixed panels read as cardboard on a running body: sweep them back
+	// with speed and flap them with the clock, so the silhouette the vision asks for is alive.
+	{
+		const UWorld* WingWorld = GetWorld();
+		const float Speed = (float)GetVelocity().Size();
+		const float Time = WingWorld ? (float)WingWorld->GetTimeSeconds() : 0.f;
+		const float Flap = FMath::Sin(Time * (2.6f + Speed / 500.f));
+		for (int32 w = 0; w < Wings.Num(); ++w)
+		{
+			if (!Wings[w]) { continue; }
+			const float Side = (w == 0) ? -1.f : 1.f;
+			Wings[w]->SetRelativeRotation(FRotator(Flap * 16.f, 0.f, Side * (26.f + Flap * 13.f)));
+		}
+	}
 	Super::Tick(DeltaSeconds);
 	++PhiTickEntryCount;
 
