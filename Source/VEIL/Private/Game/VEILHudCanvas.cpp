@@ -198,7 +198,7 @@ void AVEILHudCanvas::DrawMapLegend(UCanvas* C, UFont* Font, float X, float Y, bo
 	static const FKey Keys[] = {
 		{ FLinearColor(1.f, 0.90f, 0.45f), TEXT("RUNNER"),   TEXT("you - the map turns, not the eye"), EMark::Chevron },
 		{ FLinearColor(1.f, 0.82f, 0.32f), TEXT("CAST"),     TEXT("Keeper / Seer / Cartographer - they speak"), EMark::Ring },
-		{ FLinearColor(0.35f, 0.95f, 1.f), TEXT("FRAGMENT"), TEXT("a piece of the interrupted sentence"), EMark::Square },
+		{ FLinearColor(1.f, 0.78f, 0.30f), TEXT("FRAGMENT"), TEXT("a piece of the interrupted sentence"), EMark::Square },
 		{ FLinearColor(0.30f, 1.f, 0.45f), TEXT("CACHE"),    TEXT("the drop at the south wall"), EMark::Square },
 		{ FLinearColor(1.f, 0.45f, 0.35f), TEXT("MACHINE"),  TEXT("faction agents - they fight back"), EMark::Square },
 		{ FLinearColor(1.f, 0.22f, 0.18f), TEXT("WARDEN"),   TEXT("the thing the Vault sends"), EMark::Square },
