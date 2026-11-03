@@ -191,6 +191,13 @@ void AVEILPhiTetraSpawner::BuildChain()
 		Tetra->RegisterComponent();
 		Tetra->CreateMeshSection_LinearColor(0, TetraVerts, TetraTris, TetraNormals, TetraUVs,
 			TArray<FLinearColor>(), TArray<FProcMeshTangent>(), false);
+		// THE CHAIN IS GOLD, NOT CHALK. With no material the procedural solid reads
+		// as a white pyramid, which is why the chain was switched off in the district.
+		if (!TetraMaterial)
+		{
+			TetraMaterial = LoadObject<UMaterialInterface>(nullptr,
+				TEXT("/Game/PHI/Palette/M_PHI_GoldMetallic.M_PHI_GoldMetallic"));
+		}
 		if (TetraMaterial) { Tetra->SetMaterial(0, TetraMaterial); }
 
 		// 3. 60 degrees forward per step (the chain counts from its anchor).

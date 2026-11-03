@@ -275,6 +275,13 @@ public:
 	// Every direction used to carry three bindings at once (Up was map zoom, chart
 	// previous AND respawn), so a pad press did whatever happened to be unguarded.
 	// These four route the press to exactly one thing, by what is on screen.
+	void ArrowUp();
+	void ArrowDown();
+	void ArrowLeft();
+	void ArrowRight();
+	void PadBottom();
+	void PadFace();
+
 	void PadUp();
 	void PadDown();
 	void PadLeft();

@@ -581,8 +581,10 @@ void AVEILGameMode::BeginPlay()
 		const bool bGoldenProof = FParse::Param(FCommandLine::Get(), TEXT("phigolden"))
 			|| FParse::Param(FCommandLine::Get(), TEXT("phishot"));
 		FTimerHandle GoldenTimer;
-		if (bGoldenProof)
-		GetWorldTimerManager().SetTimer(GoldenTimer, [this]()
+		// THE CHAIN SHIPS; THE SUNFLOWER DOES NOT. Both are placed by this one timer,
+		// so the switch now guards the 34-cube proof spiral alone and the six
+		// tetrahedra stand in the district on every run, flag or no flag.
+		GetWorldTimerManager().SetTimer(GoldenTimer, [this, bGoldenProof]()
 		{
 			int32 Existing = 0;
 			for (TActorIterator<AVEILGoldenSpawner> It(GetWorld()); It; ++It) { ++Existing; }
@@ -613,10 +615,15 @@ void AVEILGameMode::BeginPlay()
 			FActorSpawnParameters SpawnParams;
 			SpawnParams.SpawnCollisionHandlingOverride =
 				ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-			GetWorld()->SpawnActor<AVEILGoldenSpawner>(
-				AVEILGoldenSpawner::StaticClass(), Where, FRotator::ZeroRotator, SpawnParams);
-			UE_LOG(LogTemp, Display, TEXT("PHI GOLDEN: spiral placed ahead of the runner at %s"),
-				*Where.ToCompactString());
+			// THE 34-CUBE SUNFLOWER IS THE INSTRUMENT, NOT THE GAME. It only spawns
+			// under -phigolden; the tetra chain below ships on every launch.
+			if (bGoldenProof)
+			{
+				GetWorld()->SpawnActor<AVEILGoldenSpawner>(
+					AVEILGoldenSpawner::StaticClass(), Where, FRotator::ZeroRotator, SpawnParams);
+				UE_LOG(LogTemp, Display, TEXT("PHI GOLDEN: spiral placed ahead of the runner at %s"),
+					*Where.ToCompactString());
+			}
 
 			// PHI TETRA: the chain sits closer than the spiral, so one frame
 			// carries both the tetra chain and the 34-cube spiral. It is placed on
@@ -632,7 +639,7 @@ void AVEILGameMode::BeginPlay()
 			// on the plaza, and in the Play frame they read as white pyramids and triangles
 			// dropped on the ground. The switch stays so the art can be turned back on
 			// deliberately; the district no longer places them.
-			static const bool bPlaceTetraChain = false;
+			static const bool bPlaceTetraChain = true;
 			if (bPlaceTetraChain && TetraExisting == 0)
 			{
 				const FVector Right = FVector::CrossProduct(Ahead, FVector::UpVector).GetSafeNormal();
@@ -2908,6 +2915,52 @@ void AVEILPlayerController::ToggleOS()
 	}
 }
 
+// ARROWS: one page decides.
+void AVEILPlayerController::ArrowUp()
+{
+	if (bGodMenuOpen) { GodMenuUp(); return; }
+	if (bShowChart) { ChartMovePrev(); }
+}
+
+void AVEILPlayerController::ArrowDown()
+{
+	if (bGodMenuOpen) { GodMenuDown(); return; }
+	if (bShowChart) { ChartMoveNext(); }
+}
+
+void AVEILPlayerController::ArrowLeft()
+{
+	if (bGodMenuOpen) { GodMenuLeft(); return; }
+	if (bShowChart && ChartPage == 2) { OptionsAdjust(-1); }
+}
+
+void AVEILPlayerController::ArrowRight()
+{
+	if (bGodMenuOpen) { GodMenuRight(); return; }
+	if (bShowChart && ChartPage == 2) { OptionsAdjust(1); }
+}
+
+// A AND X DO THE THING IN FRONT OF THE PLAYER.
+// In a conversation they answer; outside one they travel and talk. Bound once, so
+// a reply can never also fire a jump or a line of dialogue on the same press.
+void AVEILPlayerController::PadBottom()
+{
+	if (const UOMNIQuestSystem* Quest = GetWorld() ? GetWorld()->GetSubsystem<UOMNIQuestSystem>() : nullptr)
+	{
+		if (Quest->ChoiceOpen()) { ChooseReply(0); return; }
+	}
+	TravelOrAdvance();
+}
+
+void AVEILPlayerController::PadFace()
+{
+	if (const UOMNIQuestSystem* Quest = GetWorld() ? GetWorld()->GetSubsystem<UOMNIQuestSystem>() : nullptr)
+	{
+		if (Quest->ChoiceOpen()) { ChooseReply(1); return; }
+	}
+	TalkToNearest();
+}
+
 // ONE D-PAD, ONE ACTION.
 // Up on the pad used to be map-zoom, chart-previous and respawn at the same time,
 // so a player reaching for the map could quietly kill and respawn the runner. The
@@ -2962,16 +3015,10 @@ void AVEILPlayerController::SetupInputComponent()
 		// A pad speaks and answers: X talks, A / X / Y pick replies 1 / 2 / 3
 		// while a choice waits (guarded inside ChooseReply, so outside a
 		// conversation these keys keep their own jobs).
-		InputComponent->BindKey(EKeys::Gamepad_FaceButton_Bottom, IE_Pressed, this, &AVEILPlayerController::PadReply1);
-		InputComponent->BindKey(EKeys::Gamepad_FaceButton_Left, IE_Pressed, this, &AVEILPlayerController::PadReply2);
 		InputComponent->BindKey(EKeys::Gamepad_FaceButton_Top, IE_Pressed, this, &AVEILPlayerController::PadReply3);
 		// GODMODE page: [G] opens it, arrows walk it, SPACE (above) works the row.
 		InputComponent->BindKey(EKeys::G, IE_Pressed, this, &AVEILPlayerController::ToggleGodMenu);
-		InputComponent->BindKey(EKeys::Up, IE_Pressed, this, &AVEILPlayerController::GodMenuUp);
-		InputComponent->BindKey(EKeys::Down, IE_Pressed, this, &AVEILPlayerController::GodMenuDown);
 		// Two columns: left / right jump a column, up / down walk the rows.
-		InputComponent->BindKey(EKeys::Left, IE_Pressed, this, &AVEILPlayerController::GodMenuLeft);
-		InputComponent->BindKey(EKeys::Right, IE_Pressed, this, &AVEILPlayerController::GodMenuRight);
 		// The living map: wheel on a mouse, D-pad up/down on a pad.
 		InputComponent->BindKey(EKeys::MouseScrollUp, IE_Pressed, this, &AVEILPlayerController::MapZoomIn);
 		InputComponent->BindKey(EKeys::MouseScrollDown, IE_Pressed, this, &AVEILPlayerController::MapZoomOut);
@@ -2999,11 +3046,7 @@ void AVEILPlayerController::SetupInputComponent()
 		// Chart navigation + travel: arrows / d-pad move the highlight, Enter or A
 		// carries the runner to it. The d-pad's other jobs (respawn, mute) step
 		// aside while the chart is open - see their guards.
-		InputComponent->BindKey(EKeys::Up, IE_Pressed, this, &AVEILPlayerController::ChartMovePrev);
-		InputComponent->BindKey(EKeys::Down, IE_Pressed, this, &AVEILPlayerController::ChartMoveNext);
 		// Options: the same d-pad / arrows, left and right to change a value.
-		InputComponent->BindKey(EKeys::Left, IE_Pressed, this, &AVEILPlayerController::OptionsDown);
-		InputComponent->BindKey(EKeys::Right, IE_Pressed, this, &AVEILPlayerController::OptionsUp);
 		// O jumps straight to the options page from anywhere.
 		InputComponent->BindKey(EKeys::O, IE_Pressed, this, &AVEILPlayerController::OpenOptions);
 		InputComponent->BindKey(EKeys::Enter, IE_Pressed, this, &AVEILPlayerController::ChartTravel);
@@ -3022,6 +3065,16 @@ void AVEILPlayerController::SetupInputComponent()
 		// Hide tips. Not F2: the engine still answers F2 with "viewmode unlit".
 		InputComponent->BindKey(EKeys::T, IE_Pressed, this, &AVEILPlayerController::ToggleTips);
 
+		// ARROWS AND THE PAD'S A/X, ALSO ROUTED. Arrows carried three jobs each
+		// (cheat page, chart, options) and A/X carried two (travel/talk and reply),
+		// so a press could do two things at once. One dispatcher per key now.
+		InputComponent->BindKey(EKeys::Up, IE_Pressed, this, &AVEILPlayerController::ArrowUp);
+		InputComponent->BindKey(EKeys::Down, IE_Pressed, this, &AVEILPlayerController::ArrowDown);
+		InputComponent->BindKey(EKeys::Left, IE_Pressed, this, &AVEILPlayerController::ArrowLeft);
+		InputComponent->BindKey(EKeys::Right, IE_Pressed, this, &AVEILPlayerController::ArrowRight);
+		InputComponent->BindKey(EKeys::Gamepad_FaceButton_Bottom, IE_Pressed, this, &AVEILPlayerController::PadBottom);
+		InputComponent->BindKey(EKeys::Gamepad_FaceButton_Left, IE_Pressed, this, &AVEILPlayerController::PadFace);
+
 		// THE D-PAD, ROUTED. One press, one action, decided by the page in front of
 		// the player - not by which of three bindings happened to pass its guard.
 		InputComponent->BindKey(EKeys::Gamepad_DPad_Up, IE_Pressed, this, &AVEILPlayerController::PadUp);
@@ -3030,8 +3083,6 @@ void AVEILPlayerController::SetupInputComponent()
 		InputComponent->BindKey(EKeys::Gamepad_DPad_Right, IE_Pressed, this, &AVEILPlayerController::PadRight);
 
 		// Story verbs on the pad: X speaks, A advances (and jumps when nobody talks).
-		InputComponent->BindKey(EKeys::Gamepad_FaceButton_Left, IE_Pressed, this, &AVEILPlayerController::TalkToNearest);
-		InputComponent->BindKey(EKeys::Gamepad_FaceButton_Bottom, IE_Pressed, this, &AVEILPlayerController::TravelOrAdvance);
 	}
 }
 
@@ -3353,6 +3404,14 @@ void AVEILPlayerController::ChartTravel()
 
 void AVEILPlayerController::TravelOrAdvance()
 {
+	// SPACE JUMPS, TOO. Travel used to fire on the same key that jumps and on the
+	// pad's A, so a hop across a plaza could carry the runner across the district.
+	// Travel only means something while the chart is up or a line is waiting.
+	{
+		const UVEILDialogue* Dlg = GetWorld() ? GetWorld()->GetSubsystem<UVEILDialogue>() : nullptr;
+		const bool bTalking = Dlg && Dlg->IsActive();
+		if (!bShowChart && !bTalking) { return; }
+	}
 	// While the GODMODE page is up, this button is the switch under the cursor -
 	// never a beacon jump behind the menu.
 	if (bGodMenuOpen) { GodMenuActivate(); return; }

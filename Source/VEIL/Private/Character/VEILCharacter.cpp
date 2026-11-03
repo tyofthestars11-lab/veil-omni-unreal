@@ -12,6 +12,7 @@
 #include "Misc/Parse.h"
 #include "Systems/PHIMito.h"
 #include "EngineUtils.h"
+#include "Game/VEILGameMode.h"
 #include "HAL/IConsoleManager.h"
 #include "Systems/OMNIQuestSystem.h"
 #include "World/VEILWilds.h"
@@ -556,6 +557,12 @@ void AVEILCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 
 	if (UEnhancedInputComponent* EIC = CastChecked<UEnhancedInputComponent>(PlayerInputComponent))
 	{
+	// THE CHART OWNS THE WHEEL WHILE IT IS OPEN. Zooming the map also stepped the
+	// camera ring, so every map zoom silently changed the shot behind the panel.
+	if (const AVEILPlayerController* PC = Cast<AVEILPlayerController>(GetController()))
+	{
+		if (PC->bShowChart) { return; }
+	}
 		if (MoveAction)   EIC->BindAction(MoveAction, ETriggerEvent::Triggered, this, &AVEILCharacter::Move);
 		if (LookAction)   EIC->BindAction(LookAction, ETriggerEvent::Triggered, this, &AVEILCharacter::Look);
 		if (JumpAction)
