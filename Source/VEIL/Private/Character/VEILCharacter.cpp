@@ -18,6 +18,7 @@
 #include "HAL/IConsoleManager.h"
 #include "Systems/OMNIQuestSystem.h"
 #include "World/VEILWilds.h"
+#include "World/VEILConceptWorld.h"
 #include "Systems/VEILBurstFX.h"
 #include "Engine/SkeletalMesh.h"
 #include "Components/StaticMeshComponent.h"
@@ -955,6 +956,14 @@ void AVEILCharacter::Tick(float DeltaSeconds)
 				if (StuckWorld)
 				{
 					FCollisionQueryParams Probe(SCENE_QUERY_STAT(VEILUnstick), false, this);
+					// THE COMPOSITION IS SCENERY, NOT FLOOR. Its shelves are 640 cm stone
+					// platforms around the plaza, and the trace kept standing the runner on one
+					// at z=598 - above the market and inside a fall sheet, which is the dark
+					// water that filled the frame. Ignoring them finds the plaza at z=0.
+					for (TActorIterator<AVEILConceptWorld> SceneryIt(StuckWorld); SceneryIt; ++SceneryIt)
+					{
+						Probe.AddIgnoredActor(*SceneryIt);
+					}
 					for (int32 i = 1; i <= 34 && !bMoved; ++i)
 					{
 						const float Ang = FMath::DegreesToRadians(i * 137.50776405f);
