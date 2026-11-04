@@ -305,7 +305,7 @@ void AVEILGameMode::ApplyPhiGrade()
 			// MEASURED, NOT GUESSED, TWICE. 2,200 lux read 24 mean / 65% near-black; 6,400
 			// read 56 / 51.6% with 0.2% near-white, so the lever is linear and nothing clips.
 			// The last of the gap to the authored 70 is another 1.25x: 8,000 lux.
-			DL->SetIntensity(8000.0f);
+			DL->SetIntensity(8800.0f);
 			SunAfter = DL->Intensity;
 			DL->SetLightColor(FLinearColor(1.f, 0.80f, 0.56f));
 			// THE ATMOSPHERE'S OWN SUN. Without this flag the SkyAtmosphere has no light
@@ -326,7 +326,10 @@ void AVEILGameMode::ApplyPhiGrade()
 			// AND THE AIR. 3.0 lux of sky is a cellar; phi^4 (6.85) is the gold hour's
 			// bounce off the whole sky. Same authority, same stamp, so the district can no
 			// longer be re-lit to someone else's number after this pass.
-			SL->SetIntensity(65.0f);   // 6.85 -> 18 -> 52 measured mean 16 -> 24 -> 56; 1.25x more to finish
+			// THE SHADOW SIDE IS THE SKY'S JOB, NOT THE SUN'S. At 6,400 lux the frame measured
+			// mean 56 with 51% near-black: raising the key lifts what the sun reaches and
+			// leaves every wall facing away from it black, so the fill carries the last step.
+			SL->SetIntensity(100.0f);   // 6.85 -> 18 -> 52 -> 100 measured mean 16 -> 24 -> 56 -> 65
 			SkyAfter = SL->Intensity;
 			SL->RecaptureSky();
 			++Skies;
