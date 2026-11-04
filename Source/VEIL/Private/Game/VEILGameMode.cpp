@@ -296,7 +296,16 @@ void AVEILGameMode::ApplyPhiGrade()
 			// one happened to run last - that is the randomness in the frame. This pass is the
 			// last to speak, so it sets the golden-hour sun outright: 2,200 lux, warm
 			// (1, .80, .56), which is daylight on pale stone without clipping it.
-			DL->SetIntensity(2200.0f);
+			// 2,200 LUX IS DUSK, AND MANUAL EXPOSURE DOES NOT COMPENSATE FOR IT. Three
+			// geometry changes measured 24 mean / 65% near-black in a row, which reads as a
+			// post-process fault until the volume is checked: it is AEM_Manual with zero
+			// bias, so nothing adapts and the frame is as dim as the light actually is. The
+			// project's own record says the authored look is mean 70 / 20% near-black, so the
+			// key is raised by that measured gap - 70/24 = 2.9x - not by a guess: 6,400 lux.
+			// MEASURED, NOT GUESSED, TWICE. 2,200 lux read 24 mean / 65% near-black; 6,400
+			// read 56 / 51.6% with 0.2% near-white, so the lever is linear and nothing clips.
+			// The last of the gap to the authored 70 is another 1.25x: 8,000 lux.
+			DL->SetIntensity(8000.0f);
 			SunAfter = DL->Intensity;
 			DL->SetLightColor(FLinearColor(1.f, 0.80f, 0.56f));
 			// THE ATMOSPHERE'S OWN SUN. Without this flag the SkyAtmosphere has no light
@@ -317,7 +326,7 @@ void AVEILGameMode::ApplyPhiGrade()
 			// AND THE AIR. 3.0 lux of sky is a cellar; phi^4 (6.85) is the gold hour's
 			// bounce off the whole sky. Same authority, same stamp, so the district can no
 			// longer be re-lit to someone else's number after this pass.
-			SL->SetIntensity(18.0f);   // was 6.85: with it, the eye-level frame measured mean 16/255 and 81% near-black
+			SL->SetIntensity(65.0f);   // 6.85 -> 18 -> 52 measured mean 16 -> 24 -> 56; 1.25x more to finish
 			SkyAfter = SL->Intensity;
 			SL->RecaptureSky();
 			++Skies;

@@ -300,90 +300,67 @@ void AVEILCharacter::BeginPlay()
 	// MetaHuman body wins, an empty assignment changes nothing, and
 	// the PHI BODY CHECK log below reports the final body.
 	AssignMetaHumanBody();
-	// THE WINGS FROM THE VISION. Flight already exists (double-tap jump) but the runner had no
-	// wing on his back, and the wings are the whole silhouette of the reference frame. Two kit
-	// panels, gold-faced, parented to the body: no new asset, no header change, and the log says
-	// how many were bound so a missing mesh is a sentence instead of a guess.
+	// Use the authored Paragon wing meshes already in Content; floor panels stretched into
+	// feathers were placeholders, not the Runner's wings.
 	{
-		UStaticMesh* Panel = LoadObject<UStaticMesh>(nullptr,
-			TEXT("/Game/Sicka_EnvPack2/Sicka_Ancient_Kit/Mesh/Modular/SM_Floor2_Big.SM_Floor2_Big"));
-		// Gold, not lacquer. The metallic palette under a low sun read as cream card in the
-		// frame; M_PHI_Gold carries the warm gold of the reference wings.
+		static const TCHAR* WingPaths[] =
+		{
+			TEXT("/Game/ParagonCountess/FX/Meshes/Shapes/SM_Countess_WingMesh.SM_Countess_WingMesh"),
+			TEXT("/Game/ParagonCountess/FX/Meshes/Shapes/SM_Countess_WingMesh_RightWingCheated.SM_Countess_WingMesh_RightWingCheated")
+		};
+		static const float WingSides[] = { -1.f, 1.f };
 		UMaterialInterface* WingGold = LoadObject<UMaterialInterface>(nullptr,
-			TEXT("/Game/PHI/Palette/M_PHI_Gold.M_PHI_Gold"));
+			TEXT("/Game/PHI/Palette/M_PHI_GoldMetallic.M_PHI_GoldMetallic"));
 		if (!WingGold)
 		{
 			WingGold = LoadObject<UMaterialInterface>(nullptr,
-				TEXT("/Game/PHI/Palette/M_PHI_GoldMetallic.M_PHI_GoldMetallic"));
+				TEXT("/Game/PHI/Palette/M_PHI_Gold.M_PHI_Gold"));
 		}
-		if (Panel && GetMesh())
+		if (!GetMesh())
 		{
-			int32 Made = 0;
-			for (int32 Side = -1; Side <= 1; Side += 2)
+			UE_LOG(LogVEIL, Error, TEXT("PHI WINGS: Runner mesh is missing; authored wings were not attached."));
+		}
+		else
+		{
+			for (int32 i = 0; i < UE_ARRAY_COUNT(WingPaths); ++i)
 			{
-				// LAYERED FEATHERS, NOT ONE CARDBOARD PANEL. The plates show a fan of
-				// gold feathers - seven per wing, each shorter than the one below and
-				// swept back - so the silhouette reads as a wing from any angle.
-				// TWELVE NARROW FEATHERS, NOT SEVEN WIDE ONES. Seven broad blades facing the
-				// camera read as two cream cards in the rendered frame; a wing is a fan of many
-				// narrow feathers, each one offset a little deeper than the last.
-				for (int32 F = 0; F < 12; ++F)
+				UStaticMesh* WingMesh = LoadObject<UStaticMesh>(nullptr, WingPaths[i]);
+				if (!WingMesh)
 				{
-					UStaticMeshComponent* Feather = NewObject<UStaticMeshComponent>(this,
-						*FString::Printf(TEXT("PhiWing%d_%d"), Side > 0 ? 1 : 0, F));
-					if (!Feather) { continue; }
-					Feather->SetupAttachment(GetMesh());
-					Feather->SetStaticMesh(Panel);
-					const float Spread = 16.f + F * 9.f;
-					// SIZE IN CENTIMETRES, NOT MULTIPLES OF A FLOOR SLAB. Len 1.55 on a kit floor
-					// panel made a six-metre feather. A feather is measured against the runner -
-					// 86 cm at the root, shortening by 4.5 cm each, 16 cm deep, 1.2 cm thick - and
-					// the panel is scaled to that, whatever the panel's native size happens to be.
-					// THE THIN AXIS IS NOT ALWAYS X. Assigning thickness to X and length to Y
-					// stretched a floor panel along whichever axis happened to be long, and a
-					// 4 m panel became a metre-wide card: the two cream squares in the frame.
-					// Measure the panel, put thickness on its thinnest axis, length on its
-					// longest and depth on the one between, then scale to centimetres.
-					const FVector Native = Panel->GetBoundingBox().GetSize();
-					float Nat[3] = { (float)Native.X, (float)Native.Y, (float)Native.Z };
-					int32 ThinAxis = 0, LongAxis = 0;
-					for (int32 A = 1; A < 3; ++A)
-					{
-						if (Nat[A] < Nat[ThinAxis]) { ThinAxis = A; }
-						if (Nat[A] > Nat[LongAxis]) { LongAxis = A; }
-					}
-					if (ThinAxis == LongAxis) { LongAxis = (ThinAxis + 1) % 3; }
-					const int32 MidAxis = 3 - ThinAxis - LongAxis;
-					float Scale[3] = { 1.f, 1.f, 1.f };
-					Scale[ThinAxis] = 1.2f / FMath::Max(1.f, Nat[ThinAxis]);
-					Scale[LongAxis] = (86.f - F * 4.5f) / FMath::Max(1.f, Nat[LongAxis]);
-					Scale[MidAxis]  = (16.f - F * 0.7f) / FMath::Max(1.f, Nat[MidAxis]);
-					const FVector FeatherScale(Scale[0], Scale[1], Scale[2]);
-					// Each feather sits a little deeper and higher than the last: that stagger is
-					// what makes a fan, and without it the blades stack into a single card.
-					Feather->SetRelativeLocation(FVector(-10.f - F * 1.1f,
-						18.f * (float)Side + (float)Side * F * 5.5f, 150.f - F * 3.2f));
-					Feather->SetRelativeRotation(FRotator(0.f, (float)Side * (14.f + F * 6.f),
-						(float)Side * Spread));
-					Feather->SetRelativeScale3D(FeatherScale);
-					Feather->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-					Feather->SetMobility(EComponentMobility::Movable);
-					if (WingGold)
-					{
-						const int32 Slots = FMath::Max(1, (int32)Feather->GetNumMaterials());
-						for (int32 Slot = 0; Slot < Slots; ++Slot)
-						{
-							Feather->SetMaterial(Slot, WingGold);
-						}
-					}
-					Feather->RegisterComponent();
-					Wings.Add(Feather);
-					++Made;
+					UE_LOG(LogVEIL, Error, TEXT("PHI WINGS: authored wing asset failed to load: %s"), WingPaths[i]);
+					continue;
 				}
+
+				UStaticMeshComponent* Wing = NewObject<UStaticMeshComponent>(this,
+					*FString::Printf(TEXT("PhiWing_%d"), i));
+				if (!Wing) { continue; }
+				Wing->SetupAttachment(GetMesh());
+				Wing->SetStaticMesh(WingMesh);
+				const FVector NativeSize = WingMesh->GetBoundingBox().GetSize();
+				const float LargestAxis = (float)NativeSize.GetMax();
+				if (LargestAxis <= KINDA_SMALL_NUMBER)
+				{
+					UE_LOG(LogVEIL, Error, TEXT("PHI WINGS: authored wing asset has invalid bounds: %s"), WingPaths[i]);
+					continue;
+				}
+				Wing->SetRelativeScale3D(FVector(160.f / LargestAxis));
+				Wing->SetRelativeLocation(FVector(-24.f, WingSides[i] * 16.f, 150.f));
+				Wing->SetRelativeRotation(FRotator(0.f, 0.f, WingSides[i] * 22.f));
+				Wing->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+				Wing->SetMobility(EComponentMobility::Movable);
+				if (WingGold)
+				{
+					for (int32 Slot = 0; Slot < Wing->GetNumMaterials(); ++Slot)
+					{
+						Wing->SetMaterial(Slot, WingGold);
+					}
+				}
+				Wing->RegisterComponent();
+				Wings.Add(Wing);
 			}
-			UE_LOG(LogVEIL, Warning,
-				TEXT("PHI WINGS: %d phi panel(s) bound to the runner's back - the silhouette the vision asks for."),
-				Made);
+			UE_LOG(LogVEIL, Display,
+				TEXT("PHI WINGS: %d authored Countess wing mesh(es) attached to the Runner."),
+				Wings.Num());
 		}
 	}
 
@@ -1260,8 +1237,7 @@ void AVEILCharacter::LogInputAudit() const
 void AVEILCharacter::Tick(float DeltaSeconds)
 {
 
-	// THE WINGS MOVE. Two fixed panels read as cardboard on a running body: sweep them back
-	// with speed and flap them with the clock, so the silhouette the vision asks for is alive.
+	// Animate the authored left/right wing meshes with movement speed and a shared flap cycle.
 	{
 		const UWorld* WingWorld = GetWorld();
 		const float Speed = (float)GetVelocity().Size();
@@ -1270,12 +1246,10 @@ void AVEILCharacter::Tick(float DeltaSeconds)
 		for (int32 w = 0; w < Wings.Num(); ++w)
 		{
 			if (!Wings[w]) { continue; }
-			// Feathers alternate side by side; the row is its index within the wing.
 			const float Side = (w % 2 == 0) ? -1.f : 1.f;
-			const int32 Row = w / 2;
-			Wings[w]->SetRelativeRotation(FRotator(Flap * (8.f + Row * 2.f),
-				Side * (14.f + Row * 6.f),
-				Side * (26.f + Row * 11.f + Flap * 9.f)));
+			Wings[w]->SetRelativeRotation(FRotator(Flap * 10.f,
+				Side * 8.f,
+				Side * (22.f + Flap * 10.f)));
 		}
 	}
 	Super::Tick(DeltaSeconds);
@@ -1532,9 +1506,45 @@ void AVEILCharacter::Tick(float DeltaSeconds)
 						const float WasZ = GetActorLocation().Z;
 						if (BestTile)
 						{
-							SetActorLocation(FVector(Seat.X, Seat.Y, TopZ + HalfH + 2.f), false, nullptr, ETeleportType::TeleportPhysics);
-							UE_LOG(LogVEIL, Warning, TEXT("PHI GROUND STAND: standing on %s (top %.0f) - was Z=%.0f, now Z=%.0f."),
-								*BestTile->GetName(), TopZ, WasZ, TopZ + HalfH + 2.f);
+							// A SEAT UNDER A ROOF IS A SEAT IN A WALLED ROOM. The occlusion grid taken at
+							// 7 s measured nine rays out of the lens and not one reached sky: SM_Wall1_Big
+							// on five, the room's own SM_HolderRoof ceiling in VEIL_CrystalDeep overhead,
+							// cream stone on the rest. That - not the sun, the skylight, or the exposure -
+							// is the 65% near-black the eye frame has carried through every lighting fix.
+							// So he stands on the nearest open stone instead: a golden-angle spiral out
+							// from the authority anchor, keeping the first spot that has floor under his
+							// feet and nothing between his head and the sky. The anchor still decides
+							// where he stands; the room no longer decides he cannot see out of it.
+							FVector Stand(Seat.X, Seat.Y, TopZ + HalfH + 2.f);
+							FCollisionQueryParams OpenQ(SCENE_QUERY_STAT(PhiSeatOpen), false, this);
+							for (TActorIterator<AActor> VaultIt(GW); VaultIt; ++VaultIt)
+							{
+								if (*VaultIt && VaultIt->GetClass()->GetName().Contains(TEXT("Vault"))) { OpenQ.AddIgnoredActor(*VaultIt); }
+							}
+							int32 OpenStep = 0;
+							for (int32 Try = 1; Try <= 24; ++Try)
+							{
+								const float Spiral = FMath::DegreesToRadians(137.5077640500378f * (float)Try);
+								const float Reach = 700.f * FMath::Sqrt((float)Try);
+								const FVector Cursor(Seat.X + FMath::Cos(Spiral) * Reach,
+									Seat.Y + FMath::Sin(Spiral) * Reach, 0.f);
+								FHitResult Down, Up;
+								if (!GW->LineTraceSingleByChannel(Down, Cursor + FVector(0.f, 0.f, 600.f),
+									Cursor - FVector(0.f, 0.f, 600.f), ECC_Visibility, OpenQ)) { continue; }
+								const FVector Feet = Down.ImpactPoint + FVector(0.f, 0.f, HalfH + 2.f);
+								if (GW->LineTraceSingleByChannel(Up, Feet + FVector(0.f, 0.f, 40.f),
+									Feet + FVector(0.f, 0.f, 1400.f), ECC_Visibility, OpenQ))
+								{
+									continue;   // roofed: step on
+								}
+								Stand = Feet;
+								OpenStep = Try;
+								break;
+							}
+							SetActorLocation(Stand, false, nullptr, ETeleportType::TeleportPhysics);
+							UE_LOG(LogVEIL, Warning,
+								TEXT("PHI GROUND STAND: standing on %s (top %.0f) - was Z=%.0f, now V(X=%.0f, Y=%.0f, Z=%.0f), open-sky step %d."),
+								*BestTile->GetName(), TopZ, WasZ, Stand.X, Stand.Y, Stand.Z, OpenStep);
 						}
 						else
 						{
