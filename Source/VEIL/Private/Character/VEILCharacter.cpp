@@ -595,15 +595,17 @@ void AVEILCharacter::BeginPlay()
 				TEXT("PHI GROUND: %d kit tile(s) laid, top face at z=0, collision blocking."), Tiles);
 			// ON THE FLOOR, AT HIS OWN COORDINATE. RUNNER is 0,0,100: 98 cm of stand-off
 			// over the new ground, which is where the vision's market is.
-			SetActorLocation(FVector(0.f, -1500.f, 100.f), false, nullptr, ETeleportType::TeleportPhysics);
+			SetActorLocation(FVector(VEILAnchors::RunnerX, VEILAnchors::RunnerY, VEILAnchors::RunnerZ),
+				false, nullptr, ETeleportType::TeleportPhysics);
 			UE_LOG(LogVEIL, Warning,
-				TEXT("PHI AUTHORITY SEAT: runner stands on V(0,0,100) over real ground."));
+				TEXT("PHI AUTHORITY SEAT: runner stands on V(%.0f,%.0f,%.0f) over real ground."),
+				VEILAnchors::RunnerX, VEILAnchors::RunnerY, VEILAnchors::RunnerZ);
 			// CLEAR THE SPAWN COLUMN. Duplicated shells stand where the market is, so the
 			// capsule begins inside geometry and nothing can move it. Anything solid within
 			// 700 cm of the spawn and below 400 cm up is scenery over the plaza; the tagged
 			// PHI GROUND tiles are the floor and stay.
 			{
-				const FVector Plaza(0.f, -1500.f, 100.f);
+				const FVector Plaza(VEILAnchors::RunnerX, VEILAnchors::RunnerY, VEILAnchors::RunnerZ);
 				int32 Cleared = 0;
 				for (TActorIterator<AActor> ShellIt(GroundWorld); ShellIt; ++ShellIt)
 				{
@@ -1515,7 +1517,7 @@ void AVEILCharacter::Tick(float DeltaSeconds)
 					bOnPhiGround = true;
 					if (UWorld* GW = GetWorld())
 					{
-						const FVector Seat(0.f, -1500.f, 0.f);
+						const FVector Seat(VEILAnchors::RunnerX, VEILAnchors::RunnerY, 0.f);
 						const float HalfH = GetCapsuleComponent() ? GetCapsuleComponent()->GetScaledCapsuleHalfHeight() : 96.f;
 						AActor* BestTile = nullptr;
 						float BestDist = 1.0e9f, TopZ = 0.f;
@@ -1639,8 +1641,10 @@ void AVEILCharacter::Tick(float DeltaSeconds)
 					if (!bPlazaRescue)
 					{
 						bPlazaRescue = true;
-						SetActorLocation(FVector(0.f, -1500.f, 100.f), false, nullptr, ETeleportType::TeleportPhysics);
-						UE_LOG(LogVEIL, Warning, TEXT("PHI SEAT LAW: boxed in, so the runner stands on V(0,0,100)."));
+						SetActorLocation(FVector(VEILAnchors::RunnerX, VEILAnchors::RunnerY, VEILAnchors::RunnerZ),
+							false, nullptr, ETeleportType::TeleportPhysics);
+						UE_LOG(LogVEIL, Warning, TEXT("PHI SEAT LAW: boxed in, so the runner stands on V(%.0f,%.0f,%.0f)."),
+							VEILAnchors::RunnerX, VEILAnchors::RunnerY, VEILAnchors::RunnerZ);
 					}
 				}
 			}

@@ -195,3 +195,58 @@ UnrealEditor.exe running: 0
 - no Unreal editor window: `UnrealEditor.exe running: 0`
 - no cook, no package, no exe/apk/obb
 - no push, no force, no history rewrite
+
+## Fourth loop: Copilot reached directly, and the seat stops lying
+
+### The direct Copilot door, found by checking the logs
+
+`~/.copilot/` holds `chats/`, `logs/`, `agents/`, `mcp-config.json`. The direct, non-interactive door is:
+
+```
+copilot -p "<task>" --trust-folder --allow-all-paths      # exits after completion
+```
+
+No PTY, no permission prompt to race. First direct call, exit 0, 1m 6s, 1.01 credits.
+
+The project's own MCP wiring (`.mcp.json`, `.codex/config.toml`, `.cursor/mcp.json`, `.vscode/mcp.json`,
+`.gemini/settings.json`) all point at one server: **`unreal-mcp`, http://127.0.0.1:8000/mcp** — the
+Unreal editor bridge, not Copilot. Measured this pass: `port 8000: CLOSED (timed out)`,
+`initialize: WinError 10061`. It only exists while the editor is open, which is the window Tyree
+forbade, so the bridge is correctly idle.
+
+### What Copilot found in one direct call
+
+The seat law `VEILProgression.h:21` says `RunnerX=0, RunnerY=0, RunnerZ=100`. Six sites seeded the
+runner at **Y = -1500**, and the log beside one of them printed `V(0,0,100)` anyway:
+
+| File:line | Before |
+|---|---|
+| `VEILGameMode.cpp:3086` | `Seat = FVector(0.f, -1500.f, 100.f);` |
+| `VEILGameMode.cpp:3112` | `Authority(..., FVector(0.f, -1500.f, 100.f))` |
+| `VEILGameMode.cpp:5132` | respawn `SetActorLocation(FVector(0.f, -1500.f, 100.f))` |
+| `VEILCharacter.cpp:598` | authority seat, log says V(0,0,100) |
+| `VEILCharacter.cpp:606` | spawn-column clear centred on (0,-1500) |
+| `VEILCharacter.cpp:1518` | ground-stand seat `(0,-1500,0)` |
+| `VEILCharacter.cpp:1642` | boxed-in rescue `(0,-1500,100)` |
+
+All seven now read `VEILAnchors`, and the log prints the numbers it uses. The floor is safe:
+nine `SM_Floor1_Big` tiles, step 8000, 80 m each — `(0,0)` is inside the centre tile.
+
+Measured, same headless door:
+
+```
+PHI SEAT LAW: runner spawns on V(0,0,100) over PHI GROUND, not on PlayerStart_0.
+PHI RUNNER SPAWN: VEILCharacter at V(Z=100.00) (open ground ahead 235 cm; 261 shell(s) ignored)
+VEIL REGION: start = Hub at V(Z=100.00)
+VERDICT: PASS - no placeholder stood at the end of the sweep.     verify exit 0
+```
+
+Two honest notes: a 45 s headless window returns `INCOMPLETE - 2 of 10 passes spoke` because the boot
+plus sweep now needs ~75 s (75 s run: PASS, exit 0); and four `PHI UNSTICK` lines still fire, whose
+positions are recorded above rather than argued away. `-1500` remains in plaza geometry and pad
+coordinates (`VEILGameMode.cpp:1113, 2067, 2208`, `VEILCharacter.cpp:667-668`) — those are scenery
+addresses, not the runner's seat, and were deliberately left alone.
+
+### Pushed
+
+`cef0590..3efdfa9` then this seat fix, branch `veil-whole`, with `main` untouched.
