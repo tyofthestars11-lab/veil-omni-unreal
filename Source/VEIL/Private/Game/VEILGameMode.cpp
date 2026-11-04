@@ -162,6 +162,11 @@ void AVEILGameMode::ApplyPhiGrade()
 	// AutoExposureBias is exposure compensation in stops, not an absolute EV100 value.
 	// Nine stops multiplied scene exposure by 512; neutral compensation lets the authored
 	// materials and the single game-lighting pass determine the picture.
+	// -1.5 STOPS WAS TRIED AND MEASURED AS NOTHING, SO IT WAS REVERTED. The capture it was tuned
+	// against (Saved/Screenshots/hub_view.png) measured mean 179 before and 179 after, because that
+	// frame is not the player's eye: the shot harness photographs the hub from V(-8587,-9514,4240),
+	// four kilometres out, and exposure on a vista is not exposure in the district. The bias goes back
+	// to neutral until a frame is taken from the runner's own eyes.
 	const float ExposureCompensationStops = 0.f;
 
 	// Grade the volume the level already carries (the bake saved one). If a level ever
