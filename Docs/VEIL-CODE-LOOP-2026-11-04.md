@@ -250,3 +250,42 @@ addresses, not the runner's seat, and were deliberately left alone.
 ### Pushed
 
 `cef0590..3efdfa9` then this seat fix, branch `veil-whole`, with `main` untouched.
+
+## Fifth loop: Copilot writing in the side terminal, and a dead path caught by measurement
+
+### How it was reached
+
+Typing `copilot` in the side terminal is the whole connection: it opens in `D:\VEIL-OMNI`, loads
+`.github/copilot-instructions.md` as its one instruction, runs `Copilot Fusion` (it selected
+`GPT-6 Luna`), and asks for approval before touching anything
+(`Approve read-only inspection` / edits). No wrapper, no flags needed.
+
+### What Copilot wrote
+
+Asked to stop planting a Spire marker at the Hub (`vision_whole.json` carries `"Spire": [0,0,500]`
+while the tower is built at `(0,3500)`), it added to `VEILWorldBuilder.cpp` (25 insertions, 3 deletions):
+
+- `IsSpireAtHub(Name, X, Y)` — true only for `Name == "Spire" && X == 0 && Y == 0`
+- the guard in **both** authority-block paths, with `PHI AUTHORITY: skipped Spire block at Hub centre`,
+- `AuthorityPlaced` now counts what was actually placed instead of `AuthorityCount`.
+
+Build `Succeeded`; headless run: `PHI SEAT LAW: runner spawns on V(0,0,100)`, `PHI UNSTICK` **0**,
+`VERDICT: PASS` (exit 0). Pushed as `8f0488c` on `veil-whole`.
+
+### The measurement that changes the conclusion
+
+The skip never fired, and the reason is not the guard:
+
+```
+grep -rn "BuildPhiWhole" Source/VEIL/   ->  only the definition in VEILWorldBuilder.cpp
+GameMode calls Builder->BuildWorld() at VEILGameMode.cpp:1763 and :1771
+log: no "PHI AUTHORITY", no "address(es) placed", no "PHI ZONE DRESS", no "PHI VISTA"
+```
+
+**`BuildPhiWhole()` is never called.** The authority block that carries the Spire at `[0,0,500]` is
+dead code, so the doubled Spire does not exist in the running world — the live Spire is the tower at
+`(0,3500)`, which matches the reference. Copilot's edit is correct and harmless, and it proves nothing
+about the live district. Ghost work, caught because the log was read instead of the diff.
+
+Physics measured in the same frame, for the record: `gravity -980, walk 439, sprint 750,
+leap 602 cm/s = 185 cm, glide 600 with drop -50, capsule r 42 half-height 96`.
