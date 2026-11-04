@@ -1568,15 +1568,45 @@ void AVEILCharacter::Tick(float DeltaSeconds)
 			{
 				if (*VaultIt && VaultIt->GetClass()->GetName().Contains(TEXT("Vault"))) { Inside.AddIgnoredActor(*VaultIt); }
 			}
-			bOverlapping = StuckW->OverlapBlockingTestByChannel(GetActorLocation(), GetActorQuat(),
-				ECC_Pawn, FCollisionShape::MakeCapsule(38.f, 92.f), Inside);
+			// THE FLOOR IS NOT A BODY, AND A VOLUME IS NOT A BODY. Measured at the anchor with
+			// the probe below: every blocker was SM_Floor1_Big - the PHI GROUND deck and the
+			// hub's own paving, whose solid face sits about 7 cm above z=0 - where the capsule
+			// bottom at z=6 overlaps his own floor by a centimetre, plus two meshless
+			// BoxComponent volumes at z=7 and z=105. A runner standing on the ground he was
+			// given is not stuck in it, so the probe keeps only real art that stands proud of
+			// his feet. The Vault is still ignored, as the seat probe and ground trace do.
+			// CONTACT IS NOT ENTRAPMENT. Physics settles him on the PHI GROUND deck, whose solid
+			// face measures about 7 cm above z=0, so a capsule of half 92 centred at 98 starts a
+			// centimetre inside the floor he is simply standing on - and the pass teleported him
+			// 260 cm for it. Four centimetres of tolerance is the difference between resting on
+			// the ground and being buried in it.
+			const float ProbeHalf = 88.f;
+			const float ProbeBottom = GetActorLocation().Z - ProbeHalf;
+			TArray<FOverlapResult> BlockingHits;
+			bOverlapping = false;
+			if (StuckW->OverlapMultiByChannel(BlockingHits, GetActorLocation(), GetActorQuat(), ECC_Pawn,
+				FCollisionShape::MakeCapsule(34.f, ProbeHalf), Inside))
+			{
+				for (const FOverlapResult& BH : BlockingHits)
+				{
+					const AActor* BAct = BH.GetActor();
+					if (!BAct) { continue; }
+					if (BAct->ActorHasTag(FName(TEXT("PhiGround")))) { continue; }
+					const UStaticMeshComponent* BMesh = Cast<UStaticMeshComponent>(BH.GetComponent());
+					if (!BMesh || !BMesh->GetStaticMesh()) { continue; }
+					const FBox BB = BAct->GetComponentsBoundingBox(true);
+					if (BB.IsValid && BB.Max.Z <= ProbeBottom + 10.f) { continue; }
+					bOverlapping = true;
+					break;
+				}
+			}
 			// NAME THE BLOCKER. The unstick pass teleports the runner 260 cm off his own anchor,
 			// and two guesses at which actor did it were both wrong. A probe that only says
 			// "blocked" is not evidence, so the first few verdicts name the actor and component
 			// that answered. Budgeted: five lines, then silent.
 			if (bOverlapping)
 			{
-				static int32 BlockerBudget = 5;
+				static int32 BlockerBudget = 8;
 				if (BlockerBudget > 0)
 				{
 					--BlockerBudget;
@@ -1586,9 +1616,13 @@ void AVEILCharacter::Tick(float DeltaSeconds)
 					{
 						for (const FOverlapResult& BH : BlockerHits)
 						{
-							UE_LOG(LogVEIL, Warning, TEXT("PHI STUCK PROBE: blocked by %s (component %s) at %s"),
+							const UStaticMeshComponent* BHComp = Cast<UStaticMeshComponent>(BH.GetComponent());
+							UE_LOG(LogVEIL, Warning,
+								TEXT("PHI STUCK PROBE: blocked by %s (component %s, mesh %s, rel %s) at %s"),
 								BH.GetActor() ? *BH.GetActor()->GetName() : TEXT("none"),
 								BH.GetComponent() ? *BH.GetComponent()->GetName() : TEXT("none"),
+								(BHComp && BHComp->GetStaticMesh()) ? *BHComp->GetStaticMesh()->GetName() : TEXT("none"),
+								BHComp ? *BHComp->GetRelativeLocation().ToCompactString() : TEXT("?"),
 								BH.GetActor() ? *BH.GetActor()->GetActorLocation().ToCompactString() : TEXT("?"));
 						}
 					}
