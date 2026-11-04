@@ -3457,6 +3457,10 @@ void AVEILWorldBuilder::BuildPhiWhole()
 	static bool bPhiWholeBuilt = false;
 	if (bPhiWholeBuilt) { return; }
 	bPhiWholeBuilt = true;
+	auto IsSpireAtHub = [](const FString& Name, float X, float Y)
+	{
+		return Name == TEXT("Spire") && X == 0.f && Y == 0.f;
+	};
 
 	// THE VISION FILE, WHOLE. BuildWorld reads vision_whole.json - written by
 	// VEIL-Whole-Phi-Intent.py - and places what it says. The file's SHA-256 is checked
@@ -3511,9 +3515,19 @@ void AVEILWorldBuilder::BuildPhiWhole()
 					{
 						const TArray<TSharedPtr<FJsonValue>>& C = KV.Value->AsArray();
 						if (C.Num() < 3) { continue; }
+						const float X = (float)C[0]->AsNumber();
+						const float Y = (float)C[1]->AsNumber();
+						const float Z = (float)C[2]->AsNumber();
+						if (IsSpireAtHub(KV.Key, X, Y))
+						{
+							UE_LOG(LogVEIL, Warning,
+								TEXT("PHI AUTHORITY: skipped Spire block at Hub centre (%.0f, %.0f, %.1f)."),
+								X, Y, Z);
+							continue;
+						}
 						if (VStone)
 						{
-							VTag(SpawnBlock(FVector((float)C[0]->AsNumber(), (float)C[1]->AsNumber(), (float)C[2]->AsNumber()),
+							VTag(SpawnBlock(FVector(X, Y, Z),
 								FVector(1.2f, 1.2f, 1.2f), VStone, VGold, 0.f));
 						}
 						++AuthorityPlaced;
@@ -3660,15 +3674,24 @@ void AVEILWorldBuilder::BuildPhiWhole()
 
 	// AUTHORITY, PLACED. Every named address gets a stone at its exact coordinate, so the
 	// places exist in the world rather than only in a table.
+	int32 AuthorityPlaced = 0;
 	for (int32 a = 0; a < AuthorityCount; ++a)
 	{
 		if (!Stone) { break; }
 		const float AX = FCString::Atof(Authority[a].X);
 		const float AY = FCString::Atof(Authority[a].Y);
 		const float AZ = FCString::Atof(Authority[a].Z);
+		if (IsSpireAtHub(FString(Authority[a].Name), AX, AY))
+		{
+			UE_LOG(LogVEIL, Warning,
+				TEXT("PHI AUTHORITY: skipped Spire block at Hub centre (%.0f, %.0f, %.1f)."),
+				AX, AY, AZ);
+			continue;
+		}
 		Tag(SpawnBlock(FVector(AX, AY, AZ), FVector(1.2f, 1.2f, 1.2f), Stone, Gold, 0.f));
+		++AuthorityPlaced;
 	}
-	UE_LOG(LogVEIL, Warning, TEXT("PHI AUTHORITY: %d address(es) placed from one locked table."), AuthorityCount);
+	UE_LOG(LogVEIL, Warning, TEXT("PHI AUTHORITY: %d address(es) placed from one locked table."), AuthorityPlaced);
 
 	// ZONE DRESS. Five zones, each dressed at its own anchor with its own material language.
 	for (const FZone& Z : Zones)
@@ -4416,4 +4439,3 @@ void AVEILWorldBuilder::BuildVista()
 		TEXT("PHI VISTA: %d crystal peaks, %d waterfall(s), %d house(s) on 3 terraces, %d bridge span(s), %d phi pillar(s), %d beacon shaft(s) - the district reads in silhouette."),
 		Peaks, Falls, Houses, Bridges, Pillars, Shafts);
 }
-
