@@ -1557,6 +1557,17 @@ void AVEILCharacter::Tick(float DeltaSeconds)
 		if (const UWorld* StuckW = GetWorld())
 		{
 			FCollisionQueryParams Inside(SCENE_QUERY_STAT(VEILStuckProbe), false, this);
+			// THE VAULT IS A LANDMARK, NOT A BODY. Its lattice is BlockAll and its bounds
+			// reach z=747 over the plaza centre, so a runner standing on his own anchor
+			// (0,0,100) reads as overlapping it and is teleported 260 cm off the seat to
+			// V(-191.72,175.63,168.00). The seat probe in the game mode and the ground trace
+			// below both already ignore every "Vault" actor; this probe did not, and that
+			// asymmetry is the whole reason the seat kept moving after its coordinate was
+			// made honest. One rule, three places.
+			for (TActorIterator<AActor> VaultIt(GetWorld()); VaultIt; ++VaultIt)
+			{
+				if (*VaultIt && VaultIt->GetClass()->GetName().Contains(TEXT("Vault"))) { Inside.AddIgnoredActor(*VaultIt); }
+			}
 			bOverlapping = StuckW->OverlapBlockingTestByChannel(GetActorLocation(), GetActorQuat(),
 				ECC_Pawn, FCollisionShape::MakeCapsule(38.f, 92.f), Inside);
 		}
