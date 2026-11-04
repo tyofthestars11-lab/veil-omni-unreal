@@ -27,6 +27,14 @@ private:
 	UFUNCTION()
 	void OnGodClicked();
 
+	// The save menu is the pause menu's own two buttons, wired to the ONE save
+	// (UVEILOmniAll), so there is no second slot and no second writer.
+	UFUNCTION()
+	void OnSaveClicked();
+
+	UFUNCTION()
+	void OnLoadClicked();
+
 	UFUNCTION()
 	void OnQualityClicked();
 
@@ -38,6 +46,7 @@ private:
 
 	void RefreshQualityLabel();
 	void RefreshGodLabel();
+	void RefreshSaveLabel();
 
 	TObjectPtr<UButton> ResumeButton;
 	TObjectPtr<UButton> GodButton;
@@ -46,6 +55,9 @@ private:
 	TObjectPtr<UButton> QuitButton;
 	TObjectPtr<UTextBlock> QualityLabel;
 	TObjectPtr<UTextBlock> GodLabel;
+	TObjectPtr<UButton> SaveButton;
+	TObjectPtr<UButton> LoadButton;
+	TObjectPtr<UTextBlock> SaveLabel;
 
 	int32 QualityLevel = 1;
 };

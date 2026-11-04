@@ -76,7 +76,10 @@ void AVEILCrowd::Populate(int32 Count)
 		return;
 	}
 
-	const int32 N = FMath::Clamp(Count, 4, 18);
+	// EIGHTEEN WAS A CEILING, NOT A COUNT. The reference market is packed: stalls either side
+	// and a queue at each. The caller asks for 48; eighteen was the old hard maximum, which is
+	// why a market built for a crowd stood nearly empty.
+	const int32 N = FMath::Clamp(Count, 4, (int32)VeilPhi::Fibonacci(11));
 	Walkers.Reserve(N);
 	People.Reserve(N);
 

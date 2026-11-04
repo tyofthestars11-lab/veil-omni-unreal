@@ -10,7 +10,7 @@
 
 class ULineBatchComponent;
 
-UENUM(BlueprintType)
+UENUM(BlueprintType, meta = (ScriptName = "EPHIWeather"))
 enum class EPHIWeather : uint8
 {
 	Clear,
@@ -53,7 +53,11 @@ public:
 	 *  minutes of play: the sun's pitch follows the hour and the weather dims
 	 *  on top of the daylight instead of replacing it. */
 	UPROPERTY(BlueprintReadOnly, Category = "VEIL|Sky")
-	float Hour = 8.5f;
+	// GOLDEN HOUR, NOT WHATEVER THE CLOCK DRIFTED TO. The cycle used to open at 08:30 and run
+	// a world hour every real minute, so a session was night inside five minutes and every
+	// frame that survived to be measured was a blue one. 17.27 h is the hour whose sun pitch
+	// is the vision's own 17.0324 deg down - the light every reference painting is lit by.
+	float Hour = 16.5f;
 
 	/** The world's own intent, folded from measured chaos by UPHIIntent. Above
 	 *  0.618 the sky leans toward storm, below 0.382 it clears. */

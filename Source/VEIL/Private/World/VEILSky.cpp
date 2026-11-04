@@ -16,10 +16,16 @@ void VEILSky::Dress(UWorld* World)
 
 	// Gold, not white: the reference frames are lit by a low sun, and every stone surface in
 	// this project is chosen to read warm.
-	const FLinearColor SunColor(1.0f, 0.80f, 0.52f);
-	const FRotator SunAngle(-16.f, 38.f, 0.f);
-	const FLinearColor FogColor(0.62f, 0.48f, 0.30f);
-	const FLinearColor SkyTint(0.62f, 0.64f, 0.78f);
+	// GOLD, AND BRIGHT ENOUGH TO BE GOLD. This function runs at Play and is therefore the
+	// LAST author of the light: the bake could set any sun it liked and this wrote 7 lux over
+	// it, which is why every frame came back blue-black while the references are midday gold.
+	const FLinearColor SunColor(1.0f, 0.86f, 0.62f);
+	// 34.38 deg = 90 / phi^2: the same golden structure as the vision's angle, high enough to
+	// clear the market walls. At 16-17 deg the plaza sat in its own shadow and measured grey.
+	const FRotator SunAngle(-34.38f, 38.f, 0.f);
+	const FLinearColor FogColor(0.86f, 0.72f, 0.55f);
+	// NOT BLUE. A blue sky tint over a dark meter is the cold cast the last frame was drowned in.
+	const FLinearColor SkyTint(1.0f, 0.96f, 0.90f);
 
 	FActorSpawnParameters Params;
 	Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
@@ -45,7 +51,7 @@ void VEILSky::Dress(UWorld* World)
 		if (UDirectionalLightComponent* Light = Cast<UDirectionalLightComponent>(Sun->GetLightComponent()))
 		{
 			if (bSpawnedSun) { Light->SetMobility(EComponentMobility::Movable); }
-			Light->SetIntensity(7.0f);
+			Light->SetIntensity(1600.0f);
 			Light->SetLightColor(SunColor);
 			Light->SetCastShadows(true);
 		}
@@ -69,7 +75,7 @@ void VEILSky::Dress(UWorld* World)
 		{
 			if (bSpawnedSky) { Light->SetMobility(EComponentMobility::Movable); }
 			Light->SourceType = ESkyLightSourceType::SLS_CapturedScene;
-			Light->SetIntensity(1.6f);
+			Light->SetIntensity(3.2f);
 			Light->SetLightColor(SkyTint);
 			Light->RecaptureSky();
 		}
@@ -89,16 +95,16 @@ void VEILSky::Dress(UWorld* World)
 	if (Fog && Fog->GetComponent())
 	{
 		UExponentialHeightFogComponent* Air = Fog->GetComponent();
-		Air->SetFogDensity(0.018f);
-		Air->SetFogHeightFalloff(0.18f);
+		Air->SetFogDensity(0.0035f);
+		Air->SetFogHeightFalloff(0.30f);
 		Air->SetFogInscatteringColor(FogColor);
-		Air->SetStartDistance(150.f);
+		Air->SetStartDistance(2000.f);
 	}
 
 	UE_LOG(LogVEIL, Warning,
 		TEXT("PHI SKY: sun %s at %.0f lux (gold %.2f,%.2f,%.2f), sky light %s, fog %s - %d spawned, %d retuned, no second sun."),
 		Sun ? TEXT("stands") : TEXT("missing"),
-		7.0f, SunColor.R, SunColor.G, SunColor.B,
+		1600.0f, SunColor.R, SunColor.G, SunColor.B,
 		Sky ? TEXT("captured") : TEXT("missing"),
 		Fog ? TEXT("set") : TEXT("missing"),
 		Spawned, Retuned);

@@ -14,13 +14,15 @@ FVEILRegionInfo UVEILRegionSubsystem::GetInfo(EVEILRegion R) const
 	// ((0,150), (-150,20), (0,-160), (150,20)) put every region ~15 km outside a level that
 	// spans about 74 m, so RegionAt() answered "Megastructure Deep" everywhere the runner
 	// could actually walk. These are the anchors from the design:
-	//   Keeper 900,0        -> Hub
-	//   Seer -450,780       -> The Nest
-	//   Spire zone 0,3500   -> The Spire (Hark's law: the landmark is not the Hub)
-	//   fragment 600,-2100  -> Omni District (the Cache at 0,-6200 also resolves here)
+	// THE REFERENCE GEOGRAPHY, NOT A CONVENIENT ONE. Tyree's file fixes the five zones at:
+	//   Hub 0,0 · Nest -450,780 · Spire 0,3500 · Omni District 2800,500 · Deep 0,-5000.
+	// This table had Hub at 900,0 (the Keeper's post, not the Hub), Omni at 600,-2100 (a fragment
+	// site) and Deep at 0,0, so RegionAt() labelled a runner standing in the Hub as "The Nest" -
+	// measured in a headless run at V(-484.01, 106.56, 425.59). The landmarks stay where they are;
+	// what is corrected is which zone each landmark belongs to.
 	case EVEILRegion::Hub:
 		I.Name = FText::FromString(TEXT("Hub"));
-		I.Center = FVector2D(9.f, 0.f) * S; I.Palette = FLinearColor(0.85f, 0.63f, 0.36f);
+		I.Center = FVector2D(0.f, 0.f) * S; I.Palette = FLinearColor(0.85f, 0.63f, 0.36f);
 		I.MusicCue = TEXT("Explore_Hub"); I.FragmentSites = 0; break;
 	case EVEILRegion::Nest:
 		I.Name = FText::FromString(TEXT("The Nest"));
@@ -33,11 +35,11 @@ FVEILRegionInfo UVEILRegionSubsystem::GetInfo(EVEILRegion R) const
 		I.MusicCue = TEXT("Combat_Spire"); I.FragmentSites = 2; break;
 	case EVEILRegion::OmniDistrict:
 		I.Name = FText::FromString(TEXT("Omni District"));
-		I.Center = FVector2D(6.f, -21.f) * S; I.Palette = FLinearColor(1.f, 0.24f, 0.94f);
+		I.Center = FVector2D(28.f, 5.f) * S; I.Palette = FLinearColor(1.f, 0.24f, 0.94f);
 		I.MusicCue = TEXT("Explore_Omni"); I.FragmentSites = 3; break;
 	case EVEILRegion::MegastructureDeep:
 		I.Name = FText::FromString(TEXT("Megastructure Deep"));
-		I.Center = FVector2D(0.f, 0.f); I.Palette = FLinearColor(1.f, 0.77f, 0.23f);
+		I.Center = FVector2D(0.f, -50.f) * S; I.Palette = FLinearColor(1.f, 0.77f, 0.23f);
 		I.MusicCue = TEXT("Combat_Deep"); I.FragmentSites = 2; break;
 	}
 	return I;

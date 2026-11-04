@@ -395,10 +395,17 @@ UStaticMeshComponent* AVEILWorldBuilder::SpawnBlockRot(const FVector& Location,
 	// said so: MI_Modular1 missing usage flag Nanite, Default Material will be used in game.
 	// A component-level Nanite ban was not enough, so the unsafe material is swapped for the
 	// project's authored stone before anything samples it, and the package draws its own walls.
+	// THE GREY WAS THIS LINE. Every modular wall's material was replaced with the engine's
+	// M_Brick_Cut_Stone, a neutral grey - 5,094 meshes of the district wore it, which is
+	// exactly what the owner keeps calling "white/grey flat slabs". The Nanite reason for the
+	// swap is real (MI_Modular1 has no Nanite usage flag, so the cooked build fell back to the
+	// default material), so the swap stays and only its TARGET changes: the project's own
+	// cream stone carries the usage flags and the vision's colour, where the starter brick
+	// carried neither.
 	if (Comp->GetMaterial(0) && Comp->GetMaterial(0)->GetName().Contains(TEXT("MI_Modular")))
 	{
 		if (UMaterialInterface* PackStone = LoadObject<UMaterialInterface>(nullptr,
-			TEXT("/Game/StarterContent/Materials/M_Brick_Cut_Stone.M_Brick_Cut_Stone")))
+			TEXT("/Game/PHI/Palette/M_PHI_CreamStone.M_PHI_CreamStone")))
 		{
 			Comp->SetMaterial(0, PackStone);
 		}
@@ -1306,7 +1313,7 @@ UInstancedStaticMeshComponent* AVEILWorldBuilder::MakeSet(UStaticMesh* Mesh,
 		if (Emissive <= 0.f)
 		{
 			BodyMat = LoadObject<UMaterialInterface>(nullptr,
-				TEXT("/Game/StarterContent/Materials/M_Brick_Cut_Stone.M_Brick_Cut_Stone"));
+				TEXT("/Game/PHI/Palette/M_PHI_CreamStone.M_PHI_CreamStone"));
 		}
 		else
 		{
@@ -2258,14 +2265,14 @@ void AVEILWorldBuilder::DressPhiPalette()
 	// loads is the stone the district is built from. Crystal and water keep their
 	// own blue in their own files.
 	UMaterialInterface* Blue = LoadObject<UMaterialInterface>(nullptr,
-		TEXT("/Game/StarterContent/Materials/M_Brick_Cut_Stone.M_Brick_Cut_Stone"));
+		TEXT("/Game/PHI/Palette/M_PHI_CreamStone.M_PHI_CreamStone"));
 	UMaterialInterface* Glow = LoadObject<UMaterialInterface>(nullptr,
 		TEXT("/Game/PHI/Palette/M_PHI_WhiteEmissive.M_PHI_WhiteEmissive"));
 	// THE PILLAR BODIES ARE STONE. Three passes of changing GoldTint numbers proved the
 	// point: the pillars do not take a colour, they take a MATERIAL, and that material was
 	// M_PHI_Gold. This is the stone the project already ships, used by the quest statues.
 	UMaterialInterface* StoneMat = LoadObject<UMaterialInterface>(nullptr,
-		TEXT("/Game/StarterContent/Materials/M_Brick_Cut_Stone.M_Brick_Cut_Stone"));
+		TEXT("/Game/PHI/Palette/M_PHI_CreamStone.M_PHI_CreamStone"));
 	if (!Gold || !Blue)
 	{
 		UE_LOG(LogVEIL, Warning, TEXT("VEIL PALETTE: PHI palette materials missing - gold and crystal skipped."));
@@ -2645,14 +2652,14 @@ void AVEILWorldBuilder::DressRegions()
 	// loads is the stone the district is built from. Crystal and water keep their
 	// own blue in their own files.
 	UMaterialInterface* Blue = LoadObject<UMaterialInterface>(nullptr,
-		TEXT("/Game/StarterContent/Materials/M_Brick_Cut_Stone.M_Brick_Cut_Stone"));
+		TEXT("/Game/PHI/Palette/M_PHI_CreamStone.M_PHI_CreamStone"));
 	UMaterialInterface* Glow = LoadObject<UMaterialInterface>(nullptr,
 		TEXT("/Game/PHI/Palette/M_PHI_WhiteEmissive.M_PHI_WhiteEmissive"));
 	// THE PILLAR BODIES ARE STONE. Three passes of changing GoldTint numbers proved the
 	// point: the pillars do not take a colour, they take a MATERIAL, and that material was
 	// M_PHI_Gold. This is the stone the project already ships, used by the quest statues.
 	UMaterialInterface* StoneMat = LoadObject<UMaterialInterface>(nullptr,
-		TEXT("/Game/StarterContent/Materials/M_Brick_Cut_Stone.M_Brick_Cut_Stone"));
+		TEXT("/Game/PHI/Palette/M_PHI_CreamStone.M_PHI_CreamStone"));
 	if (!Gold || !Blue) { return; }
 
 	// THE SECOND GOLD PATH. DressPhiPalette was fixed and the plaza still measured 88 gold
@@ -3070,7 +3077,7 @@ void AVEILWorldBuilder::BakeToLevel()
 		// Starter Content ships real cut-stone materials, so the plain wears masonry:
 		// the same cut stone the plaza reads as, in daylight, instead of authored sand.
 		UMaterialInterface* GroundMat = LoadObject<UMaterialInterface>(nullptr,
-			TEXT("/Game/StarterContent/Materials/M_Brick_Cut_Stone.M_Brick_Cut_Stone"));
+			TEXT("/Game/PHI/Palette/M_PHI_CreamStone.M_PHI_CreamStone"));
 		int32 Tiles = 0;
 		for (int32 IX = -1; IX <= 1; ++IX)
 		{
@@ -3106,7 +3113,7 @@ void AVEILWorldBuilder::BakeToLevel()
 	if (UWorld* StoneWorld = GetWorld())
 	{
 		UMaterialInterface* Stone = LoadObject<UMaterialInterface>(nullptr,
-			TEXT("/Game/StarterContent/Materials/M_Brick_Cut_Stone.M_Brick_Cut_Stone"));
+			TEXT("/Game/PHI/Palette/M_PHI_CreamStone.M_PHI_CreamStone"));
 		int32 Reskinned = 0;
 		if (Stone)
 		{
@@ -3173,9 +3180,20 @@ void AVEILWorldBuilder::BuildPhiDistrict()
 	const float PlazaR = 1500.f;   // the open plaza: r < 15 m
 	const float CityR = 13500.f;   // the district's edge: r = 135 m
 
-	const FLinearColor Stone(0.46f, 0.44f, 0.40f);
-	const FLinearColor StoneWarm(0.50f, 0.44f, 0.36f);
-	const FLinearColor CapTint(0.28f, 0.24f, 0.21f);
+	// THE VISION'S PALETTE, NOT A GREY KIT'S. These four values are the whole reason the
+	// district read as "white/grey flat slabs and black blocks": the walls were 0.46 grey,
+	// the caps over them 0.28 near-black, and the ground tiles were the same grey as the
+	// walls. Nothing in the reference is grey. It is cream terrace stone under deep blue
+	// roofs, standing on a green ground band, lit gold.
+	//
+	// Linear values, converted from the hex the owner's art is built from:
+	//   cream  F6ECD2 -> (0.9231, 0.8377, 0.6469) -> used at 0.84 so Lumen does not clip it
+	//   blue   #1B3A63 roof / city body -> (0.0356, 0.1332, 0.3177)
+	//   green  #1B3932 ground band      -> (0.0356, 0.1150, 0.0779)
+	const FLinearColor Stone(0.84f, 0.78f, 0.62f);          // cream terrace stone
+	const FLinearColor StoneWarm(0.78f, 0.68f, 0.49f);      // warmer cream, for banding
+	const FLinearColor CapTint(0.0356f, 0.1332f, 0.3177f);  // deep blue roof
+	const FLinearColor GroundTint(0.0356f, 0.1150f, 0.0779f); // green ground band
 	const FLinearColor LampTint(1.0f, 0.78f, 0.36f);
 
 	auto TagCity = [](UStaticMeshComponent* Comp)
@@ -3222,8 +3240,10 @@ void AVEILWorldBuilder::BuildPhiDistrict()
 
 	auto LayTile = [&](float X, float Y, float SizeCm, float YawDeg)
 	{
+		// THE GROUND IS THE GREEN BAND. It was tinted with the same wall grey, which is
+		// why the floor of the world and the walls of the world were one colour.
 		UStaticMeshComponent* T = SpawnBlockRot(FVector(X, Y, -GUnit.Z * 0.5f),
-			FVector(SizeCm / GUnit.X, SizeCm / GUnit.Y, 1.f), Ground, Stone, 0.f, FRotator(0.f, YawDeg, 0.f));
+			FVector(SizeCm / GUnit.X, SizeCm / GUnit.Y, 1.f), Ground, GroundTint, 0.f, FRotator(0.f, YawDeg, 0.f));
 		TagCity(T);
 		if (T && T->GetOwner()) { T->GetOwner()->Tags.Add(FName(TEXT("PhiGround"))); }
 	};
@@ -3265,7 +3285,7 @@ void AVEILWorldBuilder::BuildPhiDistrict()
 	// the rings with each segment turned to its own bearing, so the street follows the
 	// spiral instead of a straight rule with a curve drawn over it.
 	UMaterialInterface* StreetStone = LoadObject<UMaterialInterface>(nullptr,
-		TEXT("/Game/StarterContent/Materials/M_Brick_Cut_Stone.M_Brick_Cut_Stone"));
+		TEXT("/Game/PHI/Palette/M_PHI_CreamStone.M_PHI_CreamStone"));
 	const float AveW = 700.f;
 	bool bSizedOnce = false;
 	auto LayStrip = [&](float MidR, float LenCm, float AngDeg, float WidthCm)

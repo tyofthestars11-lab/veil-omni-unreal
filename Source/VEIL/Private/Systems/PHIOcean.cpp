@@ -32,15 +32,30 @@ void APhiOcean::BeginPlay()
 	SetActorLocation(GetActorLocation() - FVector(0.f, 0.f, 400.f));
 	UE_LOG(LogTemp, Warning, TEXT("PHI SEA: ocean dropped 400 cm, surface now below the plaza."));
 	Water->SetBoxExtent(FVector(WaterSize.X / 2, WaterSize.Y / 2, WaterSize.Z / 2));
-	if (UStaticMesh* Cube = LoadObject<UStaticMesh>(nullptr, TEXT("/Engine/BasicShapes/Cube.Cube")))
+	// A SURFACE IS A PLANE, NOT A BOX. This skin used to be an engine Cube stretched to
+	// WaterSize/100 - 3000 x 3000 x 400 cm - carrying an emissive material and sitting at eye
+	// height, so every frame from the market was shot across a flat white sheet. The sheet cull
+	// in VEILGameMode never caught it: that pass walks AStaticMeshActor, and this is a component
+	// on APhiOcean. A plane has no thickness to look through, and the sea sits under the plaza.
+	if (UStaticMesh* Plane = LoadObject<UStaticMesh>(nullptr, TEXT("/Engine/BasicShapes/Plane.Plane")))
 	{
-		Skin->SetStaticMesh(Cube);
-		Skin->SetWorldScale3D(FVector(WaterSize.X / 100.f, WaterSize.Y / 100.f, WaterSize.Z / 100.f));
+		Skin->SetStaticMesh(Plane);
+		Skin->SetWorldScale3D(FVector(WaterSize.X / 100.f, WaterSize.Y / 100.f, 1.f));
+		Skin->SetRelativeLocation(FVector(0.f, 0.f, -WaterSize.Z * 0.5f));
+		Skin->SetCastShadow(false);
 	}
-	if (UMaterialInterface* M = LoadObject<UMaterialInterface>(nullptr,
-		TEXT("/Game/PHI/Palette/M_PHI_WhiteEmissive.M_PHI_WhiteEmissive")))
+	// Real water first. The white emissive was the glare: a 160 m emissive sheet reads as a
+	// light panel, not a sea. Only fall back to it when no water material resolves.
+	UMaterialInterface* Surf = LoadObject<UMaterialInterface>(nullptr,
+		TEXT("/Game/ModularS30eeb54ea3e4V1/data/Content/StarterContent/Materials/M_Water_Ocean.M_Water_Ocean"));
+	if (!Surf)
 	{
-		Skin->SetMaterial(0, M);
+		Surf = LoadObject<UMaterialInterface>(nullptr,
+			TEXT("/Game/PHI/Palette/M_PHI_WhiteEmissive.M_PHI_WhiteEmissive"));
+	}
+	if (Surf)
+	{
+		Skin->SetMaterial(0, Surf);
 	}
 	Water->OnComponentBeginOverlap.AddDynamic(this, &APhiOcean::OnSplash);
 	GrowFish(6);

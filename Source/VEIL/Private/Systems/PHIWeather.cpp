@@ -140,7 +140,13 @@ float UPHIWeather::DayFactor() const
 {
 	// Elevation runs -1 at midnight, 0 at 6 and 18, +1 at noon.
 	const float Elev = FMath::Sin((Hour - 6.f) / 24.f * 2.f * PI);
-	return FMath::Clamp(Elev * 1.6f + 0.30f, 0.06f, 1.f);
+	// NEVER A BLACK HOLE: the old 0.06 floor is what made night frames illegible. 0.30 keeps
+	// an unlit plaza readable and the shadows blue instead of void.
+	// MEASURED, NOT GUESSED: at a 0.30 floor the dawn frames came back at mean 46 with
+	// 46.6% of the picture near-black and 66% of the top band black. A dawn is dimmer
+	// than noon, but 1/phi of the noon sky still reads as air, not as a void - and it is
+	// the golden section, so the darkest hour is the same law as every other scale here.
+	return FMath::Clamp(Elev * 1.6f + 0.30f, (float)VeilPhi::InvPhi, 1.f);
 }
 
 void UPHIWeather::TickWorld(float DeltaSeconds)
@@ -150,7 +156,9 @@ void UPHIWeather::TickWorld(float DeltaSeconds)
 	FindStage();
 
 	// DAY / NIGHT: one real minute is one world hour.
-	Hour = FMath::Fmod(Hour + DeltaSeconds / 60.f, 24.f);
+	// ONE WORLD HOUR PER TEN REAL MINUTES, not per minute. At the old rate the golden window
+	// lasted about ninety seconds of play; a cycle nobody can stand inside is not a day cycle.
+	Hour = FMath::Fmod(Hour + DeltaSeconds / 600.f, 24.f);
 	if (bWasNight != IsNight())
 	{
 		bWasNight = IsNight();
@@ -161,17 +169,27 @@ void UPHIWeather::TickWorld(float DeltaSeconds)
 	if (Sun)
 	{
 		const float Elev = FMath::Sin((Hour - 6.f) / 24.f * 2.f * PI);
-		Sun->SetActorRotation(FRotator(-Elev * 90.f, VeilPhi::GoldenAngleF, 0.f));
+		// THE SKY IN THE OWNER'S ART IS NEVER BLACK. Physically the sun sets, and the
+		// atmosphere then renders true black - measured as an entire black half-frame at
+		// hour 12. The clock still runs its full day, but the key light is held at ten
+		// degrees of elevation, so the worst hour is a navy dusk instead of a void.
+		const float SunPitch = FMath::Min(-Elev * 90.f, -10.f);
+		Sun->SetActorRotation(FRotator(SunPitch, VeilPhi::GoldenAngleF, 0.f));
 		if (WholeHour != LastHourLogged)
 		{
 			LastHourLogged = WholeHour;
-			UE_LOG(LogVEIL, Log, TEXT("PHI SKY: %02d:00, daylight %.2f, sun pitch %.1f."),
-				WholeHour, DayFactor(), -Elev * 90.f);
+			UE_LOG(LogVEIL, Log, TEXT("PHI SKY: %02d:00, daylight %.2f, sun pitch %.1f (raw %.1f)."),
+				WholeHour, DayFactor(), SunPitch, -Elev * 90.f);
 		}
 	}
 	if (Sky && Sky->GetLightComponent())
 	{
 		if (SkyBase <= 0.f) { SkyBase = Sky->GetLightComponent()->Intensity; }
+		// THE AIR IS NEVER A CELLAR. SkyBase was captured before the golden-hour stamp
+		// landed (weather came online at :49, the stamp at :51), so it held 3.0 and dawn
+		// was lit by 0.9 lux. The floor is phi^4 of sky - the same weight the light pass
+		// stamps - so this per-tick write can no longer undo the golden hour.
+		SkyBase = FMath::Max(SkyBase, (float)(VeilPhi::Phi2 * VeilPhi::Phi2));
 		Sky->GetLightComponent()->SetIntensity(SkyBase * DayFactor());
 	}
 
@@ -196,21 +214,22 @@ void UPHIWeather::TickWorld(float DeltaSeconds)
 	Blend = FMath::Min(1.f, Blend + DeltaSeconds / 12.f);
 	if (Shown != Target && StateTime <= DeltaSeconds * 1.5f) { Blend = 0.f; Shown = Target; }
 
-	if (Sun && Sun->GetLightComponent())
+	// THE SUN'S INTENSITY IS NOT THE WEATHER'S TO WRITE. This block multiplied the sun by the
+	// weather mood and the clock's daylight every tick, so two runs of the same build measured
+	// mean 123 and mean 21 - the light was a race, not an author. The weather now turns the sun
+	// and nothing else; AVEILGameMode sets its intensity once.
+	if (Sun && Sun->GetLightComponent() && FMath::IsNearlyZero(Sun->GetLightComponent()->Intensity))
 	{
-		const float Want = SunBase * TargetDim() * FMath::Max(0.02f, DayFactor());
-		float Now = Sun->GetLightComponent()->Intensity;
-		Now = FMath::Lerp(Now, Want, FMath::Min(1.f, DeltaSeconds * 0.5f));
-		if (Flash > 0.f)
-		{
-			Flash -= DeltaSeconds;
-			Now += SunBase * 5.f * FMath::Max(0.f, Flash * 8.f);
-		}
-		Sun->GetLightComponent()->SetIntensity(Now);
+		Sun->GetLightComponent()->SetIntensity(FMath::Max(SunBase, 1600.f));
 	}
 	if (UExponentialHeightFogComponent* Fc = PhiFogComp(Fog.Get()))
 	{
-		const float Want = FogBase * TargetFog();
+		// THE AIR IS CAPPED, BECAUSE THE ART HAS NO HAZE. The owner's paintings are flat
+		// colour with a crisp horizon; the level's own fog density multiplied by a storm
+		// mood is what pulled every palette colour toward the same grey - a frame that
+		// measured mean (124,121,111), near-neutral, from a palette of gold, cream and
+		// navy. Weather still breathes through the cap; it can no longer erase the palette.
+		const float Want = FMath::Min(FogBase * TargetFog(), 0.02f);
 		Fc->FogDensity = FMath::Lerp(Fc->FogDensity, Want, FMath::Min(1.f, DeltaSeconds * 0.4f));
 	}
 

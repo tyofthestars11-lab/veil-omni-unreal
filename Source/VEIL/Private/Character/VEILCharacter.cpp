@@ -79,7 +79,11 @@ AVEILCharacter::AVEILCharacter()
 	// THE BLUEPRINT'S LEAP, NOT A ROUND NUMBER. 185 cm of rise under -980 is
 	// v = sqrt(2 * 980 * 185) = 602.1 cm/s, so the jump height is the authored one
 	// and the arc is a consequence of gravity rather than a tuned guess.
-	Move->JumpZVelocity = 602.f;
+	// THE SPEC SAYS "Jump 185", AND 185 IS A HEIGHT, NOT A VELOCITY. Under gravity -980 the
+	// speed that reaches 185 cm is sqrt(2 * 980 * 185) = 602.2 cm/s - which is the number this
+	// line already held. Typing 185 here was my misreading and it gave a 17.5 cm hop, a step.
+	// Derived from the spec's own height, so changing the height changes the speed correctly.
+	Move->JumpZVelocity = FMath::Sqrt(2.f * 980.f * 185.f);   // 602.2 cm/s, rise 185 cm
 	Move->MaxWalkSpeed = WalkSpeed;
 	// GRAVITY IS -980, THE WORLD'S OWN. GravityScale 1.0 means the drop law is the
 	// blueprint's; the leap above is derived from it rather than fought with it.
@@ -102,6 +106,7 @@ AVEILCharacter::AVEILCharacter()
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
 	CameraBoom->SetupAttachment(RootComponent);
 	CameraBoom->TargetArmLength = 420.f;
+	CameraBoom->CameraLagSpeed = 10.f;
 	// Golden pitch + golden angle, phi not Cartesian: SpringArm pitch -17.0324, yaw 137.507764.
 	// Cartesian flat rotation (0,0,0 / -90) is fuel only, never the frame.
 	CameraBoom->SetRelativeRotation(FRotator(-17.0324f, VeilPhi::GoldenAngleF, 0.f));
@@ -110,20 +115,13 @@ AVEILCharacter::AVEILCharacter()
 	// read a clean -17.0324. The controller drives the golden pitch every frame
 	// through HoldGoldenCamera instead.
 	CameraBoom->bUsePawnControlRotation = false;
-	// THE 420 CM IS THE SHOT. The arm's default collision test shortens itself
-	// to nothing the moment a tall piece stands behind the runner, and the lens
-	// then sits INSIDE the runner's own body: the opening frame was his back,
-	// not the district. The plaza is dense carved stone by design, so the arm
-	// holds its length and the camera rides the golden pitch above the crowd.
-	// THE LENS DOES NOT LIVE INSIDE WALLS. Collision was off because a tightening arm
-	// once put the lens in the runner's back; the captures then showed the opposite
-	// failure, half the frame filled by a wall the camera was buried in. Collision is
-	// back on with a probe size, so the arm shortens instead of entering the stone.
-		// COLLISION ON WAS TRIED AND MEASURED, AND IT DID NOT FIX THE BURIED LENS. With
-	// bDoCollisionTest the re-captured frames were unchanged - still a wall across the
-	// lower half - because the runner stands at Z=598 inside the composition, so the
-	// arm has stone on every side and shortening it only moves the lens from one face
-	// to another. The seat is the problem, not the probe, so this stays off.
+	// THE STOCK ARM'S COLLISION IS OFF ON PURPOSE. Left on, it collapses to nothing the
+	// moment a tall piece stands behind the runner and the lens ends up inside his back.
+	// Left off, it buried itself in the market stone instead. Both failures came from
+	// trusting the component: the arm is resolved by OUR probe further down, a single
+	// trace from the pivot that stops a phi skin in front of whatever it hits, with the
+	// 420/phi^2 = 160.4 cm standoff as the floor. That probe only works on stone that has
+	// collision responses, which is why the market needed fixing, not the camera.
 	CameraBoom->bDoCollisionTest = false;
 
 	FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
@@ -309,8 +307,15 @@ void AVEILCharacter::BeginPlay()
 	{
 		UStaticMesh* Panel = LoadObject<UStaticMesh>(nullptr,
 			TEXT("/Game/Sicka_EnvPack2/Sicka_Ancient_Kit/Mesh/Modular/SM_Floor2_Big.SM_Floor2_Big"));
+		// Gold, not lacquer. The metallic palette under a low sun read as cream card in the
+		// frame; M_PHI_Gold carries the warm gold of the reference wings.
 		UMaterialInterface* WingGold = LoadObject<UMaterialInterface>(nullptr,
-			TEXT("/Game/PHI/Palette/M_PHI_GoldMetallic.M_PHI_GoldMetallic"));
+			TEXT("/Game/PHI/Palette/M_PHI_Gold.M_PHI_Gold"));
+		if (!WingGold)
+		{
+			WingGold = LoadObject<UMaterialInterface>(nullptr,
+				TEXT("/Game/PHI/Palette/M_PHI_GoldMetallic.M_PHI_GoldMetallic"));
+		}
 		if (Panel && GetMesh())
 		{
 			int32 Made = 0;
@@ -319,21 +324,48 @@ void AVEILCharacter::BeginPlay()
 				// LAYERED FEATHERS, NOT ONE CARDBOARD PANEL. The plates show a fan of
 				// gold feathers - seven per wing, each shorter than the one below and
 				// swept back - so the silhouette reads as a wing from any angle.
-				for (int32 F = 0; F < 7; ++F)
+				// TWELVE NARROW FEATHERS, NOT SEVEN WIDE ONES. Seven broad blades facing the
+				// camera read as two cream cards in the rendered frame; a wing is a fan of many
+				// narrow feathers, each one offset a little deeper than the last.
+				for (int32 F = 0; F < 12; ++F)
 				{
 					UStaticMeshComponent* Feather = NewObject<UStaticMeshComponent>(this,
 						*FString::Printf(TEXT("PhiWing%d_%d"), Side > 0 ? 1 : 0, F));
 					if (!Feather) { continue; }
 					Feather->SetupAttachment(GetMesh());
 					Feather->SetStaticMesh(Panel);
-					const float Spread = 24.f + F * 12.f;
-					const float Len = 1.55f - F * 0.13f;
-					const float Depth = 0.62f - F * 0.045f;
-					Feather->SetRelativeLocation(FVector(-10.f,
-						20.f * (float)Side + (float)Side * F * 9.f, 152.f - F * 7.f));
+					const float Spread = 16.f + F * 9.f;
+					// SIZE IN CENTIMETRES, NOT MULTIPLES OF A FLOOR SLAB. Len 1.55 on a kit floor
+					// panel made a six-metre feather. A feather is measured against the runner -
+					// 86 cm at the root, shortening by 4.5 cm each, 16 cm deep, 1.2 cm thick - and
+					// the panel is scaled to that, whatever the panel's native size happens to be.
+					// THE THIN AXIS IS NOT ALWAYS X. Assigning thickness to X and length to Y
+					// stretched a floor panel along whichever axis happened to be long, and a
+					// 4 m panel became a metre-wide card: the two cream squares in the frame.
+					// Measure the panel, put thickness on its thinnest axis, length on its
+					// longest and depth on the one between, then scale to centimetres.
+					const FVector Native = Panel->GetBoundingBox().GetSize();
+					float Nat[3] = { (float)Native.X, (float)Native.Y, (float)Native.Z };
+					int32 ThinAxis = 0, LongAxis = 0;
+					for (int32 A = 1; A < 3; ++A)
+					{
+						if (Nat[A] < Nat[ThinAxis]) { ThinAxis = A; }
+						if (Nat[A] > Nat[LongAxis]) { LongAxis = A; }
+					}
+					if (ThinAxis == LongAxis) { LongAxis = (ThinAxis + 1) % 3; }
+					const int32 MidAxis = 3 - ThinAxis - LongAxis;
+					float Scale[3] = { 1.f, 1.f, 1.f };
+					Scale[ThinAxis] = 1.2f / FMath::Max(1.f, Nat[ThinAxis]);
+					Scale[LongAxis] = (86.f - F * 4.5f) / FMath::Max(1.f, Nat[LongAxis]);
+					Scale[MidAxis]  = (16.f - F * 0.7f) / FMath::Max(1.f, Nat[MidAxis]);
+					const FVector FeatherScale(Scale[0], Scale[1], Scale[2]);
+					// Each feather sits a little deeper and higher than the last: that stagger is
+					// what makes a fan, and without it the blades stack into a single card.
+					Feather->SetRelativeLocation(FVector(-10.f - F * 1.1f,
+						18.f * (float)Side + (float)Side * F * 5.5f, 150.f - F * 3.2f));
 					Feather->SetRelativeRotation(FRotator(0.f, (float)Side * (14.f + F * 6.f),
 						(float)Side * Spread));
-					Feather->SetRelativeScale3D(FVector(0.015f, Len, Depth));
+					Feather->SetRelativeScale3D(FeatherScale);
 					Feather->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 					Feather->SetMobility(EComponentMobility::Movable);
 					if (WingGold)
@@ -353,6 +385,79 @@ void AVEILCharacter::BeginPlay()
 				TEXT("PHI WINGS: %d phi panel(s) bound to the runner's back - the silhouette the vision asks for."),
 				Made);
 		}
+	}
+
+	// THE RUNNER'S BODY PANEL IS NOT THE RUNNER. The kit sweep dresses every engine shape it
+	// finds, and the character's procedural body components came out as metre-wide stone
+	// panels: the rendered frame had the camera 194 cm from a 251 cm cream slab, half the
+	// picture was wall. Any static part larger than the capsule that is not one of the gold
+	// wings is a placeholder body part - name it, hide it, and let the skeletal body be the
+	// runner. Guarded on a real skeletal mesh so a bare character is never left invisible.
+	{
+		USkeletalMeshComponent* BodyMesh = GetMesh();
+		const bool bRealBody = BodyMesh && BodyMesh->GetSkeletalMeshAsset() != nullptr;
+		if (bRealBody)
+		{
+			int32 Hidden = 0;
+			TInlineComponentArray<UStaticMeshComponent*> Parts;
+			GetComponents(Parts);
+			for (UStaticMeshComponent* Part : Parts)
+			{
+				if (!Part || !Part->GetStaticMesh()) { continue; }
+				if (Wings.Contains(Part)) { continue; }
+				const FVector Size = Part->Bounds.BoxExtent * 2.f;
+				if (Size.GetMax() < 150.f) { continue; }
+				Part->SetVisibility(false, true);
+				Part->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+				++Hidden;
+				if (Hidden <= 6)
+				{
+					UE_LOG(LogVEIL, Warning, TEXT("PHI BODY PANEL HIDDEN: %s wears %s, size %s"),
+						*Part->GetName(), *Part->GetStaticMesh()->GetName(), *Size.ToCompactString());
+				}
+			}
+			UE_LOG(LogVEIL, Warning,
+				TEXT("PHI BODY PANEL: %d oversized static part(s) hidden - the skeletal body is the runner."),
+				Hidden);
+		}
+		else
+		{
+			UE_LOG(LogVEIL, Warning, TEXT("PHI BODY PANEL: no skeletal body resolved, leaving the static panels visible."));
+		}
+	}
+
+	// THE RUNNER'S BODY PANEL ARRIVES LATE. Race gear and body parts are created after
+	// BeginPlay, so the one-shot hide above missed them and every rendered frame kept a
+	// 304 cm cream panel 194 cm from the lens (StaticMeshComponent_2, SM_Floor1_Big). This
+	// repeats once a second for twelve seconds and names whatever it hides.
+	{
+		TSharedPtr<int32> PanelPasses = MakeShared<int32>(0);
+		FTimerHandle PanelSweep;
+		GetWorldTimerManager().SetTimer(PanelSweep,
+			FTimerDelegate::CreateWeakLambda(this, [this, PanelPasses, &PanelSweep]()
+		{
+			USkeletalMeshComponent* SweepBody = GetMesh();
+			if (SweepBody && SweepBody->GetSkeletalMeshAsset() != nullptr)
+			{
+				int32 HiddenNow = 0;
+				TInlineComponentArray<UStaticMeshComponent*> PartsNow;
+				GetComponents(PartsNow);
+				for (UStaticMeshComponent* Part : PartsNow)
+				{
+					if (!Part || !Part->GetStaticMesh() || !Part->IsVisible()) { continue; }
+					if (Wings.Contains(Part)) { continue; }
+					const FVector PartSize = Part->Bounds.BoxExtent * 2.f;
+					if (PartSize.GetMax() < 150.f) { continue; }
+					Part->SetVisibility(false, true);
+					Part->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+					++HiddenNow;
+					UE_LOG(LogVEIL, Warning, TEXT("PHI BODY PANEL SWEEP: hid %s wearing %s, %s, pass %d"),
+						*Part->GetName(), *Part->GetStaticMesh()->GetName(),
+						*PartSize.ToCompactString(), *PanelPasses + 1);
+				}
+			}
+			if (++(*PanelPasses) >= 12) { GetWorldTimerManager().ClearTimer(PanelSweep); }
+		}), 1.0f, true, 1.5f);
 	}
 
 	// The spawn window: phi^5 = 11.0902 seconds to find your feet.

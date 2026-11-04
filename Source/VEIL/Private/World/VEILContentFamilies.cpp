@@ -40,6 +40,13 @@ UStaticMeshComponent* AVEILContentPass::Part(UStaticMesh* Mesh, const FVector& L
 	C->SetRelativeRotation(Rot);
 	C->SetRelativeScale3D(Scale);
 	C->SetCollisionEnabled(bSolid ? ECollisionEnabled::QueryAndPhysics : ECollisionEnabled::NoCollision);
+	// Enabled is not solid: without responses a trace sails through and the camera ends up
+	// inside the piece. Same fix as the market and the plaza columns.
+	if (bSolid)
+	{
+		C->SetCollisionObjectType(ECC_WorldStatic);
+		C->SetCollisionResponseToAllChannels(ECR_Block);
+	}
 	if (Mat) { C->SetMaterial(0, Mat); }
 	C->RegisterComponent();
 	Parts.Add(C);

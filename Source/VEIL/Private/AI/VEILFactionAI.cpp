@@ -42,38 +42,42 @@
 // thread and queued for it otherwise - same colours, correct thread.
 #include "Async/Async.h"
 
-static void PHIApplyTint(UStaticMeshComponent* Comp, UMaterialInterface* Base,
-	const FLinearColor& Color, float Emissive)
+static void PHIApplyTint(UStaticMeshComponent* Comp, const FLinearColor& Color, float Emissive)
 {
-	if (!Comp || !Base) return;
-	if (UMaterialInstanceDynamic* MID = UMaterialInstanceDynamic::Create(Base, Comp))
+	if (!Comp) return;
+	UMaterialInterface* Current = Comp->GetMaterial(0);
+	if (!Current) return;
+
+	// Reuse a component's existing MID instead of parenting another MID to it.
+	UMaterialInstanceDynamic* MID = Cast<UMaterialInstanceDynamic>(Current);
+	if (!MID)
 	{
-		MID->SetVectorParameterValue(TEXT("Color"), Color);
-		MID->SetVectorParameterValue(TEXT("BaseColor"), Color);
-		if (Emissive > 0.f)
-		{
-			MID->SetVectorParameterValue(TEXT("EmissiveColor"), Color * Emissive);
-		}
-		Comp->SetMaterial(0, MID);
+		MID = UMaterialInstanceDynamic::Create(Current, Comp);
 	}
+	if (!MID) return;
+
+	MID->SetVectorParameterValue(TEXT("Color"), Color);
+	MID->SetVectorParameterValue(TEXT("BaseColor"), Color);
+	if (Emissive > 0.f)
+	{
+		MID->SetVectorParameterValue(TEXT("EmissiveColor"), Color * Emissive);
+	}
+	Comp->SetMaterial(0, MID);
 }
 
 static void PHITintComponent(UStaticMeshComponent* Comp, const FLinearColor& Color, float Emissive)
 {
 	if (!Comp) return;
-	UMaterialInterface* Base = Comp->GetMaterial(0);
-	if (!Base) return;
 	if (IsInGameThread())
 	{
-		PHIApplyTint(Comp, Base, Color, Emissive);
+		PHIApplyTint(Comp, Color, Emissive);
 		return;
 	}
-	// The component holds the material, so a raw pointer stays valid across the queue.
 	TWeakObjectPtr<UStaticMeshComponent> Weak(Comp);
-	AsyncTask(ENamedThreads::GameThread, [Weak, Base, Color, Emissive]()
+	AsyncTask(ENamedThreads::GameThread, [Weak, Color, Emissive]()
 	{
 		UStaticMeshComponent* C = Weak.Get();
-		if (C) { PHIApplyTint(C, Base, Color, Emissive); }
+		if (C) { PHIApplyTint(C, Color, Emissive); }
 	});
 }
 

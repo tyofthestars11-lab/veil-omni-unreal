@@ -364,4 +364,9 @@ private:
 	TObjectPtr<UUserWidget> PauseWidget;
 	TObjectPtr<UUserWidget> MainMenuWidget;
 	bool bPauseOpen = false;
+
+	/** A CONSOLE DOOR TO THE PAUSE MENU, so the save menu can be opened and checked
+	 *  without a keyboard: phi.pause. It calls the same TogglePauseMenu the key calls. */
+	UFUNCTION(Exec, Category = "VEIL")
+	void PhiPause();
 };

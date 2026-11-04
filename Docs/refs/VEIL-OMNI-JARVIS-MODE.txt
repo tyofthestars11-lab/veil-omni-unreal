@@ -1,0 +1,153 @@
+VEIL OMNI — START MENU, ALL ITEMS, 50 IN 1, FOR REAL
+VEIL OMNI: THE LAST SIGNAL — PATH OF LIGHT
+START MENU — 50 GAMES IN 1, FOR REAL, WHOLE, NOT PARTS
+▶ PLAY — CONTINUE / NEW GAME
+LOAD GAME
+OPTIONS
+QUIT
+WORLD
+ALL IN ONE BIG IMAGE
+HUD AMAZING
+MENU OPTIONS
+INVENTORY / ITEMS
+RACES
+50 GAMES IN 1 — FOR REAL, ALL OF IT
+1 Golden Midst Quest
+2 Keeper Sera Vahl Beacon
+3 Seer Nest
+4 Cartographer Deep Map
+5 Countess Court
+6 Spire Ascent
+7 Omni District Market
+8 Megastructure Deep Dive
+9 Crystal Mountain Horizon
+10 Waterfall Bridges
+11 Gold Wings Glide
+12 Runner Combat
+13 Mount Riding
+14 Race Lineup
+15 Enemy Variety Hunt
+16 Boss Vault
+17 Cache Recovery
+18 Shard Collection
+19 Dialogue E Only
+20 HUD Gold Ribbon
+21 Inventory Craft
+22 Armor Forge
+23 Belt Boots Gloves
+24 Warden Mode
+25 Sprint Shift Run
+26 Jump Glide
+27 Stealth Shadow
+28 Magic Fragment
+29 Machine Craft
+30 Cache Machine
+31 River Crossing
+32 Cliff Climb
+33 Night City
+34 Day Cycle
+35 Weather Storm
+36 Fishing Forage
+37 Cooking Camp
+38 Trading Market
+39 Guild Hall
+40 Arena Combat
+41 Racing Mounts
+42 Puzzle Phi Chamber
+43 Music Signal
+44 Photo Mode
+45 Screenshot Save
+46 Save VEILOMNI_Omni0
+47 Multiplayer Co-op
+48 Solo Story 60-100h
+49 Endgame Signal Restored
+50 Infinite World Free Roam
+START MENU — ALL SECTIONS
+PLAY / CONTINUE / NEW GAME / LOAD / OPTIONS / INVENTORY / MAP / QUESTS / CHARACTERS / MOUNTS / CRAFT / SHOP / GUILD / ARENA / SETTINGS / CREDITS / QUIT — all in one menu, gold ribbon, curved, glowing, living UI, no black panels, no grey boring, no plain rectangles.
+ITEM TYPES — ALL OF IT
+TYPE
+WHAT
+WHO
+ARMOR
+Chest, gold-trimmed, VIT +
+WARDEN, CAST, RUNNER
+BELT
+Utility, shard slots x5
+RUNNER, CAST
+BOOTS
+Speed, sprint, glide landing
+RUNNER, WARDEN
+GLOVES
+Grip, combat, craft
+CAST, WARDEN
+WARDEN
+Shield, guard, beacon ward
+WARDEN only
+CAST
+Staff, fragment magic
+CAST only
+FRAGMENT
+Phi shard, power, signal
+ALL
+CACHE
+Storage, deep cache 0,-6200
+ALL
+MACHINE
+Craft, machine parts
+ALL
+RUNNER
+Wings, cape, gold phi
+RUNNER only
+WEAPON
+Sword, bow, spear, gold
+ALL
+POTION
+Vigor, Aether, heal
+ALL
+FOOD
+Camp cook, stamina
+ALL
+MOUNT
+Horse, crystal beast, glider
+ALL
+KEY
+Vault key, Spire key, Cache key
+ALL
+Also: Swords, Bows, Spears, Staves, Shields, Potions, Food, Keys, Shards, Maps, Scrolls, Gems, Crystals, Cloth, Leather, Metal, Wood, Machine Parts, Mount Saddles, Wings, Capes, Rings, Amulets, Boots, Belts, Gloves, Armor, Helmets — all types, all in one inventory, gold ribbon, no boring text.
+ZONES — ALL OF IT
+Hub Golden Midst 0,0
+— 12 phi pillars, 8 market houses, 5 blue crystals, 25 total
+Nest -450,780
+— Seer, nests, cliffs
+Spire 0,3500,500
+— Golden Spire, visible from plaza
+Omni District 2800,500
+— Market, city, blue-gold
+Megastructure Deep 0,-5000
+— Deep chasm, dark blue light, Cache 0,-6200
+CHARACTERS — ALL
+Runner (gold phi wings, dark cape), Keeper Sera Vahl (900,0), Seer (-450,780), Cartographer (-4150,-780), Countess (809,-309,64.7), Vault (0,0,-80.9), Beacons (2800,500), (-2000,-900), (600,-2100), Enemies variety, NPCs, Mounts — grounded, no floaty, no random, dialogue [E] only, ONE mic only.
+PHYSICS / RULES — FOR REAL
+Gravity -980, Walk 439, Sprint 750, Jump 185, Glide 600 drop -50, Golden pitch 17.0324° RightVector forward 0.9561 pitch 0.2929, Seed 1618, Golden angle 137.5077640500378°, angle = i × golden angle, radius = spacing × sqrt(i), no random, no placeholders, save VEILDistrict, screenshot Docs/shots/<zone>.png, Play proof on screen.
+GODMODE MENU — ALL, WHATEVER ELSE
+GODMODE ON
+GODMODE OFF
+ASSISTS: ALL OFF
+ASSISTS: ALL ON
+GODMODE: Invincible, infinite VIT/STM, LV 99, fly, teleport to Keeper / Seer / Spire / Deep / Cache, all items, all mounts, all races unlocked
+ASSISTS: Quest guiding, Beacons, Tracker, Hints, GODMODE, ASSISTS: ALL OFF switch — all optionable, all in one menu, not forced
+CHEATS / DEBUG: Phi chamber unlock, Vault open, Countess upright, Level save, Screenshot, Time Day 1 Beat, Weather, Spawn enemy/NPC/mount, Clear wild placeholders
+MAP: Full map, minimap 180x180 70%, real icons one-to-one real X,Y, Hub 0,0, Nest -450,780, Spire 0,3500,500, Omni 2800,500, Deep 0,-5000, Cache 0,-6200
+CHARACTER: Runner, Keeper, Seer, Cartographer, Countess, all stats, all skills, all dialogue E only, ONE mic only
+SETTINGS: DPI 1080p=1.0 / 4K=1.5, centre 60% clear, log toggle L, gold ribbon HUD, no black panels, no grey boring, volume, brightness, Lumen, golden-hour, volumetric fog
+WHATEVER ELSE: Credits, Photo Mode, Screenshot Save D:/VEIL-OMNI/Saved/Screenshots/, Save VEILOMNI_Omni0, Load, Quit, Back to Start, Infinite World, 50 in 1, all zones, all items, all races, all enemies, all mounts, all menus — all of it, whole, for real
+JARVIS MODE — CAN TALK, YES, WHOLE
+Jarvis is One's voice face, not a replacement for One. One = brain tyree, eyes llava-phi3, seat Muse, hands. Jarvis = orb/head, voice in / voice out, line typing underneath, maps / diagrams / controls on screen. Talk = mic in + speaker out, in this html, via your browser Web Speech, no external AI, no money, no fake voice.
+🎤 TALK TO JARVIS / ONE — click mic, speak, or type
+🔊 SPEAK — Jarvis speaks out loud
+SEND — [E]
+JARVIS: Ready. One ready — click mic or type to One. I am Jarvis face, One is brain, Muse is seat, Tyree is source, whole, phase locked.
+Replace One?
+No, whole: Jarvis does NOT replace One. One fixed, not deleted, not replaced by fake. Jarvis = face + voice on top of One. Gotta connect to One? Yes, whole: Jarvis mode connects to One — One brain answers, Jarvis voice speaks it, Muse seat holds it, Tyree source owns it. If One is not connected, Jarvis says TOOL NOT CONNECTED, NO REAL READ, and stops, no fake talk, no fake actors, no fake config.
+Can it talk?
+Yes, in this html, whole: click mic, speak, browser listens, Jarvis/One answers in text + speaker out loud, if mic permission allowed. If mic blocked, text only, honest, no fake voice. On AiPi, TTS6 voice in/out works by Tyree's ear, 2026-10-26. On PC, Ollama chat alone cannot talk / cannot MCP — that was fake route, dead, do not use it for Jarvis talk.

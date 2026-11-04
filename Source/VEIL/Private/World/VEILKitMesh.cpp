@@ -86,9 +86,24 @@ namespace VEILKit
 		// starts floating because the art changed.
 		const FVector WantSize = Comp->Bounds.BoxExtent * 2.f;
 		const FVector UnitSize = New->GetBoundingBox().GetSize();
-		if (UnitSize.X <= 1.f || UnitSize.Y <= 1.f || UnitSize.Z <= 1.f) { return false; }
-		if (WantSize.X <= 1.f || WantSize.Y <= 1.f || WantSize.Z <= 1.f) { return false; }
-
+		// THIN IS DRESSABLE, DUST IS NOT. The old guard refused any component with an axis
+		// under a centimetre, which rejected a real paper-thin wall (0.24 cm) and a 2.8 cm
+		// marker sphere alike - 481 placeholders survived the whole run for that reason. A thin
+		// axis is just a thin scale; only something with no visible size at all is retired.
+		const float MaxWant = FMath::Max3(WantSize.X, WantSize.Y, WantSize.Z);
+		if (MaxWant <= 5.f)
+		{
+			static int32 ShownDust = 0;
+			if (ShownDust++ < 8)
+			{
+				UE_LOG(LogVEIL, Log, TEXT("PHI KIT RETIRE: %s / %s (%s) is %.1f cm - below the eye, hidden."),
+					*GetNameSafe(Comp->GetOwner()), *Comp->GetName(), *Old->GetName(), MaxWant);
+			}
+			Comp->SetVisibility(false, true);
+			Comp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+			OutKind = -1;
+			return true;
+		}
 		Comp->SetStaticMesh(New);
 		Comp->SetWorldScale3D(FVector(WantSize.X / UnitSize.X, WantSize.Y / UnitSize.Y, WantSize.Z / UnitSize.Z));
 
@@ -105,7 +120,7 @@ namespace VEILKit
 		for (const TCHAR* Kind : Kinds)
 		{
 			UStaticMesh* Mesh = Shape(Kind);
-			UE_LOG(LogVEIL, Warning, TEXT("PHI KIT: %s -> %s%s"), Kind,
+			UE_LOG(LogVEIL, Log, TEXT("PHI KIT: %s -> %s%s"), Kind,
 				Mesh ? *Mesh->GetName() : TEXT("MISSING"),
 				(Mesh && IsEngineShape(Mesh)) ? TEXT(" (engine shape - kit path failed)") : TEXT(""));
 		}

@@ -26,6 +26,17 @@ namespace
 	};
 
 	constexpr float GVeilTimePhi = VeilPhi::PhiF;
+
+	// THE DAY IS STRETCHED; THE CLOCK BREATHES. Real time stays the reference - one
+	// second is one second of the player's life - but the world's day runs phi^2
+	// slower, so the 143-second cycle takes about 374 seconds. The beats are still
+	// Fibonacci numbers (1,1,2,3,5,8,13,21,34,55); they are read on a longer second.
+	// And the rate breathes by phi^-4 (0.1459 of a beat), the same law every AI stat
+	// breathes on, so no two beats pass at the same speed. Nothing here is typed by
+	// hand: the stretch is phi^2 and the breath is 1/phi^4, computed from the one phi.
+	constexpr float GDayStretch = (float)VeilPhi::Phi2;
+	constexpr float GBeatBreath =
+		(float)(VeilPhi::InvPhi * VeilPhi::InvPhi * VeilPhi::InvPhi * VeilPhi::InvPhi);
 	/** An unobserved field resolves itself after this many real seconds. */
 	// 8 s, not 13: with 1-second beats early in the day, a 13 s hold could stall
 	// the clock for longer than a whole stretch of the morning.
@@ -385,7 +396,9 @@ void UVEILTime::Tick(float DeltaTime)
 		return;
 	}
 
-	BeatLeft -= DeltaTime;
+	// The world's second is longer than the player's, and it varies as it goes.
+	const float Breath = 1.f + FMath::Sin(Elapsed * 0.05f) * GBeatBreath;
+	BeatLeft -= DeltaTime * Breath / GDayStretch;
 	if (BeatLeft <= 0.f)
 	{
 		// A day that ends at beat 10 turns without a field: the cycle closing is
@@ -398,7 +411,8 @@ void UVEILTime::Tick(float DeltaTime)
 				BeatIndex = 0;
 				++Day;
 				Elapsed = 0.f;
-				UE_LOG(LogVEIL, Log, TEXT("PHI TIME: DAY %d turns. The cycle closes and the frame holds - nobody aged."), Day);
+				UE_LOG(LogVEIL, Warning, TEXT("PHI TIME: DAY %d turns after %.1fs of world time (day stretched phi^2 = %.3fx real, beats breathing +/-%.1f%%) - the cycle closes, nobody aged."),
+				Day, (float)(143.0 * GDayStretch), GDayStretch, GBeatBreath * 100.f);
 			}
 			BeatLeft += (float)GBeatSeconds[BeatIndex];
 			UE_LOG(LogVEIL, Log, TEXT("PHI TIME: %s"), *ClockLine());
