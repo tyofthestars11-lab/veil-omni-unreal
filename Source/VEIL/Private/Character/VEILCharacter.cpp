@@ -1629,8 +1629,14 @@ void AVEILCharacter::Tick(float DeltaSeconds)
 				}
 			}
 		}
+		// GEOMETRY ALONE IS NOT PROOF. The overlap test alone teleported a standing runner
+		// 260 cm off his own anchor every run, because his feet rest on paving whose solid
+		// face sits a few centimetres proud of z=0 - he was not trapped, he was standing.
+		// A rescue needs a man who is pressing a direction and going nowhere; the -phimove
+		// proof this test was written for had keys down and moved=0, which still qualifies.
 		const bool bWedged = StuckMove && StuckMove->Velocity.SizeSquared() < 4.f
-			&& (bOverlapping || (bPushing && StuckMove->GetCurrentAcceleration().SizeSquared() > 100.f));
+			&& bPushing
+			&& (bOverlapping || StuckMove->GetCurrentAcceleration().SizeSquared() > 100.f);
 		if (!bWedged) { StuckClock = 0.f; }
 		else
 		{
