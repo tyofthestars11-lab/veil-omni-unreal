@@ -60,7 +60,17 @@ def make_material(name, hex_string):
     if not mat:
         unreal.log_error("PALETTE: could not create %s" % name)
         return None
-    mat.set_editor_property("shading_model", unreal.MaterialShadingModel.MSM_UNLIT)
+    # THE SHADING MODEL WAS THE ILLUSION. All eleven of these were MSM_UNLIT with the hex
+    # wired into Emissive. Unlit outputs emissive and nothing else: base colour, roughness,
+    # normal and shadow maps are dead inputs, so no wall in the district could take the sun,
+    # take the sky light, or show a corner. That is the flat-slab look the owner kept
+    # reporting, and it is why a whole session of sun and skylight tuning moved the eye
+    # frame by only a few points. Default Lit costs one lighting pass and buys form, contact
+    # shadow and GI. Glow stays only where the thing IS light - crystal and gold.
+    glow = ("Crystal" in name and "Deep" not in name) or name.endswith("_Gold")
+    mat.set_editor_property("shading_model",
+                            unreal.MaterialShadingModel.MSM_UNLIT if glow
+                            else unreal.MaterialShadingModel.MSM_DEFAULT_LIT)
     mat.set_editor_property("two_sided", True)   # flat art reads from both faces
 
     expr = unreal.MaterialEditingLibrary.create_material_expression(
@@ -69,20 +79,34 @@ def make_material(name, hex_string):
     expr.set_editor_property("default_value",
                              unreal.LinearColor(rgb[0], rgb[1], rgb[2], 1.0))
 
+    # THE PIN IS READ BACK, NOT ASSUMED - on whichever pin this model actually reads.
+    pin = (unreal.MaterialProperty.MP_EMISSIVE_COLOR if glow
+           else unreal.MaterialProperty.MP_BASE_COLOR)
     got = None
     for out in ("RGB", "RGBA", "", "R"):
         try:
-            unreal.MaterialEditingLibrary.connect_material_property(
-                expr, out, unreal.MaterialProperty.MP_EMISSIVE_COLOR)
+            unreal.MaterialEditingLibrary.connect_material_property(expr, out, pin)
         except Exception:
             continue
-        got = unreal.MaterialEditingLibrary.get_material_property_input_node(
-            mat, unreal.MaterialProperty.MP_EMISSIVE_COLOR)
+        got = unreal.MaterialEditingLibrary.get_material_property_input_node(mat, pin)
         if got:
             break
     if not got:
-        unreal.log_error("PALETTE: emissive pin stayed empty on %s" % name)
+        unreal.log_error("PALETTE: %s pin stayed empty on %s" % (pin, name))
         return None
+
+    if not glow:
+        # Stone is not a mirror. 0.72 roughness keeps the key light readable on a wall
+        # instead of turning every surface into a specular sheet.
+        rough = unreal.MaterialEditingLibrary.create_material_expression(
+            mat, unreal.MaterialExpressionScalarParameter, -400, 220)
+        rough.set_editor_property("parameter_name", "Roughness")
+        rough.set_editor_property("default_value", 0.72)
+        try:
+            unreal.MaterialEditingLibrary.connect_material_property(
+                rough, "", unreal.MaterialProperty.MP_ROUGHNESS)
+        except Exception:
+            unreal.log_error("PALETTE: roughness not wired on %s" % name)
 
     unreal.MaterialEditingLibrary.recompile_material(mat)
     unreal.EditorAssetLibrary.save_asset(full, False)
