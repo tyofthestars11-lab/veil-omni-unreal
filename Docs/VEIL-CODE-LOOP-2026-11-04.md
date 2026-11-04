@@ -289,3 +289,22 @@ about the live district. Ghost work, caught because the log was read instead of 
 
 Physics measured in the same frame, for the record: `gravity -980, walk 439, sprint 750,
 leap 602 cm/s = 185 cm, glide 600 with drop -50, capsule r 42 half-height 96`.
+
+### CORRECTION (this section overrides the one above)
+
+The claim "`BuildPhiWhole()` is never called" is **wrong**, and the commit that recorded it was wrong.
+The grep that produced it was piped through `head -10`, and the first ten hits were all `BuildWorld()`
+lines inside `VEILGameMode.cpp.phi-backup-*` files, so the real hits were cut off. Re-run without the
+truncation:
+
+```
+Source/VEIL/Private/World/VEILWorldBuilder.cpp:2130:   BuildPhiWhole();
+Source/VEIL/Private/World/VEILWorldBuilder.cpp:3454:   void AVEILWorldBuilder::BuildPhiWhole()
+Source/VEIL/Private/World/VEILWorldBuilder.cpp:4236:   BuildPhiWhole();
+Source/VEIL/Public/World/VEILWorldBuilder.h:98:        void BuildPhiWhole();
+```
+
+So the path **is** live. What remains unexplained is narrower and honest: the authority section logged
+nothing in the headless run (`PHI AUTHORITY` count 1, and that single hit is the unrelated
+`PHI AUTHORITY SEAT`), so either that section is skipped inside `BuildPhiWhole`, or its log never
+reaches the log file. That is the open question - not dead code.
