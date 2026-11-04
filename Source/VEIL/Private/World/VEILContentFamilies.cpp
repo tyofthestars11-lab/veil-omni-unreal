@@ -14,11 +14,15 @@ namespace
 {
 	constexpr float ContentGoldenDeg = VeilPhi::GoldenAngleF;
 	constexpr float ContentPhi = VeilPhi::PhiF;
-	const TCHAR* GoldPath = TEXT("/Game/PHI/Palette/M_PHI_GoldMetallic.M_PHI_GoldMetallic");
+	// NAMED FOR THIS FILE. VEILGoldenHub.cpp declares its own GoldPath/BluePath in an
+	// anonymous namespace too, and the unity build puts both .cpp files in one translation
+	// unit - two anonymous-namespace constants with one name is C2374, and that is what
+	// stopped VEIL compiling at all.
+	const TCHAR* FamilyGoldPath = TEXT("/Game/PHI/Palette/M_PHI_GoldMetallic.M_PHI_GoldMetallic");
 	// NOT THE PLACEHOLDER PALETTE. This pass dresses props around the RUNNER, so its
 // blue read as the flat purple slab standing beside him in the captures. The
 // content is dressed stone now; the crystal range keeps its own blue elsewhere.
-	const TCHAR* BluePath = TEXT("/Game/StarterContent/Materials/M_Brick_Cut_Stone.M_Brick_Cut_Stone");
+	const TCHAR* FamilyBluePath = TEXT("/Game/StarterContent/Materials/M_Brick_Cut_Stone.M_Brick_Cut_Stone");
 }
 
 AVEILContentPass::AVEILContentPass()
@@ -220,8 +224,8 @@ void AVEILContentPass::Populate(bool bCompositionExists)
 	Cube = LoadObject<UStaticMesh>(nullptr, TEXT("/Engine/BasicShapes/Cube.Cube"));
 	Cylinder = LoadObject<UStaticMesh>(nullptr, TEXT("/Engine/BasicShapes/Cylinder.Cylinder"));
 	Cone = LoadObject<UStaticMesh>(nullptr, TEXT("/Engine/BasicShapes/Cone.Cone"));
-	Gold = LoadObject<UMaterialInterface>(nullptr, GoldPath);
-	DeepBlue = LoadObject<UMaterialInterface>(nullptr, BluePath);
+	Gold = LoadObject<UMaterialInterface>(nullptr, FamilyGoldPath);
+	DeepBlue = LoadObject<UMaterialInterface>(nullptr, FamilyBluePath);
 	if (!Cube || !Cylinder || !Cone) { return; }
 
 	// ANCHOR IS THE RUNNER, NOT THE WORLD ORIGIN. This is the correction that
