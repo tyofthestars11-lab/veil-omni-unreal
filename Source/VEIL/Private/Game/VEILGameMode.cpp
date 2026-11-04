@@ -317,7 +317,7 @@ void AVEILGameMode::ApplyPhiGrade()
 			// AND THE AIR. 3.0 lux of sky is a cellar; phi^4 (6.85) is the gold hour's
 			// bounce off the whole sky. Same authority, same stamp, so the district can no
 			// longer be re-lit to someone else's number after this pass.
-			SL->SetIntensity(6.85f);
+			SL->SetIntensity(18.0f);   // was 6.85: with it, the eye-level frame measured mean 16/255 and 81% near-black
 			SkyAfter = SL->Intensity;
 			SL->RecaptureSky();
 			++Skies;
@@ -2872,6 +2872,37 @@ void AVEILGameMode::BeginPlay()
 				{
 					UE_LOG(LogVEIL, Warning, TEXT("PHI ENCASE: %s (%s) holds the runner: origin %s extent %.0f"),
 						*A->GetName(), *A->GetClass()->GetName(), *Origin.ToCompactString(), Extent.GetMax());
+					// A ROOF IS NOT FLOOR, AND NAMING IT IS NOT OPENING IT. This pass reported the
+					// shell and left it standing, so the runner stood inside a 947-extent mesh with
+					// the sun outside it: the eye-level frame measured mean 16/255 with 80.6%
+					// near-black while the far camera read 179 with 13% near-white. Only a piece
+					// whose underside sits above his head is opened - a floor that happens to
+					// contain his capsule stays, because removing the ground is not a light fix.
+					if (Origin.Z - Extent.Z > At.Z + 96.f)
+					{
+						A->SetActorHiddenInGame(true);
+						A->SetActorEnableCollision(false);
+						UE_LOG(LogVEIL, Warning,
+							TEXT("PHI ENCASE OPEN: lifted %s off the runner - sky reaches the capsule."), *A->GetName());
+					}
+					else
+					{
+						// IT SPANS BOTH SIDES OF HIM, SO IT IS A SHELL, NOT A ROOF (measured: origin
+						// Z=203.73, extent 947 - underside at -743, crown at 1151). Hiding it would
+						// delete the district's own scenery, and leaving its shadow on would keep the
+						// runner in the dark. So it stops casting and nothing else changes; the art and
+						// its collision stay exactly where they are.
+						TArray<UStaticMeshComponent*> EncaseMeshes;
+						A->GetComponents<UStaticMeshComponent>(EncaseMeshes);
+						int32 Casting = 0;
+						for (UStaticMeshComponent* M : EncaseMeshes)
+						{
+							if (M && M->CastShadow) { M->SetCastShadow(false); ++Casting; }
+						}
+						UE_LOG(LogVEIL, Warning,
+							TEXT("PHI ENCASE SHADOW: %s stops casting (%d mesh comp(s)) - the sun reaches the capsule, art and collision kept."),
+							*A->GetName(), Casting);
+					}
 				}
 			}
 		}

@@ -175,8 +175,15 @@ case "${1:-help}" in
     echo "  process exit=$? (124 = timeout, the normal ending)"
     # SORTED BY TIME, NOT BY PATH. `| sort | tail -1` orders the file NAMES, so the frame this verb
 # copied as proof was whichever path sorted last - repeatedly an older beat than the shutter that
-# had just fired, which is how a hub-view capture that wrote nothing went unnoticed for hours.
-local_new=$(find "$ROOT/Saved/Screenshots" -name '*.png' -newermt '-6 minutes' -printf '%T@ %p\n' 2>/dev/null | sort -n | tail -1 | cut -d' ' -f2-)
+# had just fired, which is how a hub-view capture that wrote nothing went unnoticed for hours.    # THE PLAYER'S EYE FIRST. The newest PNG under Saved/Screenshots is usually the hub_view
+    # vista fired by a later beat, and that camera stands four kilometres out - so the frame
+    # handed over as proof measured mean 179 with 13% near-white while the runner's own eye beat
+    # (WindowsEditor/HighresScreenshot*.png) measured mean 16 with 81% near-black. The proof must
+    # be the view a player gets, with the vista only as a fallback.
+    local_new=$(find "$ROOT/Saved/Screenshots/WindowsEditor" -name 'HighresScreenshot*.png' -newermt '-8 minutes' -printf '%T@ %p\n' 2>/dev/null | sort -n | tail -1 | cut -d' ' -f2-)
+    if [ -z "$local_new" ]; then
+      local_new=$(find "$ROOT/Saved/Screenshots" -name '*.png' -newermt '-8 minutes' -printf '%T@ %p\n' 2>/dev/null | sort -n | tail -1 | cut -d' ' -f2-)
+    fi
     if [ -n "$local_new" ]; then
       mkdir -p "$ROOT/Docs/shots"
       cp "$local_new" "$ROOT/Docs/shots/_cli_shot.png"
