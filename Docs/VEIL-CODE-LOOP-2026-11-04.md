@@ -308,3 +308,32 @@ So the path **is** live. What remains unexplained is narrower and honest: the au
 nothing in the headless run (`PHI AUTHORITY` count 1, and that single hit is the unrelated
 `PHI AUTHORITY SEAT`), so either that section is skipped inside `BuildPhiWhole`, or its log never
 reaches the log file. That is the open question - not dead code.
+
+### RESOLVED: the quiet authority section is a `return`, not a null mesh
+
+Read with line numbers instead of reasoning about it:
+
+```
+3542  UE_LOG(LogVEIL, Warning,
+3543    TEXT("PHI VISION FILE: %d placement(s), %d authority, %d zone(s), SHA %s %s"),
+3544    ...
+3547    return;                     <-- ends BuildPhiWhole here
+3550  UE_LOG(... "not found at %s - compiled law stands.")
+3558  UStaticMesh* Stone = FloorMesh ? FloorMesh.Get() : CubeMesh.Get();
+3568  static const FAuthority Authority[] = { ... { "Spire", "0", "0", "500" } ... };
+3678  for (int32 a = 0; a < AuthorityCount; ++a) { if (!Stone) { break; } ...
+```
+
+Because `vision_whole.json` exists, the vision branch runs and **returns at 3547**, so the authority
+stones, the zone dress table and everything after it are unreachable in practice. That is why the log
+never prints `address(es) placed`: the line does not run. Two follow-on facts:
+
+- `Stone` at 3558 is **function scope** and non-null (`FloorMesh` or `CubeMesh`), so `if (!Stone)` was
+  never the cause. The second `Stone` at 3728 belongs to a **different function** (`BuildPhiForms`,
+  starting at 3716) - no shadowing. Copilot's hypothesis and my repeat of it were both wrong.
+- The authority table does carry `{ "Spire", "0", "0", "500" }` (line 3579) and the zone table dresses
+  a Spire at `(0,0)` (line 3592) - a second Spire at the Hub, in source, exactly as Copilot reported.
+  It never spawns, because of the return. The live Spire is `BuildPhiForms`, `SpireX=0, SpireY=3500`.
+
+So the district is correct in the frame and contradictory in the table. Copilot's guard is correct code
+sitting after an early return: harmless, unreachable, and it proves nothing about the boot.
