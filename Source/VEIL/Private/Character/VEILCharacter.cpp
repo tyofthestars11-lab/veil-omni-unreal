@@ -1570,6 +1570,30 @@ void AVEILCharacter::Tick(float DeltaSeconds)
 			}
 			bOverlapping = StuckW->OverlapBlockingTestByChannel(GetActorLocation(), GetActorQuat(),
 				ECC_Pawn, FCollisionShape::MakeCapsule(38.f, 92.f), Inside);
+			// NAME THE BLOCKER. The unstick pass teleports the runner 260 cm off his own anchor,
+			// and two guesses at which actor did it were both wrong. A probe that only says
+			// "blocked" is not evidence, so the first few verdicts name the actor and component
+			// that answered. Budgeted: five lines, then silent.
+			if (bOverlapping)
+			{
+				static int32 BlockerBudget = 5;
+				if (BlockerBudget > 0)
+				{
+					--BlockerBudget;
+					TArray<FOverlapResult> BlockerHits;
+					if (GetWorld()->OverlapMultiByChannel(BlockerHits, GetActorLocation(), GetActorQuat(),
+						ECC_Pawn, FCollisionShape::MakeCapsule(38.f, 92.f), Inside))
+					{
+						for (const FOverlapResult& BH : BlockerHits)
+						{
+							UE_LOG(LogVEIL, Warning, TEXT("PHI STUCK PROBE: blocked by %s (component %s) at %s"),
+								BH.GetActor() ? *BH.GetActor()->GetName() : TEXT("none"),
+								BH.GetComponent() ? *BH.GetComponent()->GetName() : TEXT("none"),
+								BH.GetActor() ? *BH.GetActor()->GetActorLocation().ToCompactString() : TEXT("?"));
+						}
+					}
+				}
+			}
 		}
 		const bool bWedged = StuckMove && StuckMove->Velocity.SizeSquared() < 4.f
 			&& (bOverlapping || (bPushing && StuckMove->GetCurrentAcceleration().SizeSquared() > 100.f));
