@@ -2902,6 +2902,16 @@ void AVEILGameMode::BeginPlay()
 						UE_LOG(LogVEIL, Warning,
 							TEXT("PHI ENCASE SHADOW: %s stops casting (%d mesh comp(s)) - the sun reaches the capsule, art and collision kept."),
 							*A->GetName(), Casting);
+						// AND THE BLACK IS THE MESH ITSELF, NOT THE SHADOW IT CAST. Shot 233 was opened
+						// and read: the dark half of the eye frame ends on a straight vertical edge
+						// down the middle of the screen, which is a wall's inside face, not nightfall.
+						// Turning the shadows off moved the measurement not at all (24 -> 24 mean,
+						// 64.6 -> 64.5% near-black), so the shell stops rendering. Collision stays, so
+						// the runner is held exactly where he was and the district behind it shows.
+						A->SetActorHiddenInGame(true);
+						UE_LOG(LogVEIL, Warning,
+							TEXT("PHI SHELL VEILED: %s no longer renders (collision kept) - what stands behind it is visible."),
+							*A->GetName());
 					}
 				}
 			}
@@ -4020,6 +4030,82 @@ void AVEILPlayerController::BeginPlay()
 							Eye.X, Eye.Y, Eye.Z, Fwd.X, Fwd.Y, Fwd.Z,
 							Down.bBlockingHit ? *Down.GetActor()->GetName() : TEXT("NONE"), Down.Distance,
 							Ahead.bBlockingHit ? *Ahead.GetActor()->GetName() : TEXT("NONE"), Ahead.Distance);
+						// WHAT ACTUALLY HOLDS THE DARK HALF OF THE FRAME. Three lighting changes in a
+						// row moved the eye frame by nothing at all (24 mean, 65.4% near-black, against
+						// 24 and 64.5% before them), which is what a frame of geometry looks like when
+						// it is being blamed on exposure. One ray per cell of a 3x3 grid across the
+						// lens, each named, settles it: the picture is whatever these rays hit.
+						if (UWorld* GridWorld = GetWorld())
+						{
+							FCollisionQueryParams GP(SCENE_QUERY_STAT(VeilShotGrid), false);
+							if (Body) { GP.AddIgnoredActor(Body); }
+							TMap<AActor*, int32> Grid;
+							const FRotator View = ShotPC->GetControlRotation();
+							for (int32 iy = -1; iy <= 1; ++iy)
+							{
+								for (int32 ix = -1; ix <= 1; ++ix)
+								{
+									const FRotator Off(View.Pitch + 14.f * (float)iy, View.Yaw + 20.f * (float)ix, 0.f);
+									// A PROXY IS NOT IN THE PICTURE, AGAIN. The first run of this grid reported
+									// "9 of 9 rays hit Actor_54" - a meshless box 45 cm round the lens, which
+									// screens every real surface behind it. Each hit is checked for geometry and
+									// a proxy is ignored and the ray asked again, exactly as the eye traces above
+									// already do. The grid names what the camera sees, not what blocks a line.
+									FCollisionQueryParams RP = GP;
+									FHitResult G;
+									AActor* Seen = nullptr;
+									for (int32 Try = 0; Try < 8; ++Try)
+									{
+										if (!GridWorld->LineTraceSingleByChannel(G, Eye,
+											Eye + Off.Vector() * 6000.f, ECC_Visibility, RP)) { break; }
+										AActor* H = G.GetActor();
+										if (!H) { break; }
+										const UStaticMeshComponent* HM = H->FindComponentByClass<UStaticMeshComponent>();
+										if (HM && HM->GetStaticMesh()) { Seen = H; break; }
+										RP.AddIgnoredActor(H);
+									}
+									Grid.FindOrAdd(Seen) += 1;
+								}
+							}
+							// AND SAY WHAT IT IS. A name like Actor_54 is a runtime label and names nothing;
+							// the mesh asset and its materials are what a fix can be chosen from.
+							for (const TPair<AActor*, int32>& Cell : Grid)
+							{
+								AActor* Hitter = Cell.Key;
+								FString MeshPath = TEXT("no mesh");
+								FString Mats = TEXT("-");
+								FVector BoxExtent = FVector::ZeroVector;
+								if (Hitter)
+								{
+									if (const UStaticMeshComponent* HM =
+										Hitter->FindComponentByClass<UStaticMeshComponent>())
+									{
+										if (const UStaticMesh* SM = HM->GetStaticMesh())
+										{
+											MeshPath = SM->GetPathName();
+										}
+										Mats.Reset();
+										for (int32 m = 0; m < HM->GetNumMaterials(); ++m)
+										{
+											if (const UMaterialInterface* MI = HM->GetMaterial(m))
+											{
+												Mats += MI->GetName() + TEXT(" ");
+											}
+										}
+									}
+									FVector Origin, Ext;
+									Hitter->GetActorBounds(false, Origin, Ext);
+									BoxExtent = Ext;
+								}
+								UE_LOG(LogVEIL, Warning,
+									TEXT("PHI OCCLUDE: %d of 9 rays hit %s (class %s) mesh [%s] mats [%s] extent %.0f hidden %d"),
+									Cell.Value,
+									Hitter ? *Hitter->GetName() : TEXT("SKY"),
+									Hitter ? *Hitter->GetClass()->GetName() : TEXT("none"),
+									*MeshPath, *Mats, BoxExtent.GetMax(),
+									(Hitter && Hitter->IsHidden()) ? 1 : 0);
+							}
+						}
 					}
 				}
 				ShotPC->ConsoleCommand(TEXT("HighResShot 1920x1080"), true);
