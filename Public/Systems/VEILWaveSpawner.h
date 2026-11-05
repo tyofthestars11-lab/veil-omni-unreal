@@ -23,7 +23,7 @@ public:
 	UPROPERTY(BlueprintReadOnly, Category = "VEIL|Waves") int32 CurrentWave = 0; // 1..5, 6 = boss
 	UPROPERTY(BlueprintReadOnly, Category = "VEIL|Waves") int32 Alive = 0;
 
-	// Golden-angle placement: step * 137.5 mod 360 (0, 137.5, 275, 52.5, 190, ...)
+	// Golden-angle placement: step * 137.5077640500378 mod 360 (Bible §1, via PHI_Constants)
 	UFUNCTION(BlueprintPure, Category = "VEIL|Waves") static float BranchAngleDeg(int32 Step);
 
 private:

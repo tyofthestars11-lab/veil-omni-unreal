@@ -32,6 +32,9 @@ public:
 	UPROPERTY(BlueprintReadOnly, Category = "VEIL|Loop") int32 WavesCleared = 0;
 	UPROPERTY(BlueprintReadOnly, Category = "VEIL|Loop") bool bBossDefeated = false;
 
+	// Bible §1: phi^2 = phi + 1 is checked on boot. World subsystem init is that hook.
+	virtual void Initialize(FSubsystemCollectionBase& Collection) override;
+
 	UPROPERTY(BlueprintAssignable) FVEILStageChanged OnStageChanged;
 	UPROPERTY(BlueprintAssignable) FVEILFragmentCount OnFragmentCollected;
 

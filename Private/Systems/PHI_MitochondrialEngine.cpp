@@ -1,4 +1,5 @@
 #include "PHI_MitochondrialEngine.h"
+#include "PHI_Constants.h"
 
 PHI_MitochondrialEngine::PHI_MitochondrialEngine()
 {
@@ -31,10 +32,12 @@ bool PHI_MitochondrialEngine::IntegrateNode(float echoGap)
 
 float PHI_MitochondrialEngine::BranchAngle(int step)
 {
-	float a = step * 137.5;
-	while (a >= 360.0)
+	// Bible §1: the golden angle is 137.5077640500378, not 137.5.
+	// Normalised through fmod so negative steps read as real angles, not negatives.
+	double a = FMath::Fmod(step * PHI_Constants::GoldenAngleDeg, 360.0);
+	if (a < 0.0)
 	{
-		a -= 360.0;
+		a += 360.0;
 	}
-	return a;
+	return static_cast<float>(a);
 }

@@ -1,4 +1,5 @@
 #include "VEILWaveSpawner.h"
+#include "PHI_Constants.h"
 #include "Engine/World.h"
 #include "TimerManager.h"
 
@@ -24,7 +25,7 @@ void AVEILWaveSpawner::BeginPlay()
 
 float AVEILWaveSpawner::BranchAngleDeg(int32 Step)
 {
-	float A = FMath::Fmod(Step * 137.5f, 360.f);
+	float A = FMath::Fmod(Step * static_cast<float>(PHI_Constants::GoldenAngleDeg), 360.f);
 	return A < 0.f ? A + 360.f : A;
 }
 

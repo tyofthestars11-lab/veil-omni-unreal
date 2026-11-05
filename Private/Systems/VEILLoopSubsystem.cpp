@@ -1,4 +1,18 @@
 #include "VEILLoopSubsystem.h"
+#include "PHI_Constants.h"
+
+void UVEILLoopSubsystem::Initialize(FSubsystemCollectionBase& Collection)
+{
+	Super::Initialize(Collection);
+
+	// Bible §1: verify phi on boot. Once per process, never per frame (Bible §9).
+	static bool bPhiVerified = false;
+	if (!bPhiVerified)
+	{
+		bPhiVerified = true;
+		PHI_Constants::VerifyBoot();
+	}
+}
 
 void UVEILLoopSubsystem::SetStage(EVEILStage S)
 {

@@ -8,7 +8,7 @@ date: "2026-11-02"
 # 0. Who does what
 
 - **Tyree** is the source. He decides. He reviews proof.
-- **Buffy** builds in D:\\VEIL-OMNI. She reads this file from disk, not from chat.
+- **Buffy** builds in `C:\Users\Admin\HarkGame` (`VEILOMNI.uproject`, Unreal Engine 5.8). She reads this file from disk, not from chat.
 - **Muse** writes briefs. She never claims a result she didn't see.
 - AI never pays a COOK fee. Never delete Content or Saved. Never delete the game. No package, no cook, no exe until 100%.
 
@@ -94,7 +94,7 @@ Settings screen: sliders for Vitality and Stamina HUD scale, "HUD Atmosphere Sta
 
 1. Edit code.
 2. Build:\
-`UnrealBuildTool.exe VEIL Win64 Development -Project="D:\VEIL-OMNI\VEIL.uproject" -WaitMutex -FromMsBuild -MaxParallelActions=12`\
+`UnrealBuildTool.exe VEILOMNI Win64 Development -Project="C:\Users\Admin\HarkGame\VEILOMNI.uproject" -WaitMutex -FromMsBuild -MaxParallelActions=12`\
 Must end Succeeded, 0 errors, 0 warnings.
 3. Bake the world: Build Lighting, Build Geometry, Build Navigation, Build All. Wait until done. A code build is not a world build. A bake is not a cook. A cook is not a package.
 4. Play and test the milestone.
