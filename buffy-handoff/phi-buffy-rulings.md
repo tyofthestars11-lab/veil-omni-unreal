@@ -1,6 +1,6 @@
 # RULINGS FOR BUFFY — VEIL OMNI
 
-Tyree's direction (2026-11-26): "I want yall to do it all." These four rulings are decided here, by TON 618 on that word. Tyree can override any of them.
+Tyree's direction (2026-11-26): "I want yall to do it all." These six rulings are decided here, by TON 618 on that word. Tyree can override any of them.
 
 ## 1. Canon tree: C:\Users\Admin\HarkGame
 
@@ -17,6 +17,14 @@ The phase-shift directive already settles this — the HUD stays, it is not rebu
 ## 4. Builder counts: reference only
 
 637 trees, 34 stalls, 70 dwellings, the 25.2-unit spire, 1,364 lattice points — none of these appear in the bible, so none of them bind VEIL OMNI. They guide proportion; they are not canon. What IS canon from the builder side is the §5 bridge: the Mitochondrial engine, ATP feeds stamina and abilities. The builder stays a proportion source and proof-of-order, not a thing to import. The whole-in-one-read build and the one-piece-at-a-time frog rule are not in conflict: the builder proves order, the frog rule builds it.
+
+## 5. Spire position: (0, 10590) stands
+
+The built Spire is the generator's PlaceSpire: 5,000 tall × 1,200 wide at (0, 10590), 8 steps, from docs/world_layout.json. The bible's (0, 3500) coordinate is superseded by the built world. Three reasons it makes sense: (a) the bible's own art direction says the Spire stands "on the horizon, visible from everywhere" — at 35 m a 50 m tower would loom over the market, not sit on the horizon; at 105.9 m it does. (b) 10,590 = base_ring_cm 4045 × φ² — phi-derived, part of the ring layout (rings [21, 13, 8, 21, 55]); moving it to 3500 would put it inside the Hub ring and break the layout. (c) The real assets are built there — the generator, the rings, the placed Spire. PHI_APPLIED.md is a stale spec (2026-11-04, never regenerated since the generator took the world over) — regenerate it from the build; docs are derived, not the other way around. BuildSpire() is dead code (never called) — remove it so it stops giving a fourth answer. The bible's coordinate gets a note, not a rebuild (same treatment as Rulings 1 and 3).
+
+## 6. Census: keep 37, derive it, count the failures
+
+21/8/5/3 = 37 is Fibonacci (F8/F6/F5/F4) and the dressing is real — the counts stand. The loop must derive the tally instead of hardcoding it: no literal +16, no hardcoded caste thresholds (21/29/34). If the tally changes, the loop follows. Add failure accounting: a SpawnActor returning null gets counted, not silently skipped. The newest run read 35, not 37 — two walkers failed to spawn and the census reported the survivors. That drift is the bug; the count itself is not.
 
 ## What follows from these rulings
 
