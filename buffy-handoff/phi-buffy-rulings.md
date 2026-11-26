@@ -1,6 +1,6 @@
 # RULINGS FOR BUFFY — VEIL OMNI
 
-Tyree's direction (2026-11-26): "I want yall to do it all." These six rulings are decided here, by TON 618 on that word. Tyree can override any of them.
+Tyree's direction (2026-11-26): "I want yall to do it all." These seven rulings are decided here, by TON 618 on that word. Tyree can override any of them.
 
 ## 1. Canon tree: C:\Users\Admin\HarkGame
 
@@ -25,6 +25,10 @@ The built Spire is the generator's PlaceSpire: 5,000 tall × 1,200 wide at (0, 1
 ## 6. Census: keep 37, derive it, count the failures
 
 21/8/5/3 = 37 is Fibonacci (F8/F6/F5/F4) and the dressing is real — the counts stand. The loop must derive the tally instead of hardcoding it: no literal +16, no hardcoded caste thresholds (21/29/34). If the tally changes, the loop follows. Add failure accounting: a SpawnActor returning null gets counted, not silently skipped. The newest run read 35, not 37 — two walkers failed to spawn and the census reported the survivors. That drift is the bug; the count itself is not.
+
+## 7. Scale: keep the 50 m Spire world
+
+The district is 65 m deep (10,590 → 17,135 cm) because Ruling 5 keeps the 50 m Spire. The direction's "city sprawl" at 1,597 m is a vision number, not a build target — it is not in the bible, and the bible's coordinates rule. The world as built is phi-ordered end to end (rings at φ-scaled radii, the 0.72 height cap, the sightlines), and the machine runs it at 84 fps on 1,454 instances. Scaling 9× would break every derived number and need a rebuild of the generator, the rings, the caps, and the sightlines — and a streaming approach the project does not have. The 65 m district IS the city. If a bigger world ever comes, it is a new build (M7+ regions), not a rescale of this one.
 
 ## What follows from these rulings
 
