@@ -734,3 +734,31 @@ pretending.
 
 Not done: the room in the frame is dim (the ceiling light sits above the lens line), rooms are empty
 of props, and nothing has walked into one yet.
+
+### M4 frame items: the city lights itself, the street clears, gold comes back (2026-11-26)
+
+**Cause, read from the log and not guessed.** `VEIL LIGHT: gi=0 reflect=2 sky=2.618 lamps=22
+tier=low`. This machine resolves `r.DynamicGlobalIlluminationMethod` to 0 and had
+`r.ReflectionMethod` at 0 as well: no bounce, no reflections. That single fact explains both open
+frame faults -- shade had only the sky, and every gold surface had nothing to reflect, which is why
+three bespoke gold materials were tried against it and all three failed.
+
+- Sky: real-time capture, phi^2 intensity, warm tint (`VEIL LIGHT: ... sky=2.618`).
+- Bounce: a shadowless warm light from the district's own bearing stands in for the GI this tier
+  does not compute (`VEIL LIGHT: bounce=2.62`).
+- Street: 22 real point lights on the district's own lamp heads, intensity and reach from head
+  height (`VEIL CITY LIGHT: street_lamps=22 of 44 heads`).
+- Reflections: screen-space restored on the low tier, so gold is metal again, not grey
+  (`reflect=2`).
+- Walkers: they now walk loops in front of the street lens that cannot reach it
+  (`VEIL CITY CROWD: walkers=13 nearest_to_lens_cm=815`).
+- Grade: sun 11 -> 7.85 (phi^2 * 3) and exposure max 1.6 -> 1.45, because a lit sky at 11 blew the
+  terrace sand to white.
+
+`VEIL CHECK pass=8 fail=0 instances=2788`, `VEIL HASH crc=AC518031 slots=41`, build
+`Result: Succeeded`. Proof: `docs/proof/frame.log`, `hub_omni_city.png`, `hub_omni_street.png`,
+`hub_bible_horizon.png`.
+
+**Still open:** the inward faces are lifted out of charcoal but remain the darkest read in the frame;
+the frames suggest `M_VEIL_CityStone` is not the sandstone the docs claim (sunlit walls read grey, not
+tan), so the next pass is the material's base colour, not another light.

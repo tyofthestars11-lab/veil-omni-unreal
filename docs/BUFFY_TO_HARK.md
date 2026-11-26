@@ -1158,3 +1158,29 @@ now traces its own standing room first.
 
 **Ruling followed.** No job files, no launcher runs beyond the single shot check, no editor session
 to look around: code first, the shot is the check.
+
+## M4 frame items (2026-11-26)
+
+**Order taken as given:** inward faces, then walkers, then gold. Factions, heists and the Countess
+untouched -- they belong to the region milestone.
+
+**1. Inward faces.** The proof log had the answer already: `r.DynamicGlobalIlluminationMethod = 0`
+and `r.ReflectionMethod = 0` on this tier. Shade had no bounce and metal had nothing to reflect.
+Sky is now real-time captured at phi^2 with the sun's own warm tint, a shadowless bounce light from
+the district's bearing stands in for the missing GI (`bounce=2.62`), and the district's 44 lamp heads
+carry 22 real point lights. Inward faces went from near-black to readable grey-brown.
+**Not finished:** they are still the darkest thing in the frame. The frames say the wall material is
+grey, not the sandstone the docs claim -- so the next attempt is `M_VEIL_CityStone`'s base colour,
+not another light. I am not claiming this item closed.
+
+**2. Walkers.** They started at 11,000 and walked outward with a 1,623 cm loop, so the street lens at
+14,935 had a walker 65 cm from the glass and a crystal shoulder across the right third of the frame.
+They now start at 7,500 in front of the lens with a 620 cm pace: `nearest_to_lens_cm=815`, and the
+street frame shows people at 8-40 m. **Closed.**
+
+**3. Gold.** With reflections restored the Spire reads gold again at 10.6 km and the distant spires
+read gold-yellow instead of grey. Metal now has something to reflect; the earlier three-material
+chase was working against a disabled reflection method. **Closed at this tier.**
+
+**Value.** `VEIL CHECK pass=8 fail=0 instances=2788`; `VEIL HASH crc=AC518031 slots=41`; build
+`Result: Succeeded`; proof `docs/proof/frame.log` + the three frames.
