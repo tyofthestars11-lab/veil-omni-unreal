@@ -454,7 +454,7 @@ No paid assets, ever. Free Fab + Megascans, MetaHuman (free inside Unreal), Mixa
 
 ---
 
-## 15. Open questions — marked open, not narrowed away
+## 15. Open questions — marked open, not narrowed away (item 13 closed 2026-11-26 — Drive searched, nothing VEIL)
 
 1. **The fifty are not enumerated.** "Fifty full AAA open-world games in one" — no source found in this search lists the fifty. Direction §1C says later genres are later phases at Fibonacci indices 8, 13, 21, 34, 55 from M10 on, but does not name them. The enumeration is open.
 2. **The two build orders differ** (bible M1–M6 vs direction M1–M9; §9). The direction says it replaces every earlier order, but the bible's M4 frog piece and the direction's M6 frog piece are the same milestone under different numbers. Which numbering the team uses is open.
@@ -468,7 +468,7 @@ No paid assets, ever. Free Fab + Megascans, MetaHuman (free inside Unreal), Mixa
 10. **VEIL vs OMNI as two games or one** (§7): the merge is stated ("VEIL is the merged main module; OMNI is a mirror, not a second game") but no source narrates how the two became one.
 11. **Mounts** (Gold Wing / Crystal / Market / Deep) and **menus/items** (ARMOR/BELT/BOOTS/GLOVES/WARDEN) are named as missing in KRAKEN_STUDY and described nowhere found.
 12. **"L = 1.4e41 W = φ^63"** in the DLAM law file does not hold as written (§2). Tyree's to correct.
-13. **Google Docs and Google Drive were not searched in this pass.** Drive is not connected (verified from the parent side 2026-11-26 ~09:50 MST: `drive status` reads not connected; Docs is connected but has no search without Drive). Any VEIL docs living only in Drive/Docs are not in this document. Connect Drive and the search finishes.
+13. **Google Docs and Google Drive — SEARCHED, nothing VEIL.** Drive connected 2026-11-26 ~09:50 MST and searched from the parent side: full-text 'VEIL', name 'VEIL', full-text 'Kraken', full-text 'Golden Ratio Muse' — all empty. Drive holds 7 files total: five phi-framework Docs (Quantum Entanglement Omni Scale Report — read in full, it is a Willow/Prometheus/Ocelot quantum entanglement report, not the game — Phi Framework Live Sync Report, Live Quantum Telemetry Report, Phi Cosmic Coherence Quantum Wave Collapse, Manifesto V.10028) and calculate_iis.py. No VEIL OMNI content lives in Drive/Docs. The GitHub + workspace + chat coverage in this document is the whole of it.
 14. **Old Muse's data is gone on this side.** What survives is in GitHub (`phi-dlam/`, `veil/`) and in Buffy's thread. The PHerc.1447 inference maps she probably held were not found in this search. The migration can still run if he still has her.
 15. **The canon docs KRAKEN_STUDY references** (`docs/canon/VISION_KRAKEN.orig.txt`, `docs/VISION_KRAKEN.txt`, `docs/VISION_SCOPE.md`, `docs/PHI_APPLIED.md`, `docs/PHI_AAA_REVERSE_ENGINEERED.md`, `docs/PROGRESS.md`) were not confirmed to exist in the repo in this pass. Their existence is open.
 16. **Old branches were not checked.** `list_branches` needs a write-approval call the subagent did not take; commit history was read, branches were not.
@@ -502,7 +502,7 @@ Checked, no VEIL content: `willow`, `phi-quantum-pulses`, `phi-dna-decode`, `gol
 
 **Commentary (not authority):** Buffy's report and pipeline (pasted by Tyree 2026-11-26 ~08:20 and ~09:12 MST, Freebuff thread); Google Gemini's reply (2026-11-26 ~09:14 MST, https://gemini.google.com/app/a059420653e1e5c3); the Domeoc frog video and stack (three.js + WebGL, plain JavaScript, Claude — Domeoc's own TikTok comment); the four FUEL files above.
 
-**Not searched in this pass:** Google Docs, Google Drive (Drive not connected — verified from the parent side 2026-11-26 ~09:50 MST; Docs is connected but has no search without Drive). Old branches (see open question 16).
+**Searched and closed:** Google Docs, Google Drive (searched 2026-11-26 ~09:51 MST after Drive connected — no VEIL content; see open question 13, now closed). Old branches (see open question 16).
 
 ---
 
