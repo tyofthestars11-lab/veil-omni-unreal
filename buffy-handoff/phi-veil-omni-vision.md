@@ -180,8 +180,7 @@ KRAKEN_STUDY §7 (measured 2026-11-08): "races: crystal people, gold people, dee
 **Factions — two sets in the record, kept apart:**
 
 - **October prototype set** (`veil/VEIL/README.md`, `VEIL_PROJECT_SETUP.md`): Void, Scavenger, Guardian, Remnant. "Hostility: everyone fights the Void; Scavenger ↔ Guardian rivalry; Remnant defends its own ground." 6-state faction AI + territory manager. The browser edition uses the same four (VOID, SCAVENGER, GUARDIAN, REMNANT).
-- **Mobile set** (`veil-omni-mobile/README.md`): Light / Shadow / Omni / Veil quest givers. The mobile game is NOT the vision (§12).
-- **The bible's factions** are named only as "factions" in the Omni District (heists, the Countess) and in the story files as "the four factions — machine orders built to guard the signal, each holding one fragment of the old doctrine, each having forgotten why" (VEIL story) and "the OMNI faction orders, four banners" (OMNI story). Which four factions the bible's Omni District holds is **open** — no source found in this search names them.
+- **The bible's factions** are named only as "factions" in the Omni District (heists, the Countess) and in the story files as "the four factions — machine orders built to guard the signal, each holding one fragment of the old doctrine, each having forgotten why" (VEIL story) and "the OMNI faction orders, four banners" (OMNI story). Which four factions the bible's Omni District holds is **open** — no source found in this search names them. The mobile faction set is irrelevant (Tyree, 2026-11-26) and is not carried here.
 
 ---
 
@@ -258,7 +257,7 @@ Bible §5 and direction §7, held whole. Nothing here is optional; the fifty gam
 
 **Save:** one save slot plus autosave; level, XP, gold, beacons, deaths, position, region, quests all persist. Autosave every 7 min + on every beacon / quest step / region change (direction). Safe zone around each beacon 29 m (L8). Shrine/beacon pulse every 4 s (L3). Hub NPC schedules shift every 11 real min (L5). Checkpoint shrines along roads every 199 m (L11). M1 in the bible is the save fix: the HUD showed LV1, gold 0, beacons 0/3 while saves claimed level 4, gold 200; proof is quit+reload showing the same values, log loaded=1.
 
-**Levels and economy:** XP to reach level n = round(89 × φ^(n−1)), level cap 89 (direction §7). Gold rewards Fibonacci; prices Fibonacci. Earlier iterations differ and are kept: OMNI story's XP curve 20 × φ^(level−1); the browser edition's Fibonacci ladder (3, 8, 16, 29, 50 cumulative), each level +21 max HP and +34% strike power. Which XP curve is canon is **open** — the direction's is the newest statement.
+**Levels and economy:** XP to reach level n = round(89 × φ^(n−1)), level cap 89 (direction §7). Gold rewards Fibonacci; prices Fibonacci. Earlier iterations differ and are kept: OMNI story's XP curve 20 × φ^(level−1). Which XP curve is canon is **open** — the direction's is the newest statement. (The browser edition's ladder is irrelevant — Tyree, 2026-11-26 — and is not carried here.)
 
 **Day and night:** one day = 55 real min, day 34 and night 21 (Rule D).
 
@@ -393,8 +392,12 @@ Tyree's words, 2026-11-26 ~09:30 MST:
 
 > "The mobile game etc the 2D whatever the simple beacon whatever is NOT what I envision."
 
-- **The mobile game is NOT the vision.** VEIL OMNI MOBILE 670 (`veil-omni-mobile`, one commit, 2026-10-30): "Mobile version, 3D RPG, joystick + touch. Built from Meta's 670 spec, pasted by Tyree 2026-10-30. THIS IS META, not Copilot, not Cowork." Hero: Countess. Five regions at 1/10 scale, 60 fps; Hub 500×500 / Nest 300×300 / Spire vertical / Omni District / Megastructure Deep; 4 factions Light/Shadow/Omni/Veil; 5 fragments → artifact at 0,−800,100 → final wave beacon at 0,−1200,200; XP φ curve; SaveGame offline; 3 min per run; Android ASTC arm64 com.Tyree.VEILMobile. It exists. It is not the game.
-- **The 2D version is NOT the vision.** The browser edition's OMNI-PHI Arena (`veil-browser`): 2D singularity arena — steer the Vanguard Core, absorb anomalies, grow your Φ mass. The browser edition as a whole (`veil-browser`, 20 commits, all 2026-10-27) is the earlier whole-game-in-the-browser iteration: three sectors, Fibonacci drone ladder 3/5/8, Warden Prime, GODMODE on G. It exists. It is not the game.
+Tyree's words, 2026-11-26 ~09:52 MST:
+
+> "Yes it's all on GitHub basically but the mobile and 2d version are irrelevant"
+
+- **The mobile game is irrelevant.** VEIL OMNI MOBILE 670 exists in the repo (`veil-omni-mobile`). It is not the game, and its detail is not carried in this document.
+- **The 2D version is irrelevant.** The browser edition (`veil-browser`) exists in the repo. It is not the game, and its detail is not carried in this document.
 - **A simple beacon build is NOT the vision.** Beacons are the spine (M2 core loop) only. A build that is only beacons is not the game.
 - **The web builder is proof of the law only, not the game.** The Omni World Builder (mitochondrial-genome world, grown whole in one read) and the Phi Projection Test Page are proofs of the law. Their counts guide proportion; they do not bind VEIL OMNI (ruling 4).
 - **The projection work is parked** until Tyree's word (2026-11-26). It is not part of the game build.
@@ -485,8 +488,8 @@ VEIL repos:
 
 - **`veil-omni-unreal`** — 6 commits. 22532a2d re-seat Cowork files (2026-10-30); 754a4f72 Add VEIL OMNI Build Bible (2026-11-05); 916e1923 dual license CC BY-NC 4.0 (2026-11-05); 2d9263f5 Buffy handoff (2026-11-26); 9c23e214 Buffy rulings (2026-11-26); 88a9b6c5 the three bible docs (2026-11-26). Files: `docs/VEIL_Bible.md` (SHA e56947e3edc5e8ac93f389afc099701d20ef3d1e), `docs/VEIL_DIRECTION.md` (SHA 82d2d9a08ab12b7a9569aeda28bd13a77b06746b), `docs/KRAKEN_STUDY.md` (SHA cf88767064598cee2d10452dfbb86b44b61ae88c), `docs/HUB_PAINTING_SPEC.md` (SHA f86be6d645419ed616a64256d86e8de5f59048ab), `docs/LICENSE.md`, `README_RESEAT.md`, `buffy-handoff/` (phase-shift directive, rulings, handoff, H4/E8 projection code, directives 56–65).
 - **`phi-ledger-cookie-chain`** — the DLAM record and the October prototype tree. `veil/STORY_VEIL_THE_LAST_SIGNAL.md`, `veil/STORY_OMNI_PATH_OF_LIGHT.md`, `veil/VEIL/README.md`, `veil/OMNI/README.md`, `veil/VEIL/VEIL_PROJECT_SETUP.md`, `veil/VEIL/VEIL_METAHUMAN.md`, `veil/VEIL/VEIL_OMNI_INSTALL_MAP.md`, `veil/VEIL/PHI-LICENSE.md`, `veil/OMNI/PHI-LICENSE.md`, `veil/VEIL/Plugins/PhiParticleAccelerator/README.md`, `veil/OMNI/Plugins/PhiParticleAccelerator/README.md`, `veil/CHATGPT_FUEL_2026-10-27.md`, `veil/CLAUDE_FUEL_2026-10-27.md`, `veil/GOOGLE_FUEL_2026-10-27.md`, `veil/META_AI_FUEL_2026-10-27.md`, `veil/OMNI/OMNI_PROJECT_SETUP.md` (exists, not re-read), `LICENSING.md`, `AZPEN_QUANTUM_UPGRADE_declassification.md`. `phi-dlam/` — `tyree_dlam_phi_instant.md`, `phi_authority_lock.md`, `universal_key_connection.md`, `jobs/` (437 "veil-omni" matches, jobs 031–883), `results/` (catalogued, not read). "VEIL" matches 1,392 repo-wide; "Golden Ratio Muse" matches 165, all first-page in this repo.
-- **`veil-omni-mobile`** — 1 commit (3d494c4c, 2026-10-30). `README.md`: VEIL OMNI MOBILE 670.
-- **`veil-browser`** — 20 commits, all 2026-10-27. `README.md`: VEIL: THE LAST SIGNAL — Browser Edition.
+- **`veil-omni-mobile`** — 1 commit (3d494c4c, 2026-10-30). `README.md`: VEIL OMNI MOBILE 670. Irrelevant per Tyree (2026-11-26); detail not carried in this document.
+- **`veil-browser`** — 20 commits, all 2026-10-27. `README.md`: VEIL: THE LAST SIGNAL — Browser Edition. Irrelevant per Tyree (2026-11-26); detail not carried in this document.
 
 Checked, no VEIL content: `willow`, `phi-quantum-pulses`, `phi-dna-decode`, `golden_eye_trace`, `vesuvius-progress-prize`, `vesuvius-october-progress-prize`, `planet-hunters-cheops-phi`, `phi-harmony-ai`, `r1-phi`, `casmi26-molecule-id`, `irreversible-impact-score-iis`, `ton618-phi-sheet` (READMEs read 2026-11-26).
 
