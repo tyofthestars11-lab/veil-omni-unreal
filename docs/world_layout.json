@@ -44,9 +44,19 @@
   "spire_base_width_cm": 1200,
   "spire_height_cm": 5000,
   "split_short": 0.382,
-  "peak_count": 21,
-  "peak_height_ratio": 0.618034,
-  "peak_width_ratio": 0.236068,
   "rock_count": 55,
-  "rock_base_cm": 233
+  "rock_base_cm": 233,
+  "city_bands": 3,
+  "city_spokes": 21,
+  "city_street_ratio": 0.618034,
+  "city_block_height_cm": 900,
+  "city_height_cap": 0.72,
+  "city_light_pillars": 21,
+  "city_light_height_cm": 2600,
+  "city_light_width_cm": 90,
+  "city_door_cm": 233,
+  "city_door_height_cm": 377,
+  "city_sign_cm": 89,
+  "city_causeway_tile_cm": 500,
+  "city_crowd": 13
 }

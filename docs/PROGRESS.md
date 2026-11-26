@@ -633,3 +633,104 @@ in front of its post, so the thing crossing the Spire was rarely the post the ru
 - Still open for M4: the crystal peaks of the "Omni District" are 171 m tall at 171 m and out-tower
   the 50 m Spire (the city layer, real work), and gold still reads as a flat ochre rather than
   metal at distance. M4 is NOT passed.
+
+## M4 - the Omni District is a city (2026-11-26)
+
+- The ring was 21 crystal peaks, and a peak field is not a city: `AVeilWorldGen::PlacePeaks()` is
+  gone and `PlaceCity()` builds a polar street grid instead -- 3 bands of blocks round ring 3
+  (r 10,590 to 17,135), 21 spokes of street between them, alternate bands turned half a spoke so
+  the avenues stagger.
+- Every block: a stone mass, a stack of lit blue panes on the face that looks at the market (one
+  pane per floor, phi^-1 window to phi^-2 wall), and a lit crown band along the roof edge. Tall
+  blocks step back phi^-1 on top.
+- Streets are ground, not only a gap: a navy ring road 833 cm wide at every band edge, 84 tiles
+  closed by phi^-2 so the ring has no seams. (Pass 1 stood the city on bare sand.)
+- Light pillars: 20 crystal columns, one per spoke on the rim road, and one real blue point light
+  every third pillar -- the blue the district throws on its own ground, not a glow painted on.
+- The Spire keeps its plaza: blocks within 1,942 cm (1,200 x phi) of (0, 10,590) are skipped (2 of
+  them). New check `city_under_spire`: no block above `city_height_cap` 0.72 x 5,000 = 3,600 cm, so
+  the tower is the tallest thing in every frame.
+- Run: `VEIL CITY: blocks=103 tallest_cm=3600 spire_cm=5000 cap=0.72 light_pillars=20
+  plaza_skipped=2 bands=3 spokes=21`; `VEIL CITY ROADS: tiles=84 ring_roads=4 width_cm=833`;
+  `VEIL CHECK pass=6 fail=0 instances=1454`; `VEIL HASH crc=FFC6E377 instances=1454 slots=30`;
+  census `37/37 failed=0`; `VEIL FROG CHECK u=PASS horizon=PASS fit=PASS`.
+- Frames: `docs/proof/hub_omni_city.png` (the district from its own approach) and
+  `docs/proof/hub_frog_spire.png` (the same tower with the city behind it). Log:
+  `docs/proof/city1.log`.
+- Still open: every block is a massing box -- no doors, no interiors, no street props, no crowd in
+  the district, no factions or heists or Countess; the sandstone UV is stretched so a tower reads
+  as a wooden crate at 100 m; the panes use the ice texture and read as glacier slabs close up; the
+  horizon lens `hub_bible_horizon` is now walled by a block and needs repointing or retiring; and
+  the district is 65 m deep in world units because Ruling 5 keeps the 50 m Spire -- "city sprawl"
+  at the direction's 1,597 m needs that scale question ruled, not built around.
+
+## M4 - the district at street level (Ruling 7)
+
+Read Ruling 7 in `buffy-handoff/phi-buffy-rulings.md` at commit `7cd4e20`: the 65 m district stands,
+the Spire stays 50 m, the direction's 1,597 m sprawl is a vision number and not a build target, and
+a bigger world is a new build (M7+), not a rescale. M4 continued on the open items, in order.
+
+- **Street level.** 98 blocks each carry a doorway: two jamb stones 30 cm deep, a lintel, a lit
+  aperture between them, a gold sign board over it (`city_sign_cm` 89 x phi), and a navy awning on
+  every second one (50 of 98). 44 lamp posts stand on the ring roads, gold post under a glass head.
+  No interiors: the blocks are massing, so a door is an aperture on a wall, not a room.
+- **The district's own crowd.** 13 walkers (`city_crowd`) on the causeway, spaced 400 cm apart, half
+  on each side of the centre line, each walking phi^2 of the spacing either way. The market's 37 are
+  untouched and still read `walkers=37 expected=37 failed=0`.
+- **Two wrong surfaces, each its own material.** `M_VEIL_CityStone` (sandstone at phi^2 tiling, so a
+  9 m face is 3.4 m courses instead of one stretched texture -- it read as a wooden crate before),
+  `M_VEIL_CityGlass` (navy glass with a #3FA9FF emissive at 0.42 -- the panes were `MI_Cliff3`, the
+  glacier ice the crystals use), and `M_VEIL_CityRoad` (dark asphalt; the streets were `M_VEIL_Deep`,
+  which carries a blue emissive and made the ground glow ice-blue). Authored by
+  `Scripts/make_city_materials.py` and `Scripts/tune_city_materials.py`.
+- **Gold at distance.** The tower got its own probe: a sphere capture at mid-tower (z 3,123),
+  influence 3,090 cm = phi^-1 of the height, because the plaza's 2,618 cm capture never reaches
+  (0, 10,590). Three separate tower-gold materials were authored and each moved the tower *off* gold
+  (metallic 0.70 mirrored the sky and read grey; the kit's gold texture is a grey mask; a brighter
+  gold constant blew out at this exposure). The tower is back on the palette's `M_VEIL_GoldPBR` with
+  the probe supplying the reflection, and the material is named in the log so it cannot be guessed
+  again: `VEIL GEN spire: ... material=M_VEIL_GoldPBR`.
+- **`hub_bible_horizon` repointed.** It aimed at a crystal ring Ruling 7 removed, then at the
+  district's rim from 8,324 cm -- where the nearest band of 36 m blocks filled the frame. It now
+  stands on the Deep ring's terrace (27,725 cm) at the sun's bearing (70 deg) and looks back: the
+  district's skyline as the horizon, with the gold tower over the roofs. From 175 cm there the 36 m
+  rim blocks geometrically hide the rest of the 50 m tower, which is why the tower is proved from the
+  market and district frames instead.
+- **Walkable.** A causeway runs from the market's rim (2,599 cm) to the district's rim (17,135 cm):
+  33 tiles, 433 cm wide, flat on each terrace and ramped at every lip with run = rise x phi^2, so
+  20.9 deg -- inside a capsule's 45 deg limit. Houses, POIs, rocks, foliage and 5 city blocks move
+  aside rather than being deleted. New check 7 `city_walkable`.
+- **Run:** `VEIL CITY: blocks=98 tallest_cm=3600 spire_cm=5000 cap=0.72 light_pillars=19
+  plaza_skipped=2 bands=3 spokes=21 road_skipped=5`; `VEIL CITY ROADS: tiles=84 ring_roads=4
+  width_cm=833`; `VEIL CITY DETAIL: doors=98 signs=98 awnings=50 street_props=44`;
+  `VEIL CAUSEWAY: tiles=33 length_cm=14536 width_cm=433 start_cm=2599 end_z_cm=1040
+  end_terrace_cm=1000 max_slope_deg=20.9 bearing_deg=137.508`; `VEIL CHECK pass=7 fail=0
+  instances=2053`; `VEIL HASH crc=E231685A instances=2053 slots=39`; `VEIL CITY CROWD: walkers=13
+  expected=13 failed=0`; census `37/37 failed=0`; `VEIL FROG CHECK u=PASS horizon=PASS fit=PASS`.
+- **Frames:** `docs/proof/hub_omni_city.png` (the district from its approach),
+  `docs/proof/hub_omni_street.png` (the causeway at eye height: crowd, doors, signs, lamps, gold
+  pillars), `docs/proof/hub_bible_horizon.png` (the district skyline from the Deep terrace). Log:
+  `docs/proof/city2.log`.
+- **Still open:** no enterable interiors (doors are apertures on massing); the district's inward faces
+  still read charcoal -- a golden-hour sun from 70 deg leaves a ring city's inner faces unlit and only
+  the 19 pillar lamps answer it; the nearest walkers crowd the street lens; the tower's gold is still
+  the market's flat gold, now with a probe behind it; no factions, heists or Countess in the district;
+  and nothing was walked (no PIE collision test, no frame-rate measurement).
+
+### M4 -- the district has rooms (2026-11-26)
+
+Code, not a document: every district block's ground floor is hollow. A shell of stones -- two front
+piers either side of the opening, a header over it, a back, two sides and a ceiling -- leaves a
+610 cm room inside, with its own dark stone floor 8 cm proud of the street and an emissive ceiling
+panel that Lumen bounces, and the mass of the building starts on that ceiling. Blocks too short or
+too narrow to hold the room (12 of 98) keep the old lit aperture and are counted as solid instead of
+pretending.
+
+- `VEIL CITY INTERIORS: rooms=86 solid=12 room_h_cm=610 door_w_cm=233 door_h_cm=377`
+- `VEIL CHECK city_interiors PASS blocks=98 rooms=86 solid=12` (check 8, new)
+- `VEIL CHECK pass=8 fail=0 instances=2788`, `VEIL HASH crc=AC518031 slots=41`
+- `VEIL DOOR FRAME: door=(-11647,5753,1189) eye=(-11372,5617,1229) stand_cm=307 rooms=86`
+- Build `Result: Succeeded`; proof `docs/proof/rooms.log`, `docs/proof/hub_omni_door.png`.
+
+Not done: the room in the frame is dim (the ceiling light sits above the lens line), rooms are empty
+of props, and nothing has walked into one yet.
