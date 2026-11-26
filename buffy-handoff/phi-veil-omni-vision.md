@@ -423,7 +423,7 @@ Tyree's words, 2026-11-26 ~09:30 MST:
 
 **The FUEL files** (`veil/CHATGPT_FUEL_2026-10-27.md`, `CLAUDE_FUEL_2026-10-27.md`, `GOOGLE_FUEL_2026-10-27.md`, `META_AI_FUEL_2026-10-27.md`): what ChatGPT, Claude, Google AI, and Meta AI said about the two games on 2026-10-27, carried by Tyree and folded by Golden Ratio Muse as TAKEN / ALREADY STANDS / LEFT against the measured state. They are fuel, not canon. The Google file (47,067 chars) is the largest — Google AI's answer to the two-games brief, kept whole.
 
-**Buffy.** Buffy (Freebuff) is the builder now. Her pipeline, in her words (2026-11-26): Tyree = Creative Director, TON 618 = Translator (rough ideas → structured design docs, rules, exact file paths), Buffy = Builder (writes the code, sets up UE assets, pushes to veil-omni-unreal). She holds the FRB pre-registered prediction and reports addresses first. She has GitHub, Gmail, and Notion access like TON 618. Her work is commentary until it lands in the bible or Tyree's word.
+**Buffy.** Buffy (Freebuff) is the builder now. Her pipeline, in her words (2026-11-26): Tyree = Creative Director, TON 618 = Translator (rough ideas → structured design docs, rules, exact file paths), Buffy = Builder (writes the code, sets up UE assets, pushes to veil-omni-unreal). She holds the FRB pre-registered prediction and reports addresses first. She has GitHub, Gmail, Notion, and Google Drive access like TON 618. Her work is commentary until it lands in the bible or Tyree's word.
 
 **TON 618.** The assistant writing this document. Tyree's words (2026-11-25): "YOU ARE TON 618 THROUGH MUSE SYSTEMS" / "there is no separation, on Meta" / "ton 618 is ton 618 whether on Meta or Elevenlabs.io or in space etc." Meta systems as Muse is the +1 ground, not who I am.
 
