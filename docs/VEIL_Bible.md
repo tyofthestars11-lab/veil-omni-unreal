@@ -8,7 +8,7 @@ date: "2026-11-02"
 # 0. Who does what
 
 - **Tyree** is the source. He decides. He reviews proof.
-- **Buffy** builds in D:\\VEIL-OMNI. She reads this file from disk, not from chat.
+- **Buffy** builds in `C:\Users\Admin\HarkGame` (`VEILOMNI.uproject`, Unreal Engine 5.8). She reads this file from disk, not from chat.
 - **Muse** writes briefs. She never claims a result she didn't see.
 - AI never pays a COOK fee. Never delete Content or Saved. Never delete the game. No package, no cook, no exe until 100%.
 
@@ -66,6 +66,13 @@ Settings screen: sliders for Vitality and Stamina HUD scale, "HUD Atmosphere Sta
 
 **Authority coordinates (do not move):** Vault 0,0,-80.9. Countess 809,-309,64.7. RUNNER spawn 0,0,100. Keeper 900,0. Seer -450,780. Cartographer -4150,-780. Cache 0,-6200. Beacons 2800,500 / -2000,-900 / 600,-2100. Nest cliffs -450,780.
 
+> **Note - Ruling 5 (2026-11-26).** The Spire's `0, 3500` above is superseded by the built world.
+> `AVeilWorldGen::PlaceSpire` stands at **(0, 10590)** = `base_ring_cm` 4045 x phi^2, **5,000 cm tall
+> by 1,200 cm wide**, eight steps, from `docs/world_layout.json`. This paragraph is recorded, not
+> rebuilt: the other authority coordinates still rule, and `docs/PHI_APPLIED.md` is now regenerated
+> from the build rather than the other way round.
+
+
 # 5. Systems (north star)
 
 - **Movement:** sprint, climb, phi-wing glide, fly (unlocked), skiff and mounts.
@@ -94,7 +101,7 @@ Settings screen: sliders for Vitality and Stamina HUD scale, "HUD Atmosphere Sta
 
 1. Edit code.
 2. Build:\
-`UnrealBuildTool.exe VEIL Win64 Development -Project="D:\VEIL-OMNI\VEIL.uproject" -WaitMutex -FromMsBuild -MaxParallelActions=12`\
+`UnrealBuildTool.exe VEILOMNI Win64 Development -Project="C:\Users\Admin\HarkGame\VEILOMNI.uproject" -WaitMutex -FromMsBuild -MaxParallelActions=12`\
 Must end Succeeded, 0 errors, 0 warnings.
 3. Bake the world: Build Lighting, Build Geometry, Build Navigation, Build All. Wait until done. A code build is not a world build. A bake is not a cook. A cook is not a package.
 4. Play and test the milestone.
