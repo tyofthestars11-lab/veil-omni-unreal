@@ -610,3 +610,26 @@ M4 direction, started:
 - Still open: the Spire reads as a stepped gold tower in the frog frame but a foreground pillar
   crosses its silhouette, so "one legible Spire" is not met; and the Omni District is still 21
   crystal peaks, not a city. M4 is NOT passed.
+
+## M4 — the Spire sightline is geometry now (2026-11-26)
+
+The generator reserved the tower's cone with a remembered slope (`R * (600.f / 10590.f)`) and only
+asked the *pillar* whether it was inside it. The stall's canvas is 1,165 cm wide and hangs 260 cm
+in front of its post, so the thing crossing the Spire was rarely the post the rule was testing.
+
+- `OccludesSpire(AlongY, Lateral, PropTopZ, HalfW)` asks the question properly: distance to the
+  tower is `RingRadiusCm(2)`, the base is `TerraceTop(2)`, the half width is `SpireBaseW * 0.5`,
+  the eye is `PlateauZ + 175`, all read from the build. Height first (a prop whose top is under the
+  sightline to the tower's base cannot cross it), then the wedge half width at that distance.
+- `ClearSpireSight()` acts on it: the prop keeps its distance and its place in the market and moves
+  sideways out of the wedge. Nothing is deleted, nothing is shortened -- the old flatten cut posts
+  to phi^-1, which is how the corridor stayed "clear" on paper while a canopy crossed it in frame.
+- Applied to every prop that can stand in the corridor: hub props (footprint = max(pillar, stall
+  canvas)), houses, lanterns, and the gold POI obelisks.
+- Run: `VEIL SPIRE SIGHT: cleared=5 props`, five named moves in the log, `spire_cone_flattened=0`,
+  `VEIL CHECK pass=5 fail=0`, census `37/37 failed=0`, `VEIL FROG CHECK u=PASS horizon=PASS fit=PASS`.
+  `docs/proof/hub_frog_spire.png` now shows the eight-step gold tower standing alone on the 0.618
+  line with nothing in front of it.
+- Still open for M4: the crystal peaks of the "Omni District" are 171 m tall at 171 m and out-tower
+  the 50 m Spire (the city layer, real work), and gold still reads as a flat ochre rather than
+  metal at distance. M4 is NOT passed.

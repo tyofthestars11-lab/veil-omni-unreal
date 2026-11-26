@@ -6,7 +6,7 @@ hand. Ruling 5 (2026-11-26): the build is the authority, the docs follow it. The
 hand-written version of this file claimed "1200 wide, 5000 tall at (0, 3500)" — the size was
 right by luck, the coordinate was the bible's and the generator never built it.
 
-Generated 2026-11-26 from `r56b.log`.
+Generated 2026-11-26 from `sight1.log`.
 
 ## The world ladder
 
@@ -47,7 +47,7 @@ the hand-built tower at (0, 9000) that was never called, is deleted.
 | golden frame | `u=PASS horizon=PASS fit=PASS | fg_cm=1276 mid_cm=4045 bg_cm=10590` |
 | census | `human=21 gold=8 crystal=5 deep=3 walkers=37 expected=37 failed=0` |
 | census accounting | `PASS walkers_plus_failed=37 expected=37` |
-| placement hash | `crc=4D97CEC4 instances=725` |
+| placement hash | `crc=4891B0C2 instances=725` |
 | plaza reflection | `plaza capture radius_cm=2618 at_z=300` |
 
 Materials: `stone=/Game/VEIL/CC0/Materials/M_CC0_Sandstone.M_CC0_Sandstone gold=/Game/VEIL/Materials/M_VEIL_GoldPBR.M_VEIL_GoldPBR navy=/Game/VEIL/Materials/M_VEIL_Deep.M_VEIL_Deep crystal=/Game/Sicka_EnvPack2/Sicka_Ancient_Kit/Materials/MI_Cliff3.MI_Cliff3`
